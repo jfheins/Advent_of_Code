@@ -14,3 +14,7 @@ dotnet_diagnostic.CA1043.severity = none
 
 # CA1819: Properties should not return arrays
 dotnet_diagnostic.CA1819.severity = none
+
+# Default severity for analyzer diagnostics with category 'Globalization'
+dotnet_analyzer_diagnostic.category-Globalization.severity = none
+
