@@ -8,7 +8,7 @@ namespace AoC_2020
     {
         static void Main()
         {
-            Solver.SolveAll();
+            Solver.SolveLast();
             _ = Console.ReadLine();
         }
     }
