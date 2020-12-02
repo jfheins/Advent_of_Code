@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 
@@ -12,46 +13,30 @@ namespace AoC_2020.Days
 {
     public class Day_02 : BaseDay
     {
-        private readonly ICollection<string[]> _input;
+        private readonly ICollection<(int, int, char, string)> _input;
 
         public Day_02()
         {
-            _input = File.ReadAllLines(InputFilePath).MatchRegexGroups(@"(\d+)-(\d+) (\w): (\w+)").ToList();
+            _input = File.ReadAllLines(InputFilePath).MatchRegexGroups4<int, int, char, string>(@"(\d+)-(\d+) (\w): (\w+)").ToList();
         }
 
         public override string Solve_1()
         {
-            var isvalid = 0;
-            foreach (var line in _input)
+            static bool IsValid((int min, int max, char c, string pwd) input)
             {
-                var min = int.Parse(line[1]);
-                var max = int.Parse(line[2]);
-                var requiredChar = line[3];
-                var password = line[4];
-
-                var count = password.Count(x => x == requiredChar[0]);
-                if (count >= min && count <= max)
-                    isvalid++;
+                var count = input.pwd.Count(x => x == input.c);
+                return count >= input.min && count <= input.max;
             }
-            return isvalid.ToString();
+
+            return _input.Count(IsValid).ToString();
         }
 
         public override string Solve_2()
         {
+            static bool IsValid((int firstIdx, int secondIdx, char c, string pwd) t)
+                => t.pwd[t.firstIdx - 1] == t.c ^ t.pwd[t.secondIdx - 1] == t.c;
 
-            var isvalid = 0;
-            foreach (var line in _input)
-            {
-                var min = int.Parse(line[1]);
-                var max = int.Parse(line[2]);
-                var need = line[3][0];
-                var pwd = line[4];
-
-                if (pwd[min - 1] == need ^ pwd[max - 1] == need)
-                    isvalid++;
-
-            }
-            return isvalid.ToString();
+            return _input.Count(IsValid).ToString();
         }
     }
 }
