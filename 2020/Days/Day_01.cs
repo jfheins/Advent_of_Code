@@ -15,12 +15,12 @@ namespace AoC_2020.Days
             _input = File.ReadAllLines(InputFilePath).Select(int.Parse).ToArray();
         }
 
-        public override string Solve_1() => new Combinations<int>(_input, 2)
+        public override string Solve_1() => new ArrayCombinations<int>(_input, 2)
             .Where(x => x.Sum() == 2020)
             .Select(x => x.Product())
             .First().ToString();
 
-        public override string Solve_2() => new Combinations<int>(_input, 3)
+        public override string Solve_2() => new ArrayCombinations<int>(_input, 3)
             .Where(x => x.Sum() == 2020)
             .Select(x => x.Product())
             .First().ToString();
