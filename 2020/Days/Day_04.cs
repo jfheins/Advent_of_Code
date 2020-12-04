@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-
-using Core;
 
 using MoreLinq;
 
@@ -13,95 +10,64 @@ namespace AoC_2020.Days
 {
     public class Day_04 : BaseDay
     {
-        //private readonly WrappingXGrid2D<char> _input;
-        private readonly List<string> _input;
+        private readonly List<Dictionary<string, string>> _input;
 
         public Day_04()
         {
-            //_input = new WrappingXGrid2D<char>(File.ReadAllLines(InputFilePath));
             _input = File.ReadAllLines(InputFilePath).Split("")
-                .Select(b => string.Join(" ", b)).ToList();
+                .Select(block => block.SelectMany(line => line.Split(" ")))
+                .Select(block => block.Select(item => item.Split(":")))
+                .Select(block => block.ToDictionary(kvp => kvp[0], kvp => kvp[1]))
+                .ToList();
         }
 
         public override string Solve_1()
         {
-            var count = 0;
-            var fields = new string[] { "byr",
-"iyr",
-"eyr",
-"hgt",
-"hcl",
-"ecl",
-"pid",
-};
-            foreach (var line in _input)
-            {
-                if (fields.All(x => line.Contains(x + ":")))
-                {
-                    count++;
-                }
-            }
-            return count.ToString();
+            var fields = new string[] { "byr","iyr","eyr","hgt","hcl","ecl","pid"};
+            return _input.Count(passport => fields.All(x => passport.ContainsKey(x))).ToString();
         }
 
-        public override string Solve_2()
+        private static bool IsValid(Dictionary<string, string> currentPassport)
         {
+            bool InRange(string key, int min, int max)
+                => currentPassport.TryGetValue(key, out var val) && int.Parse(val) >= min && int.Parse(val) <= max;
 
-            /*
-             byr (Birth Year) - four digits; at least 1920 and at most 2002.
-    iyr (Issue Year) - four digits; at least 2010 and at most 2020.
-    eyr (Expiration Year) - four digits; at least 2020 and at most 2030.
-    hgt (Height) - a number followed by either cm or in:
-    If cm, the number must be at least 150 and at most 193.
-    If in, the number must be at least 59 and at most 76.
-    hcl (Hair Color) - a # followed by exactly six characters 0-9 or a-f.
-    ecl (Eye Color) - exactly one of: amb blu brn gry grn hzl oth.
-    pid (Passport ID) - a nine-digit number, including leading zeroes.
-    cid (Country ID) - ignored, missing or not.
-             */
-            var count = 0;
-            var fields = new string[] { "byr",
-                "iyr",
-                "eyr",
-                "hgt",
-                "hcl",
-                "ecl",
-                "pid",
-                };
-            foreach (var line in _input)
-            {
-                var details = line.Split(" ").Select(field => field.Split(":").ToTuple2())
-                    .ToDictionary(x => x.Item1, x => x.Item2);
+            bool Fulfills(string key, Func<string, bool> checker)
+                => currentPassport.TryGetValue(key, out var val) && checker(val);
 
-                if (details.TryGetValue("hgt", out var hgt))
+            bool FulfillsRegEx(string key, string pattern)
+                => Fulfills(key, val => Regex.IsMatch(val, pattern));
 
-                    if (hgt.Contains("cm") && (int.Parse(hgt[..^2]) >= 150 && int.Parse(hgt[..^2]) <= 193)
-                         || hgt.Contains("in") && (int.Parse(hgt[..^2]) >= 59 && int.Parse(hgt[..^2]) <= 76)
-                                )
+            (int val, string unit) GetHeight()
+                => currentPassport.TryGetValue("hgt", out var hgt) ? (int.Parse(hgt[..^2]), hgt[^2..]) : (0, "");
 
-                        if (inRange(details, "byr", 1920, 2002))
-                            if (details.TryGetValue("iyr", out var iyr) && int.Parse(iyr) >= 2010 && int.Parse(iyr) <= 2020)
-                                if (details.TryGetValue("eyr", out var eyr) && int.Parse(eyr) >= 2020 && int.Parse(eyr) <= 2030)
-                                    if (details.TryGetValue("hcl", out var hcl) && Regex.IsMatch(hcl, @"#[0-9a-f]{6}"))
-                                        if (details.TryGetValue("ecl", out var ecl) && Regex.IsMatch(ecl, @"amb|blu|brn|gry|grn|hzl|oth"))
-                                            if (inRange(details, "pid", 0, 999999999) && details.TryGetValue("pid", out var pid) && pid.Length == 9)
-                                            {
-                                                count++;
-                                            }
-            }
-            return count.ToString();
-        }
-
-        private static bool InRange(Dictionary<string, string> details, string key, int min, int max)
-        {
             try
             {
-                return details.TryGetValue(key, out var val) && int.Parse(val) >= min && int.Parse(val) <= max;
+                if (InRange("byr", 1920, 2002)
+                  && InRange("iyr", 2010, 2020)
+                  && InRange("eyr", 2020, 2030)
+                  && FulfillsRegEx("hcl", @"#[0-9a-f]{6}")
+                  && FulfillsRegEx("ecl", @"amb|blu|brn|gry|grn|hzl|oth")
+                  && Fulfills("pid", s => s.Length == 9)
+                  && InRange("pid", 0, 999999999))
+                {
+                    var (val, unit) = GetHeight();
+                    if (unit == "cm")
+                        return val >= 150 && val <= 193;
+                    if (unit == "in")
+                        return val >= 59 && val <= 76;
+                }
             }
             catch (Exception)
             {
                 return false;
             }
+            return false;
+        }
+
+        public override string Solve_2()
+        {
+            return _input.Count(p => IsValid(p)).ToString();
         }
     }
 }
