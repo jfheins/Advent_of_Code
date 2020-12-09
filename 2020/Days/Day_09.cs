@@ -16,7 +16,6 @@ namespace AoC_2020.Days
     {
         private readonly long[] input;
         private long xmasNumber = 0;
-        private int xmasNumberIdx = 0;
 
         public Day_09()
         {
@@ -32,7 +31,6 @@ namespace AoC_2020.Days
                 if (!isSum)
                 {
                     xmasNumber = input[i];
-                    xmasNumberIdx = i;
                     return xmasNumber.ToString();
                 }
                 _ = window.Remove(input[i - 25]);
@@ -43,9 +41,7 @@ namespace AoC_2020.Days
 
         public override string Solve_2()
         {
-            var haystack = input.Take(xmasNumberIdx).ToList();
-
-            for (int lower = 0; lower < haystack.Count; lower++)
+            for (int lower = 0; lower < input.Length; lower++)
             {
                 for (int len = 1; len < 100; len++)
                 {
@@ -58,7 +54,7 @@ namespace AoC_2020.Days
                 }
             }
 
-            return "";
+            return "?";
         }
     }
 }
