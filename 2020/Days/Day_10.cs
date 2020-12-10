@@ -36,18 +36,22 @@ namespace AoC_2020.Days
         {
             return diffs
                 .Runs()
-                .Where(run => run.first == 1)
-                .Select(run =>
-                    run.count switch
-                    {
-                        1 => 1L,
-                        2 => 2L,
-                        3 => 4L,
-                        4 => 7L,
-                        _ => 0L
-                    })
+                .Where(run => run.Element == 1)
+                .Select(run => NumberOfCompositionsOfN(run.Count))
+                .Cast<long>()
                 .Product()
                 .ToString();
+        }
+        private int NumberOfCompositionsOfN(int n) => Tribonacci(n);
+
+        private readonly List<int> TribonacciCache = new() { 1, 1, 2 };
+
+        private int Tribonacci(int x)
+        {
+            if (TribonacciCache.Count <= x)
+                TribonacciCache.Add(Tribonacci(x - 1) + Tribonacci(x - 2) + Tribonacci(x - 3));
+
+            return TribonacciCache[x];
         }
     }
 }
