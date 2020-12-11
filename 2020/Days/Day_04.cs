@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-using MoreLinq;
+using MoreLinq.Extensions;
 
 namespace AoC_2020.Days
 {
@@ -23,7 +23,7 @@ namespace AoC_2020.Days
 
         public override string Solve_1()
         {
-            var fields = new string[] { "byr","iyr","eyr","hgt","hcl","ecl","pid"};
+            var fields = new string[] { "byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid" };
             return _input.Count(passport => fields.All(x => passport.ContainsKey(x))).ToString();
         }
 

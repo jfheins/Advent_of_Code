@@ -1,13 +1,8 @@
-﻿using System.Buffers;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-
 
 using Core;
-using Core.Combinatorics;
 
 namespace AoC_2020.Days
 {

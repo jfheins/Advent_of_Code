@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
-using System.Text.RegularExpressions;
 
 using Core;
 using Core.Combinatorics;
-
-using MoreLinq.Extensions;
 
 namespace AoC_2020.Days
 {

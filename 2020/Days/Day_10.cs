@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
 using Core;
@@ -12,7 +11,7 @@ namespace AoC_2020.Days
     public class Day_10 : BaseDay
     {
         private readonly int[] input;
-        private List<int> diffs;
+        private List<int> diffs = new();
 
         public Day_10()
         {
