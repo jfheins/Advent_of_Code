@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Dynamic;
-using System.Globalization;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 using Core;
 
@@ -15,7 +9,6 @@ namespace AoC_2020.Days
     {
         private readonly string[] input;
         private readonly int[] ids;
-        //private FiniteGrid2D<char> grid;
 
         public Day_13()
         {
@@ -40,14 +33,18 @@ namespace AoC_2020.Days
 
         public override string Solve_2()
         {
-            var res = input[1].Split(",").Select(num => num == "x" ? (long?)null : long.Parse(num)).ToList();
+            var busses = input[1].Split(",")
+                .Select((busid, idx) => (idx, busid))
+                .Where(t => t.busid != "x")
+                .Select(t => (t.idx, busid: long.Parse(t.busid)))
+                .ToList();
 
-            var factors = res.Select((x, idx) => (n: x, rem: idx)).Where(x => x.n.HasValue).ToList();
-            var n = factors.Select(x => x.n.Value).ToArray();
-            var remainders = factors.Select(x => (int)(x.n.Value) - x.rem).ToArray();
-            var overallPeriod = ChineseRemainderTheorem.Solve(n, remainders);
+            var ids = busses.Select(x => x.busid).ToArray();
+            var remainders = busses.Select(x => (int)x.busid - x.idx).ToArray();
 
-            return "_";
+            var bestTime = ChineseRemainderTheorem.Solve(ids, remainders);
+
+            return bestTime.ToString();
         }
     }
 
