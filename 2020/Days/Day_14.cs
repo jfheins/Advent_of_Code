@@ -49,7 +49,8 @@ namespace AoC_2020.Days
         {
             var mask = 0L;
             var maskBits = 0L;
-            var maskX = new HashSet<int>();
+            var maskX = new HashSet<long>();
+            var allX = 0L;
             var mem = new Dictionary<long, long>();
 
             foreach (var line in input)
@@ -58,23 +59,19 @@ namespace AoC_2020.Days
                 {
                     mask = Convert.ToInt64(line[^36..].Replace("X", "0"), 2);
                     maskBits = Convert.ToInt64(line[^36..].Replace("X", "0"), 2);
-                    maskX = line.IndexWhere(c => c == 'X').Select(i => 42-i).ToHashSet();
+                    maskX = line.IndexWhere(c => c == 'X').Select(i => 42-i).Select(i => 1L << i).ToHashSet();
+                    allX = Convert.ToInt64(line[^36..].Replace("1", "0").Replace("X", "1"), 2);
                 }
                 else if (line.StartsWith("mem"))
                 {
                     var numbers = line.ParseLongs(2);
                     var addr = numbers[0];
                     var value = numbers[1];
-                    foreach (var floating in maskX.Subsets())
+                    foreach (var floatingIndex in maskX.Subsets())
                     {
-                        var faddr = (addr & ~maskBits) | mask;
-                        foreach (var bitidx in maskX)
-                        {
-                            if (floating.Contains(bitidx))
-                                faddr |= 1L << bitidx;
-                            else
-                                faddr &= ~(1L << bitidx);
-                        }
+                        var faddr = ((addr & ~maskBits) | mask) & ~allX;
+                        foreach (var oneBitNumber in floatingIndex)
+                                faddr |= oneBitNumber;
                         mem[faddr] = value;
                     }
                 }
