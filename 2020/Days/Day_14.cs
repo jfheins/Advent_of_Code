@@ -67,11 +67,12 @@ namespace AoC_2020.Days
                     var numbers = line.ParseLongs(2);
                     var addr = numbers[0];
                     var value = numbers[1];
-                    foreach (var floatingIndex in maskX.Subsets())
+
+                    foreach (var setOfFloatingBits  in maskX.Subsets())
                     {
                         var faddr = ((addr & ~maskBits) | mask) & ~allX;
-                        foreach (var oneBitNumber in floatingIndex)
-                                faddr |= oneBitNumber;
+                        foreach (var oneBitNumber in setOfFloatingBits )
+                            faddr |= oneBitNumber;
                         mem[faddr] = value;
                     }
                 }
