@@ -37,7 +37,7 @@ namespace AoC_2020.Days
                 .Runs()
                 .Where(run => run.Element == 1)
                 .Select(run => NumberOfCompositionsOfN(run.Count))
-                .Cast<long>()
+                .Select(x => (long)x)
                 .Product()
                 .ToString();
         }
