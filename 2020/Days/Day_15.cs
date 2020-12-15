@@ -41,22 +41,21 @@ namespace AoC_2020.Days
 
         public override string Solve_2()
         {
-            var mapNumToTurn = new Dictionary<int, int>(4_000_000);
-            var prevNum = -1;
+            var mapNumToTurn = new int[30_000_000];
 
-            for (int i = 0; i < numbers.Length; i++)
+            for (int i = 0; i < numbers.Length - 1; i++)
             {
-                mapNumToTurn[numbers[i]] = i;
-                prevNum = numbers[i];
+                mapNumToTurn[numbers[i]] = i+1;
             }
+            var prevNum = numbers[^1];
 
-            for (int i = numbers.Length; i < 30000000; i++)
+            for (int i = numbers.Length; i < 30_000_000; i++)
             {
-                var newNumber = 0;
-                if (mapNumToTurn.TryGetValue(prevNum, out var idx))
-                    newNumber = i - 1 - idx;
+                var newNumber = mapNumToTurn[prevNum];
+                if (newNumber > 0)
+                    newNumber = i - newNumber;
                 
-                mapNumToTurn[prevNum] = i-1;
+                mapNumToTurn[prevNum] = i;
                 prevNum = newNumber;
             }
             return prevNum.ToString();
