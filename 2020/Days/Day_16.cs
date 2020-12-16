@@ -1,109 +1,90 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Globalization;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 using Core;
 
-using static MoreLinq.Extensions.SkipUntilExtension;
+using static MoreLinq.Extensions.SplitExtension;
 
 namespace AoC_2020.Days
 {
+    internal record TicketField(string Name, List<(int Min, int Max)> Ranges)
+    {
+        public bool IsValid(int value) => Ranges.Any(r => r.Min <= value && value <= r.Max);
+        public bool IsValidForAll(IEnumerable<int> values) => values.All(v => IsValid(v));
+    }
+
     public class Day_16 : BaseDay
     {
-        private readonly string[] input;
-        //private readonly int[] numbers;
-        //private FiniteGrid2D<char> grid;
+        private readonly TicketField[] fields;
+        private readonly int[] myTicket;
+        private readonly List<int[]> nearbyTickets;
 
         public Day_16()
         {
-            input = File.ReadAllLines(InputFilePath);
-            //numbers = input.Select(int.Parse).ToArray();
-            //grid = Grid2D.FromFile(InputFilePath);
+            var input = File.ReadAllLines(InputFilePath).Split("").ToArray();
+            Debug.Assert(input.Length == 3);
+            Debug.Assert(input[1].First().Contains("your"));
+
+            fields = input[0].Select(ParseField).ToArray();
+            myTicket = input[1].ElementAt(1).ParseInts();
+            nearbyTickets = input[2].Skip(1).Select(l => l.ParseInts()).ToList();
+        }
+
+        private TicketField ParseField(string line)
+        {
+            var name = line.Substring(0, line.IndexOf(':'));
+            var ranges = line.ParseNNInts().Pairwise();
+            return new TicketField(name, ranges.ToList());
         }
 
         public override string Solve_1()
         {
-            var rules = input.TakeWhile(line => line.Length > 0);
-            var nearby = input.SkipUntil(line => line.Contains("nearby tickets:"));
-
-            var allowedRange = new HashSet<(int min, int max)>();
-            foreach (var line in rules)
-            {
-                var num = line.ParseNNInts().Pairwise();
-                foreach (var range in num)
-                {
-                    _ = allowedRange.Add(range);
-                }
-            }
+            bool IsInvalidValue(int value) => !fields.Any(f => f.IsValid(value));
 
             long errorRate = 0;
-            foreach (var line in nearby)
+            var invalidIdx = new List<int>();
+            foreach (var ticket in nearbyTickets)
             {
-                var vals = line.ParseInts();
-                var invalid = vals.Where(v => !allowedRange
-                    .Any(r => r.min <= v && v <= r.max));
-                errorRate += invalid.Sum();
+                errorRate += ticket.Where(IsInvalidValue).Sum();
             }
-
+            // Remove invalid tickwets for part 2
+            _ = nearbyTickets.RemoveAll(t => t.Any(IsInvalidValue));
             return errorRate.ToString();
         }
 
-        private bool IsValid((int min, int max) rule, int value)
-            => rule.min <= value && value <= rule.max;
-        private bool IsValidForAll((int min, int max) rule, IEnumerable<int> values)
-            => values.All(v => IsValid(rule, v));
-        private bool IsValidForAny(IEnumerable<(int min, int max)> rules, int val)
-            => rules.Any(r => IsValid(r, val));
-        private bool IsValidForAll(IEnumerable<(int min, int max)> rule, IEnumerable<int> values)
-            => values.All(v => IsValidForAny(rule, v));
-
         public override string Solve_2()
         {
-            var rules = input.TakeWhile(line => line.Length > 0);
-            var nearby = input.SkipUntil(line => line.Contains("nearby tickets:"));
-
-            var allowedRange = new HashSet<(int min, int max)>();
-            var fieldrules = new Dictionary<string, List<(int min, int max)>>();
-            foreach (var line in rules)
+            var possibleIdx = new Dictionary<string, List<int>>();
+            foreach (var field in fields)
             {
-                var num = line.ParseNNInts().Pairwise();
-                var name = line.Substring(0, line.IndexOf(':'));
-                fieldrules[name] = new List<(int min, int max)>();
-                foreach (var pair in num)
+                possibleIdx[field.Name] = new List<int>();
+            }
+
+            for (int idx = 0; idx < fields.Length; idx++)
+            {
+                var values = nearbyTickets.Select(t => t[idx]);
+                foreach (var field in fields.Where(f => f.IsValidForAll(values)))
+                    possibleIdx[field.Name].Add(idx);
+            }
+
+            var knownIdx = new Dictionary<string, int>();
+            for (int i = 0; i < fields.Length; i++)
+            {
+                // Find the field with only one possible index
+                var (name, indicies) = possibleIdx.First(x => x.Value.Count == 1);
+                var index = indicies[0];
+                _ = possibleIdx.Remove(name);
+                knownIdx[name] = index;
+                foreach (var other in possibleIdx)
                 {
-                    _ = allowedRange.Add(pair);
-                    fieldrules[name].Add(pair);
+                    _ = other.Value.Remove(index);
                 }
             }
 
-            var validTickets = new List<int[]>();
-            foreach (var line in nearby)
-            {
-                var vals = line.ParseInts();
-                var valid = vals.All(v => allowedRange
-                    .Any(r => r.min <= v && v <= r.max));
-                if (valid)
-                {
-                    validTickets.Add(line.ParseInts());
-                }
-            }
-
-            var text = "";
-            for (int i = 0; i < 20; i++)
-            {
-                var values = validTickets.Select(t => t[i]).ToList();
-                var field = fieldrules.Select(r =>  IsValidForAll(r.Value, values) ? r.Key.Replace(" ", "-") : "_").ToList();
-                var names = string.Join("\t", field);
-                text += names + "\r\n";
-                Console.WriteLine(names);
-            }
-            File.WriteAllText("./tickets.csv", text);
-
-            return "_";
+            return knownIdx.Where(kvp => kvp.Key.StartsWith("departure"))
+                .Select(kvp => myTicket[kvp.Value]).Product().ToString();
         }
     }
 }
