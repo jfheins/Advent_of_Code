@@ -20,6 +20,7 @@ namespace AoC_2020.Days
             var input = File.ReadAllLines(InputFilePath);
             points = input.WithXY().Where(x => x.value == '#');
         }
+
         public override string Solve_1()
         {
             var grid = new HashSet<Point3>(points.Select(p => new Point3(p.x, p.y, 0)));

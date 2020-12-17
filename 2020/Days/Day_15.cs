@@ -45,7 +45,7 @@ namespace AoC_2020.Days
 
             for (int i = 0; i < numbers.Length - 1; i++)
             {
-                mapNumToTurn[numbers[i]] = i+1;
+                mapNumToTurn[numbers[i]] = i + 1;
             }
             var prevNum = numbers[^1];
 
@@ -54,7 +54,7 @@ namespace AoC_2020.Days
                 var newNumber = mapNumToTurn[prevNum];
                 if (newNumber > 0)
                     newNumber = i - newNumber;
-                
+
                 mapNumToTurn[prevNum] = i;
                 prevNum = newNumber;
             }
