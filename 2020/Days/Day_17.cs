@@ -14,16 +14,18 @@ namespace AoC_2020.Days
     public class Day_17 : BaseDay
     {
         private Dictionary<Point3, char> grid = new();
-        private Dictionary<Point4, char> grid2 = new();
+        private HashSet<Point4> grid2 = new();
+        private int Maxy = 0;
 
         public Day_17()
         {
             var content = File.ReadAllLines(InputFilePath);
+            Maxy = content.Length;
             foreach (var (x, y, value) in content.WithXY())
                 grid[new Point3(x, y, 0)] = value;
 
-            foreach (var (x, y, value) in content.WithXY())
-                grid2[new Point4(x, y, 0, 0)] = value;
+            foreach (var (x, y, value) in content.WithXY().Where(x => x.value == '#'))
+                _ = grid2.Add(new Point4(x, y, 0, 0));
         }
 
         private IEnumerable<Point3> Neighbors(Point3 p)
@@ -95,51 +97,41 @@ If a cube is inactive but exactly 3 of its neighbors are active, the cube become
                                 yield return p.TranslateBy(dx, dy, dz, dw);
         }
 
-        private char Life2(Point4 p)
+        private bool Life2(Point4 p)
         {
-            /*
-If a cube is active and exactly 2 or 3 of its neighbors are also active,
-            the cube remains active. Otherwise, the cube becomes inactive.
-If a cube is inactive but exactly 3 of its neighbors are active, the cube becomes active. Otherwise, the cube remains inactive.
-             */
-            var activeNeighb = Neighbors2(p).Count(n => grid2.GetValueOrDefault(n, '.') == '#');
-            if (grid2.GetValueOrDefault(p, '.') == '#')
-                return (activeNeighb == 2 || activeNeighb == 3) ? '#' : '.';
-            else
-                return activeNeighb == 3 ? '#' : '.';
+            var activeNeighb = Neighbors2(p).Count(n => grid2.Contains(n));
+            return grid2.Contains(p) ? activeNeighb == 2 || activeNeighb == 3 : activeNeighb == 3;
         }
 
         public override string Solve_2()
         {
-            var newgrid = new Dictionary<Point4, char>();
-            var lim = 15;
+            var newgrid = new HashSet<Point4>();
+            var lim = 6;
 
             for (int i = 0; i < 6; i++)
             {
-                for (int x = -lim; x <= lim; x++)
+                for (int x = -lim; x <= lim + Maxy; x++)
                 {
-                    for (int y = -lim; y <= lim; y++)
+                    for (int y = -lim; y <= lim + Maxy; y++)
                     {
                         for (int z = -lim; z <= lim; z++)
                         {
                             for (int w = -lim; w <= lim; w++)
                             {
-                                var newCell = Life2(new Point4(x, y, z, w));
-                                if (newCell == '#')
-                                    newgrid[new Point4(x, y, z, w)] = '#';
+                                if (Life2(new Point4(x, y, z, w)))
+                                    _ = newgrid.Add(new Point4(x, y, z, w));
                             }
                         }
                     }
-                    Console.Write(x.ToString() + " ");
                 }
                 Console.WriteLine();
 
                 grid2 = newgrid;
-                newgrid = new Dictionary<Point4, char>();
+                newgrid = new();
             }
 
 
-            return grid2.Count(x => x.Value == '#').ToString();
+            return grid2.Count.ToString();
         }
     }
 }
