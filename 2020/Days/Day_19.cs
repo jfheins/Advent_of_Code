@@ -15,7 +15,6 @@ namespace AoC_2020.Days
         private readonly string[] rules;
         private readonly string[] messages;
         private Dictionary<int, string> ruleDict;
-        private long time;
 
         public Day_19()
         {
