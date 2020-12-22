@@ -9,6 +9,9 @@ using static MoreLinq.Extensions.SplitExtension;
 
 using Core;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Data;
 
 namespace AoC_2020.Days
 {
@@ -58,31 +61,24 @@ namespace AoC_2020.Days
 
         public override string Solve_2()
         {
-            var winner = RecurseCombat(p1list, p2list);
-            var winnerdeck = winner.player == 1 ? p1list : p2list;
-            var count = winner.deck.Count;
-            var score = winner.deck.Select((item, idx) => (count - idx) * (long)item).Sum();
+            var (_, deck) = RecurseCombat(p1list, p2list);
+            var count = deck.Count;
+            var score = deck.Select((item, idx) => (count - idx) * (long)item).Sum();
             return score.ToString();
         }
 
-        //Dictionary<ImmutableList<int>, int> seen = new();
-        int game = 1;
         private (int player, ImmutableList<int> deck) RecurseCombat(ImmutableList<int> deck1, ImmutableList<int> deck2)
         {
-            HashSet<string> seen = new();
-            var thisgame = game++;
+            HashSet<(ImmutableList<int>, ImmutableList<int>)> seen = new(new SequenceComparer());
+            var drawn = new int[2];
             while (deck1.Any() && deck2.Any())
             {
-                //var builder = ImmutableList.CreateBuilder<int>();
-                //builder.AddRange(deck1);
-                //builder.Add(-1);
-                //builder.AddRange(deck2);
-                //var state =  builder.ToImmutable();
-                var state = string.Join(',', deck1) + "/" + string.Join(',', deck2);
-                if (!seen.Add(state))
+                if (!seen.Add((deck1, deck2)))
                     return (1, deck1);
 
-                var drawn = new[] { deck1[0], deck2[0] };
+                drawn[0] = deck1[0];
+                drawn[1] = deck2[0];
+
                 int winner;
                 if (deck1.Count > drawn[0] && deck2.Count > drawn[1])
                     winner = RecurseCombat(deck1.GetRange(1, drawn[0]), deck2.GetRange(1, drawn[1])).player;
@@ -103,15 +99,18 @@ namespace AoC_2020.Days
             return deck1.Any() ? (1, deck1) : (2, deck2);
         }
 
-        public static long GetSequenceHashCode<T>(IEnumerable<T> sequence) where T: notnull
+        private class SequenceComparer : IEqualityComparer<(ImmutableList<int>, ImmutableList<int>)>
         {
-            const long seed = 487;
-            const long modifier = 31;
-
-            unchecked
+            public bool Equals((ImmutableList<int>, ImmutableList<int>) x, (ImmutableList<int>, ImmutableList<int>) y)
             {
-                return sequence.Aggregate(seed, (current, item) =>
-                    (current * modifier) + item.GetHashCode());
+                return Enumerable.SequenceEqual(x.Item1, y.Item1) && Enumerable.SequenceEqual(x.Item2, y.Item2);
+            }
+
+            public int GetHashCode([DisallowNull] (ImmutableList<int>, ImmutableList<int>) obj)
+            {
+                var left = obj.Item1.Count > 2 ? obj.Item1[0] + (obj.Item1[1] * 59) + (obj.Item1[^1] * 59 * 59) : 487;
+                var right = obj.Item2.Count > 2 ? unchecked((obj.Item2[0] + (obj.Item2[1] * 59) + (obj.Item2[^1] * 59 * 59)) << 20) : 1000037;
+                return left ^ right;
             }
         }
     }
