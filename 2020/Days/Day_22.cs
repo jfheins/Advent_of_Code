@@ -68,6 +68,9 @@ namespace AoC_2020.Days
 
         private (int player, ImmutableArray<int> deck) RecurseCombat(ImmutableArray<int> deck1, ImmutableArray<int> deck2, int depth = 1)
         {
+            if (depth > 1 && deck1.Max() > deck2.Max())
+                return (1, deck1); // Player 1 cannot loose if he has the highest card
+
             HashSet<(ImmutableArray<int>, ImmutableArray<int>)> seen = new(new SequenceComparer());
             var drawn = new int[2];
             while (deck1.Any() && deck2.Any())
