@@ -54,64 +54,45 @@ namespace AoC_2020.Days
         public override string Solve_2()
         {
 
-            var cardCount = 1_000_000;
-            var nodeMap = new (int value, int next)[cardCount];
+            var cupCount = 1_000_000;
+            var successorOf = new int[cupCount];
 
-
-            foreach (var pair in input.Concat(Enumerable.Range(10, cardCount - input.Count + 1)).Select(x => x - 1).PairwiseWithOverlap())
+            foreach (var pair in input.Concat(Enumerable.Range(10, cupCount - input.Count + 1)).Select(x => x - 1).PairwiseWithOverlap())
             {
-                nodeMap[pair.Item1] = pair;
+                successorOf[pair.Item1] = pair.Item2;
             }
-            nodeMap[cardCount - 1] = (cardCount - 1, input[0] - 1);
+            successorOf[cupCount - 1] = input[0] - 1;
 
-            (int value, int next)[] GetNextThree((int value, int next) item)
+            int[] GetNextThree(int cup)
             {
-                var res = new (int value, int next)[3];
+                var res = new int[3];
                 for (int i = 0; i < res.Length; i++)
                 {
-                    var nextIdx = item.next % cardCount;
-                    item = res[i] = nodeMap[nextIdx];
+                    cup = res[i] = successorOf[cup] % cupCount;
                 }
                 return res;
             }
 
-            void Print((int value, int next) item)
-            {
-                Console.Write($"({item.value + 1}) ");
-                var pointer = item;
-                for (int j = 0; j < 7; j++)
-                {
-                    pointer = nodeMap[pointer.next];
-                    Console.Write($"{pointer.value + 1} ");
-                }
-                Console.WriteLine();
-            }
-
-            var current = nodeMap[input[0] - 1];
+            var currentCup = input[0] - 1;
             for (int i = 0; i < 10_000_000; i++)
             {
-                // Output
-                //Print(current);
+                var picked = GetNextThree(currentCup);
+                // remove them from linked list
+                successorOf[currentCup] = successorOf[picked[^1]];
 
-                var picked = GetNextThree(current);
-                current.next = picked[^1].next; // remove them from linked list
-                nodeMap[current.value] = current;
-                //Print(current);
+                var dest = (currentCup - 1 + cupCount) % cupCount;
+                while (Array.IndexOf(picked, dest) > -1)
+                    dest = (dest + cupCount - 1) % cupCount;
 
-                var dest = (current.value - 1 + cardCount) % cardCount;
-                while (picked.Any(p => p.value == dest))
-                    dest = (dest + cardCount - 1) % cardCount;
+                successorOf[picked[^1]] = successorOf[dest];
+                successorOf[dest] = picked[0];
 
-                nodeMap[picked[^1].value].next = nodeMap[dest].next;
-                nodeMap[dest].next = picked[0].value;
-                //Print(current);
-
-                current = nodeMap[current.next];
+                currentCup = successorOf[currentCup];
             }
 
-            var oneNode = nodeMap[0];
-            var next = GetNextThree(oneNode);
-            var final = (next[0].value + 1L) * (next[1].value + 1L);
+            var oneNode = successorOf[0];
+            var next = GetNextThree(0);
+            var final = (next[0] + 1L) * (next[1] + 1L);
 
             return final.ToString();
         }
