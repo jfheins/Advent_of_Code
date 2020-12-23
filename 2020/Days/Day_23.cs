@@ -90,7 +90,6 @@ namespace AoC_2020.Days
                 currentCup = successorOf[currentCup];
             }
 
-            var oneNode = successorOf[0];
             var next = GetNextThree(0);
             var final = (next[0] + 1L) * (next[1] + 1L);
 
