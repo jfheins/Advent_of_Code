@@ -13,7 +13,6 @@ namespace AoC_2020.Days
     public class Day_23 : BaseDay
     {
         private readonly List<int> input;
-        //private FiniteGrid2D<char> grid;
 
         public Day_23()
         {
@@ -54,52 +53,70 @@ namespace AoC_2020.Days
 
         public override string Solve_2()
         {
-            var numbers = new LinkedList<int>(input.Concat(Enumerable.Range(10, 999991)));
-            var max = 1_000_000;
-            var nodeMap = new LinkedListNode<int>[max+1];
-            var current = numbers.First;
-            while (current != null)
+
+            var cardCount = 1_000_000;
+            var nodeMap = new (int value, int next)[cardCount];
+
+
+            foreach (var pair in input.Concat(Enumerable.Range(10, cardCount - input.Count + 1)).Select(x => x - 1).PairwiseWithOverlap())
             {
-                nodeMap[current.Value] = current;
-                current = current.Next;
+                nodeMap[pair.Item1] = pair;
+            }
+            nodeMap[cardCount - 1] = (cardCount - 1, input[0] - 1);
+
+            (int value, int next)[] GetNextThree((int value, int next) item)
+            {
+                var res = new (int value, int next)[3];
+                for (int i = 0; i < res.Length; i++)
+                {
+                    var nextIdx = item.next % cardCount;
+                    item = res[i] = nodeMap[nextIdx];
+                }
+                return res;
             }
 
-            current = numbers.First!;
+            void Print((int value, int next) item)
+            {
+                Console.Write($"({item.value + 1}) ");
+                var pointer = item;
+                for (int j = 0; j < 7; j++)
+                {
+                    pointer = nodeMap[pointer.next];
+                    Console.Write($"{pointer.value + 1} ");
+                }
+                Console.WriteLine();
+            }
+
+            var current = nodeMap[input[0] - 1];
             for (int i = 0; i < 10_000_000; i++)
             {
+                // Output
+                //Print(current);
+
                 var picked = GetNextThree(current);
-                foreach (var node in picked)
-                    numbers.Remove(node);
-                
-                var dest = current.Value == 1 ? max : current.Value - 1;
-                while (picked.Any(p => p.Value == dest))
-                    dest = dest == 1 ? max : dest - 1;
+                current.next = picked[^1].next; // remove them from linked list
+                nodeMap[current.value] = current;
+                //Print(current);
 
-                var destNode = nodeMap[dest];
+                var dest = (current.value - 1 + cardCount) % cardCount;
+                while (picked.Any(p => p.value == dest))
+                    dest = (dest + cardCount - 1) % cardCount;
 
-                numbers.AddAfter(destNode, picked[2]);
-                numbers.AddAfter(destNode, picked[1]);
-                numbers.AddAfter(destNode, picked[0]);
-                current = current.Next ?? numbers.First!;
+                nodeMap[picked[^1].value].next = nodeMap[dest].next;
+                nodeMap[dest].next = picked[0].value;
+                //Print(current);
+
+                current = nodeMap[current.next];
             }
 
-            var oneNode = numbers.Find(1)!;
+            var oneNode = nodeMap[0];
             var next = GetNextThree(oneNode);
-            var final = next[0].Value * (long)next[1].Value;
+            var final = (next[0].value + 1L) * (next[1].value + 1L);
 
             return final.ToString();
         }
 
-        private LinkedListNode<int>[] GetNextThree(LinkedListNode<int> x)
-        {
-            var res = new LinkedListNode<int>[3];
-            for (int i = 0; i < res.Length; i++)
-            {
-                x = x.Next ?? x.List!.First!;
-                res[i] = x;
-            }
-            return res;
-        }
+
     }
 }
 
