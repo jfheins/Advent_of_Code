@@ -1,15 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Globalization;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks.Dataflow;
-
-using Core;
 
 namespace AoC_2020.Days
 {
@@ -27,25 +18,13 @@ namespace AoC_2020.Days
         {
             const int mod = 20201227;
 
-            long Transform(long value, int loops)
-            {
-                var val = 1L;
-                for (int i = 0; i < loops; i++)
-                    val = checked(val * value) % mod;
-                return val;
-            }
+            static BigInteger Transform(long value, int loops)
+                => BigInteger.ModPow(value, loops, mod);
 
-
-            var cardLoops = GetLoops(numbers[0], mod);
+            //var cardLoops = GetLoops(numbers[0], mod);
             var doorLoops = GetLoops(numbers[1], mod);
 
-            var key = Transform(numbers[0], doorLoops);
-            key %= mod;
-            //for (int i = 0; i < doorLoops; i++)
-            //{
-            //    key = (7 * key) % mod;
-            //}
-            
+            var key = Transform(numbers[0], doorLoops);            
             return  key.ToString();
         }
 
@@ -62,11 +41,7 @@ namespace AoC_2020.Days
             return loops;
         }
 
-        public override string Solve_2()
-        {
-
-            return "_";
-        }
+        public override string Solve_2() => "-";
     }
 }
 
