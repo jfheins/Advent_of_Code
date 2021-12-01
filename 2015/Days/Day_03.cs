@@ -40,9 +40,6 @@ namespace AoC_2015.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            var currentPos = new Point(0, 0);
-            var positions = new List<Point> { currentPos };
-
             var emptyList = ImmutableList.Create(new Point(0, 0));
 
             // Funktional, aber schlechte performance
