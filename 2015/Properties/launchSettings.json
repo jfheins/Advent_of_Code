@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AoC_2015": {
+      "commandName": "Project",
+      "workingDirectory": "."
+    }
+  }
+}
