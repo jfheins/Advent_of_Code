@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AoC_2021": {
+      "commandName": "Project",
+      "workingDirectory": "."
+    }
+  }
+}

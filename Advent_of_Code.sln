@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30709.64
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.31911.260
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AoC_2020", "2020\AoC_2020.csproj", "{47BADC69-2B08-4C03-A721-502F1225932A}"
 EndProject
@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AoC_2021", "2021\AoC_2021.csproj", "{A2E5C9F7-94A0-447E-A795-ACCAB0F38857}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +34,10 @@ Global
 		{9C05372A-5686-4FFF-9C6B-CB3FB4512780}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C05372A-5686-4FFF-9C6B-CB3FB4512780}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9C05372A-5686-4FFF-9C6B-CB3FB4512780}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2E5C9F7-94A0-447E-A795-ACCAB0F38857}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2E5C9F7-94A0-447E-A795-ACCAB0F38857}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2E5C9F7-94A0-447E-A795-ACCAB0F38857}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2E5C9F7-94A0-447E-A795-ACCAB0F38857}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
