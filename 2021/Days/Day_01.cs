@@ -4,6 +4,8 @@ using System.Linq;
 using Core;
 using Core.Combinatorics;
 
+using static MoreLinq.Extensions.WindowExtension;
+
 namespace AoC_2021.Days
 {
     public class Day_01 : BaseDay
@@ -15,14 +17,12 @@ namespace AoC_2021.Days
             _input = File.ReadAllLines(InputFilePath).Select(int.Parse).ToArray();
         }
 
-        public override async ValueTask<string> Solve_1() => new FastCombinations<int>(_input, 2)
-            .Where(x => x.Sum() == 2020)
-            .Select(x => x.Product())
-            .First().ToString();
+        public override async ValueTask<string> Solve_1() => _input.Diff()
+            .Count(x => x > 0).ToString();
 
-        public override async ValueTask<string> Solve_2() => new FastCombinations<int>(_input, 3)
-            .Where(x => x.Sum() == 2020)
-            .Select(x => x.Product())
-            .First().ToString();
+        public override async ValueTask<string> Solve_2() => _input.Window(3)
+            .Select(x => x.Sum())
+            .Diff()
+            .Count(x => x > 0).ToString();
     }
 }
