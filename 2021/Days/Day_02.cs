@@ -10,11 +10,23 @@ namespace AoC_2021.Days
 {
     public class Day_02 : BaseDay
     {
-        private readonly string[] _input;
+        private readonly (string d, int val)[] _input;
 
         public Day_02()
         {
-            _input = File.ReadAllLines(InputFilePath);
+            _input = File.ReadAllLines(InputFilePath)
+                .MatchRegexGroups2<string, int>(@"(.+) (\d+)").ToArray();
+        }
+
+        private (Direction d, int val) Parse(string s)
+        {
+            var val = s[0] switch
+            {
+                'f' => Direction.Right,
+                'd' => Direction.Down,
+                'u' => Direction.Up
+            };
+            return (val, s.ParseInts()[0]);
         }
 
         public override async ValueTask<string> Solve_1()
@@ -22,23 +34,22 @@ namespace AoC_2021.Days
             var pos = 0;
             var depth = 0;
 
-            foreach (var line in _input)
+            foreach (var (dir, val) in _input)
             {
-                var delta = line.ParseInts(1)[0];
-                if (line.StartsWith("forward"))
+                if (dir == "forward")
                 {
-                    pos += delta;
+                    pos += val;
                 }
-                else if (line.StartsWith("down"))
+                else if (dir == "down")
                 {
-                    depth += delta;
+                    depth += val;
                 }
-                else if (line.StartsWith("up"))
+                else if (dir == "up")
                 {
-                    depth -= delta;
+                    depth -= val;
                 }
             }
-            return (depth*pos).ToString();
+            return (depth * pos).ToString();
         }
 
         public override async ValueTask<string> Solve_2()
@@ -47,21 +58,20 @@ namespace AoC_2021.Days
             var depth = 0;
             var aim = 0;
 
-            foreach (var line in _input)
+            foreach (var (dir, val) in _input)
             {
-                var delta = line.ParseInts(1)[0];
-                if (line.StartsWith("forward"))
+                if (dir == "forward")
                 {
-                    pos += delta;
-                    depth += aim * delta;
+                    pos += val;
+                    depth += aim * val;
                 }
-                else if (line.StartsWith("down"))
+                else if (dir == "down")
                 {
-                    aim += delta;
+                    aim += val;
                 }
-                else if (line.StartsWith("up"))
+                else if (dir == "up")
                 {
-                    aim -= delta;
+                    aim -= val;
                 }
             }
             return (depth * pos).ToString();
