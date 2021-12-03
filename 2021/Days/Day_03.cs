@@ -21,7 +21,7 @@ namespace AoC_2021.Days
 
         private int PopCount(int idx, IEnumerable<string> arr)
         {
-            return arr.Select(x => x[idx]).Count(x => x == '1');
+            return arr.Count(x => x[idx] == '1');
         }
 
         public override async ValueTask<string> Solve_1()
@@ -42,53 +42,47 @@ namespace AoC_2021.Days
             return (gamma * epsilon).ToString();
         }
 
+        private List<string> FilterForOxygen(List<string> list, int idx)
+        {
+            if (list.Count <= 1)
+                return list;
+
+            var popcount = PopCount(idx, list);
+            var filterchar = '0';
+            if (2 * popcount >= list.Count)
+                filterchar = '1';
+            return list.Where(s => s[idx] == filterchar).ToList();
+        }
+
+        private List<string> FilterForCO2(List<string> list, int idx)
+        {
+            if (list.Count <= 1)
+                return list;
+
+            var popcount = PopCount(idx, list);
+            var filterchar = '1';
+            if (2 * popcount >= list.Count)
+                filterchar = '0';
+            return list.Where(s => s[idx] == filterchar).ToList();
+        }
+
         public override async ValueTask<string> Solve_2()
         {
             var digits = _input[0].Length;
-            var num = _input.ToList();
-            // oxygen generator rating, determine the most common 
-            for (int idx = 0; idx < digits; idx++)
-            {
-                var popcount = PopCount(idx, num);
-                if (2*popcount >= num.Count)
-                { // Keep 1
-                    num = num.Where(s => s[idx] == '1').ToList();
-                }
-                else
-                {
-                    num = num.Where(s => s[idx] == '0').ToList();
-                }
-                if (num.Count == 1)
-                {
-                    break;
-                }
-            }
-            var oxygenRating = num.First();
-            num = _input.ToList();
 
-            // co2 generator rating, determine the least common 
-            for (int idx = 0; idx < digits; idx++)
-            {
-                var popcount = PopCount(idx, num);
-                if (2*popcount >= num.Count)
-                { // Keep 1
-                    num = num.Where(s => s[idx] == '0').ToList();
-                }
-                else
-                {
-                    num = num.Where(s => s[idx] == '1').ToList();
-                }
-                if (num.Count == 1)
-                {
-                    break;
-                }
-            }
-            var co2Rating = num.First();
+            var oxygenRating = Enumerable.Range(0, digits).Aggregate(
+                _input.ToList(),
+                (list, idx) => FilterForOxygen(list, idx),
+                list => list.First());
+
+            var co2Rating = Enumerable.Range(0, digits).Aggregate(
+                _input.ToList(),
+                (list, idx) => FilterForCO2(list, idx),
+                list => list.First());
 
             var a = Convert.ToInt32(oxygenRating, 2);
             var b = Convert.ToInt32(co2Rating, 2);
-            return (a*b).ToString();
-
+            return (a * b).ToString();
         }
     }
 }
