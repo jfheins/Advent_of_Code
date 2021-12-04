@@ -1,14 +1,12 @@
 ﻿using Core;
-using Core.Combinatorics;
-using MoreLinq.Extensions;
-using System.IO;
-using System.Linq;
+using System.Diagnostics;
+
+using static MoreLinq.Extensions.SplitExtension;
 
 namespace AoC_2021.Days
 {
     public class Day_04 : BaseDay
     {
-        private string[] _input;
         private int[] _numbers;
         private List<Board> _boards;
 
@@ -27,14 +25,13 @@ namespace AoC_2021.Days
                 {
                     b.Draw(drawn);
                 }
-                foreach (var b in _boards)
-                {
-                    if (b.HasBingo())
-                    {
-                        var res = (drawn * b.Score()).ToString();
-                        return res;
-                    }
-                }
+                var winningScore = _boards
+                    .Where(b => b.HasBingo())
+                    .Select(b => b.Score())
+                    .FirstOrDefault();
+
+                if (winningScore > 0)
+                    return winningScore.ToString();
             }
             return "";
         }
@@ -49,17 +46,13 @@ namespace AoC_2021.Days
                 {
                     b.Draw(drawn);
                 }
-                foreach (var b in _boards)
+                var doneBoards = openBoards.Where(b => b.HasBingo()).ToList();
+                openBoards.ExceptWith(doneBoards);
+
+                if (openBoards.Count == 0)
                 {
-                    if (b.HasBingo())
-                    {
-                        openBoards.Remove(b);
-                        if (openBoards.Count ==0)
-                        {
-                            var res = (drawn * b.Score()).ToString();
-                            return res;
-                        }
-                    }
+                    // Last one was just removed
+                    return doneBoards[0].Score().ToString();
                 }
             }
             return "";
@@ -69,6 +62,7 @@ namespace AoC_2021.Days
     public class Board
     {
         public (int num, bool wasDrawn)[][] Numbers { get; set; }
+        private int lastDrawn = -1;
 
         public Board(IEnumerable<string> lines)
         {
@@ -78,36 +72,36 @@ namespace AoC_2021.Days
 
         internal void Draw(int drawn)
         {
+            lastDrawn = drawn;
+
             for (int x = 0; x < Numbers.Length; x++)
-            {
                 for (int y = 0; y < Numbers[x].Length; y++)
-                {
                     if (Numbers[x][y].num == drawn)
-                    {
-                        Numbers[x][y] = (drawn, true);
-                    }
-                }
-            }
+                        Numbers[x][y].wasDrawn = true;
         }
 
         internal bool HasBingo()
         {
             var rows = Numbers.Any(row => row.All(x => x.wasDrawn));
-            var cols = Enumerable.Range(0, 5).Any(i => GetColumn(i).All(x => x));
+            var cols = GetColumns().Any(col => col.All(x => x.wasDrawn));
             return rows || cols;
-
-            IEnumerable<bool> GetColumn(int idx)
-            {
-                for (int i = 0; i < Numbers.Length; i++)
-                {
-                    yield return Numbers[i][idx].wasDrawn;
-                }
-            }
         }
+
+        private IEnumerable<IEnumerable<(int num, bool wasDrawn)>> GetColumns()
+        {
+            for (int i = 0; i < Numbers[0].Length; i++)
+                yield return GetColumn(i);
+            
+            IEnumerable<(int num, bool wasDrawn)> GetColumn(int idx)
+                => Numbers.Select(row => row[idx]);
+        }
+
 
         internal int Score()
         {
-            return Numbers.Sum(row => row.Sum(x => x.wasDrawn ? 0 : x.num));
+            ValueTuple<int, int> x;
+            Debug.Assert(HasBingo());
+            return lastDrawn * Numbers.Sum(row => row.Sum(x => x.wasDrawn ? 0 : x.num));
         }
     }
 }
