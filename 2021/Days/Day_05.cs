@@ -5,33 +5,34 @@ namespace AoC_2021.Days
 {
     public class Day_05 : BaseDay
     {
-        private List<Line> _lines;
+        private ILookup<bool, Line> _lines;
+        private byte[] grid = new byte[1000 * 1000];
 
         public Day_05()
         {
             _lines = File.ReadAllLines(InputFilePath)
-                .Select(l => new Line(l.ParseInts(4))).ToList();
+                .Select(Line.FromString).ToLookup(l => l.IsStraight);
         }
 
         public override async ValueTask<string> Solve_1()
         {
-            var allpoints = _lines
-                .Where(line => line.IsStraight)
-                .SelectMany(l => l.AllPoints);
-            var manyPoints = allpoints.GroupBy(p => p);
+            foreach (var line in _lines[true])
+                foreach (var p in line.AllPoints)
+                    grid[p.X + p.Y * 1000]++;
 
-            return manyPoints.Count(grp => grp.Count() > 1).ToString();
+            return grid.Count(x => x > 1).ToString();
         }
 
         public override async ValueTask<string> Solve_2()
         {
-            var allpoints = _lines.SelectMany(l => l.AllPoints);
-            var manyPoints = allpoints.GroupBy(p => p);
+            foreach (var line in _lines[false])
+                foreach (var p in line.AllPoints)
+                    grid[p.X + p.Y * 1000]++;
 
-            return manyPoints.Count(grp => grp.Count() > 1).ToString();
+            return grid.Count(x => x > 1).ToString();
         }
 
-        public record Line
+        public sealed record Line
         {
             public Point A { get; set; }
             public Point B { get; set; }
@@ -39,11 +40,10 @@ namespace AoC_2021.Days
 
             public bool IsStraight => A.X == B.X || A.Y == B.Y;
 
-            public Line(int[] numbers)
+            public Line(int ax, int ay, int bx, int by)
             {
-                // 767,159 -> 180,159
-                A = new Point(numbers[0], numbers[1]);
-                B = new Point(numbers[2], numbers[3]);
+                A = new Point(ax, ay);
+                B = new Point(bx, by);
 
                 AllPoints = CalcPoints().ToList();
             }
@@ -59,6 +59,13 @@ namespace AoC_2021.Days
                 {
                     yield return A + new Size(dx * i, dy * i);
                 }
+            }
+
+            internal static Line FromString(string line)
+            {
+                // 767,159 -> 180,159
+                var parts = line.Replace(" -> ", ",").Split(",").SelectArray(int.Parse);
+                return new Line(parts[0], parts[1], parts[2], parts[3]);
             }
         }
     }
