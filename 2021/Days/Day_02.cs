@@ -18,17 +18,6 @@ namespace AoC_2021.Days
                 .MatchRegexGroups2<string, int>(@"(.+) (\d+)").ToArray();
         }
 
-        private (Direction d, int val) Parse(string s)
-        {
-            var val = s[0] switch
-            {
-                'f' => Direction.Right,
-                'd' => Direction.Down,
-                'u' => Direction.Up
-            };
-            return (val, s.ParseInts()[0]);
-        }
-
         public override async ValueTask<string> Solve_1()
         {
             var pos = 0;

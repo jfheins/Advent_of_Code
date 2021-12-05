@@ -22,10 +22,10 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            return _input.Window(3)
-                       .Select(x => x.Sum())
-                       .Diff()
-                       .Count(x => x > 0).ToString();
+            return (GetSum(0) + GetSum(1) + GetSum(2)).ToString();
+
+            int GetSum(int offset)
+                => _input.StepBy(3, offset).Diff().Count(x => x > 0);
         }
     }
 }
