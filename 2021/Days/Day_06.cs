@@ -1,74 +1,46 @@
-﻿using Core;
-using Core.Combinatorics;
-using MoreLinq.Extensions;
-using System.IO;
-using System.Linq;
-
-namespace AoC_2021.Days
+﻿namespace AoC_2021.Days
 {
     public class Day_06 : BaseDay
     {
-        private string _input;
-        private int[] _numbers;
+        private long[] _fishByAge;
 
         public Day_06()
         {
-            _input = File.ReadAllText(InputFilePath);
-            _numbers = _input.Split(",").Select(int.Parse).ToArray();
+            var fish = File.ReadAllText(InputFilePath).Split(",").Select(int.Parse).ToArray();
+            _fishByAge = Enumerable.Range(0, 9).Select(age => fish.LongCount(x => x == age)).ToArray();
         }
             
         public override async ValueTask<string> Solve_1()
         {
-            var allFish = _numbers.ToLookup(x => x)
-                            .Select(g => (age: g.Key, count: g.LongCount())).ToList();
+            var allFish = _fishByAge.ToArray();
+
             for (int i = 0; i < 80; i++)
             {
-                allFish = allFish.SelectMany(Grow).ToList();
-                if (allFish.Count > 9)
-                {
-                    allFish = allFish.ToLookup(x => x.age)
-                            .Select(g => (age: g.Key, count: g.Sum(x => x.count))).ToList();
-                }
+                var newParents = ShiftArray(ref allFish);
+                allFish[6] += newParents;
+                allFish[8] = newParents;
             }
-            return allFish.Sum(x => x.count).ToString();
+            return allFish.Sum().ToString();
         }
 
-        private IEnumerable<int> Grow(int x)
+        private long ShiftArray(ref long[] source)
         {
-            if (x == 0)
-            {
-                yield return 6;
-                yield return 8;
-            }
-            else
-                yield return x - 1;
-        }
-
-        private IEnumerable<(int age, long count)> Grow((int age, long count) group)
-        {
-            if (group.age == 0)
-            {
-                yield return (6, group.count);
-                yield return (8, group.count);
-            }
-            else
-                yield return (group.age - 1, group.count);
+            var head = source[0];
+            Array.Copy(source, 1, source, 0, source.Length - 1);
+            return head;
         }
 
         public override async ValueTask<string> Solve_2()
         {
-            var allFish = _numbers.ToLookup(x => x)
-                 .Select(g => (age: g.Key, count: g.LongCount())).ToList();
+            var allFish = _fishByAge.ToArray();
+
             for (int i = 0; i < 256; i++)
             {
-                allFish = allFish.SelectMany(Grow).ToList();
-                if (allFish.Count > 9)
-                {
-                    allFish = allFish.ToLookup(x => x.age)
-                            .Select(g => (age: g.Key, count: g.Sum(x => x.count))).ToList();
-                }
+                var newParents = ShiftArray(ref allFish);
+                allFish[6] += newParents;
+                allFish[8] = newParents;
             }
-            return allFish.Sum(x => x.count).ToString();
+            return allFish.Sum().ToString();
         }
     }
 }
