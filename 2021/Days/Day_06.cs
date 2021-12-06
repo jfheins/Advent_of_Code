@@ -23,7 +23,7 @@
             return allFish.Sum().ToString();
         }
 
-        private long ShiftArray(ref long[] source)
+        private static T ShiftArray<T>(ref T[] source)
         {
             var head = source[0];
             Array.Copy(source, 1, source, 0, source.Length - 1);
