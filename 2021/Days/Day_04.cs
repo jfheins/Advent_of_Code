@@ -99,7 +99,6 @@ namespace AoC_2021.Days
 
         internal int Score()
         {
-            ValueTuple<int, int> x;
             Debug.Assert(HasBingo());
             return lastDrawn * Numbers.Sum(row => row.Sum(x => x.wasDrawn ? 0 : x.num));
         }
