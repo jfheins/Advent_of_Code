@@ -39,8 +39,9 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            var avg = (int)Math.Round(_numbers.Average());
-            return OverallFuel2(avg).ToString();
+            var avg = _numbers.Average();
+            var intavg = (int)Math.Floor(avg);
+            return OverallFuel2(intavg).ToString();
         }
     }
 }
