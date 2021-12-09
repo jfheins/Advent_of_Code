@@ -8,29 +8,20 @@ namespace AoC_2021.Days
 {
     public class Day_08 : BaseDay
     {
-        private List<(string[] patterns, string[] code)> _input;
+        private List<Row> _input;
 
         public Day_08()
         {
-            _input = File.ReadAllLines(InputFilePath).Select(Parse).ToList();
-        }
-
-        private (string[] patterns, string[] code) Parse(string line)
-        {
-            var parts = line.Split("|");
-            var p = parts[0].Split(" ", StringSplitOptions.RemoveEmptyEntries);
-            var d = parts[1].Split(" ", StringSplitOptions.RemoveEmptyEntries);
-            return (p, d);
+            _input = File.ReadAllLines(InputFilePath).Select(Row.FromLine).ToList();
         }
 
         public override async ValueTask<string> Solve_1()
         {
-            // gits 1, 4, 7, or 8 appear?
-            var ones = _input.Sum(line => line.code.Count(p => p.Length == 2));
-            var fours = _input.Sum(line => line.code.Count(p => p.Length == 4));
-            var sevens = _input.Sum(line => line.code.Count(p => p.Length == 3));
-            var eigths = _input.Sum(line => line.code.Count(p => p.Length == 7));
-            return (ones+fours+sevens+eigths).ToString();
+            var relevantLengths = new HashSet<int> { 2, 3, 4, 7 };
+            return _input.Sum(CountEasyDigits).ToString();
+
+            int CountEasyDigits(Row line)
+                => line.OutputValues.Count(s => relevantLengths.Contains(s.Length));
         }
 
         public override async ValueTask<string> Solve_2()
@@ -38,71 +29,63 @@ namespace AoC_2021.Days
             return _input.Sum(SolveLine).ToString();
         }
 
-        private int SolveLine((string[] patterns, string[] code) line)
+        private int SolveLine(Row line)
         {
-            /*  000000
-             * 1       2
-               1       2 
-                  3333
-               4       5
-               4       5 
-                  6666  */
+            /*   0000
+             * 1      2
+               1      2 
+                 3333
+               4      5
+               4      5 
+                 6666    */
             var possibleChars = Enumerable.Range(0, 7).Select(_ => new HashSet<char>("abcdefg")).ToArray();
-
-            foreach (var pattern in line.patterns)
+            var mapLengthToKnownSegments = new Dictionary<int, IList<int>>
             {
-                switch (pattern.Length)
+                {2, new[]{ 2, 5 } },     // must be 1
+                {3, new[]{ 0, 2, 5 } },  // 7
+                {4, new[]{ 1, 2, 3, 5 } }, // 4
+                {5, new[]{ 0, 3, 6 } }, // can be 2, 3 or 5
+                {6, new[]{ 0, 1, 5, 6 } } // can be 0, 6 or 9
+            };
+
+            foreach (var pattern in line.Patterns)
+            {
+                if (mapLengthToKnownSegments.TryGetValue(pattern.Length, out var knownSegments))
                 {
-                    case 2: // must be 1
-                        possibleChars[2].IntersectWith(pattern);
-                        possibleChars[5].IntersectWith(pattern);
-                        break;
-                    case 3: // 7
-                        possibleChars[0].IntersectWith(pattern);
-                        possibleChars[2].IntersectWith(pattern);
-                        possibleChars[5].IntersectWith(pattern);
-                        break;
-                    case 4: // 4
-                        possibleChars[1].IntersectWith(pattern);
-                        possibleChars[3].IntersectWith(pattern);
-                        possibleChars[2].IntersectWith(pattern);
-                        possibleChars[5].IntersectWith(pattern);
-                        break;
-                    case 5: // can be 2 or 3 or 5
-                        possibleChars[0].IntersectWith(pattern);
-                        possibleChars[3].IntersectWith(pattern);
-                        possibleChars[6].IntersectWith(pattern);
-                        break;
-                    case 6: // can be 0 6 or 9
-                        possibleChars[0].IntersectWith(pattern);
-                        possibleChars[1].IntersectWith(pattern);
-                        possibleChars[5].IntersectWith(pattern);
-                        possibleChars[6].IntersectWith(pattern);
-                        break;
-                    default:
-                        break;
+                    foreach (var segment in knownSegments)
+                        possibleChars[segment].IntersectWith(pattern);
                 }
             }
-            while (possibleChars.Any(x => x.Count > 1))
+
+            var solved = GetSolved().ToList();
+
+            for (int i = 0; i < 7; i++)
             {
-                var clear = possibleChars.Select((s, i) => (s, i))
-                    .Where(x => x.s.Count == 1).Select(x => (x.s.First(), x.i)).ToList();
-                foreach (var item in clear)
-                {
-                    for (int i = 0; i < 7; i++)
-                    {
-                        if (i != item.i)
-                        {
-                            possibleChars[i].Remove(item.Item1);
-                        }
-                    }
-                }
+                foreach (var (_, c) in solved)
+                    Apply(set => set.Remove(c));
+                
+                solved.AddRange(GetSolved());
+                if (solved.Count == 7)
+                    break;
             }
             var dict = possibleChars.Select((s, i) => (s.First(), i))
                 .ToDictionary(t => t.Item1, t => t.i);
 
-            var digits = line.code.Select(code => MapToDigit(code, dict));
+            var digits = line.OutputValues.Select(code => MapToDigit(code, dict));
             return int.Parse(string.Concat(digits.Select(d => d.ToString())));
+
+
+            IEnumerable<(int segment, char c)> GetSolved()
+            {
+                for (int i = 0; i < possibleChars.Length; i++)
+                    if (possibleChars[i].Count == 1)
+                        yield return (i, possibleChars[i].First());
+            }
+            void Apply(Action<HashSet<char>> action)
+            {
+                foreach (var set in possibleChars)
+                    action(set);
+            }
         }
 
         private int MapToDigit(string code, Dictionary<char, int> dict)
@@ -131,5 +114,13 @@ namespace AoC_2021.Days
                 _ => throw new NotImplementedException()
             };
         }
+        private record Row(string[] Patterns, string[] OutputValues)
+        {
+            public static Row FromLine(string line)
+            {
+                var parts = line.Split("|").SelectArray(p => p.Split(" ", StringSplitOptions.RemoveEmptyEntries));
+                return new Row(parts[0], parts[1]);
+            }
+        };
     }
 }
