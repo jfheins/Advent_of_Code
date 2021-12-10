@@ -7,11 +7,11 @@ namespace AoC_2021.Days
 {
     public class Day_10 : BaseDay
     {
-        private readonly IReadOnlyCollection<string> _input;
+        private IReadOnlyCollection<Either<char, string>> _input;
 
         public Day_10()
         {
-            _input = File.ReadAllLines(InputFilePath).ToList();
+            _input = File.ReadAllLines(InputFilePath).Select(ParseLine).ToList();
         }
 
         // Return illegal char or missing chunk
@@ -42,10 +42,9 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_1()
         {
-            return _input.Select(ParseLine)
-                .SelectMany(it => it.LeftAsEnumerable())
-                .Sum(GetScore)
-                .ToString();
+            return _input.SelectMany(it => it.LeftAsEnumerable())
+                         .Sum(GetScore)
+                         .ToString();
 
             static int GetScore(char c) => c switch
             {
@@ -59,10 +58,9 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            var scores = _input.Select(ParseLine)
-                .SelectMany(it => it.RightAsEnumerable())
-                .Select(GetScore)
-                .ToList();
+            var scores = _input.SelectMany(it => it.RightAsEnumerable())
+                               .Select(GetScore)
+                               .ToList();
 
             scores.Sort();
             return scores.CenterItem().ToString();

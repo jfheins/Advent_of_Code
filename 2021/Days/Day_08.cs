@@ -68,8 +68,7 @@ namespace AoC_2021.Days
                 if (solved.Count == 7)
                     break;
             }
-            var dict = possibleChars.Select((s, i) => (s.First(), i))
-                .ToDictionary(t => t.Item1, t => t.i);
+            var dict = solved.ToDictionary(t => t.c, t => t.segment);
 
             var digits = line.OutputValues.Select(code => MapToDigit(code, dict));
             return int.Parse(string.Concat(digits.Select(d => d.ToString())));
