@@ -16,7 +16,7 @@ namespace AoC_2021.Days
         public override async ValueTask<string> Solve_1()
         {
             _numbers.Sort();
-            var minimum = OverallFuel1(_numbers.Median());
+            var minimum = OverallFuel1(_numbers.CenterItem());
             return minimum.ToString();
         }
 

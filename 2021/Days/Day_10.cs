@@ -1,64 +1,36 @@
 ﻿using Core;
-using Core.Combinatorics;
-using MoreLinq.Extensions;
-using System.IO;
-using System.Linq;
+
+using LanguageExt;
+using static LanguageExt.Prelude;
 
 namespace AoC_2021.Days
 {
     public class Day_10 : BaseDay
     {
-        private string[] _input;
-        private int[] _numbers;
+        private readonly IReadOnlyCollection<string> _input;
 
         public Day_10()
         {
-            _input = File.ReadAllLines(InputFilePath).ToArray();
-
-            //Grid2D.FromFile(InputFilePath);
+            _input = File.ReadAllLines(InputFilePath).ToList();
         }
 
-        public override async ValueTask<string> Solve_1()
+        // Return illegal char or missing chunk
+        private Either<char, string> ParseLine(string line)
         {
-            int score = 0;
-            foreach (var line in _input)
+            var expectedChars = new Stack<char>();
+            foreach (var chr in line)
             {
-                var stack = new Stack<char>();
-                char? illegalChar = null;
-                foreach (var chr in line)
+                if ("([{<".Contains(chr))
+                    expectedChars.Push(GetClosing(chr));
+                else
                 {
-                    if ("([{<".Contains(chr))
-                        stack.Push(chr);
-                    else
-                    {
-                        var expected = GetMatching(stack.Pop());
-                        if (chr != expected)
-                        {
-                            illegalChar = chr;
-                            break;
-                        }
-                    }
+                    if (chr != expectedChars.Pop())
+                        return Left(chr);
                 }
-                /*
-                 ): 3 points.
-                ]: 57 points.
-                }: 1197 points.
-                >: 25137 points.*/
-
-                score += illegalChar switch {
-                ')' => 3,
-                ']' => 57,
-                '}' => 1197,
-                '>' => 25137,
-                null => 0
-                };
             }
-            return score.ToString();
-        }
+            return Right(string.Concat(expectedChars));
 
-        private char GetMatching(char v)
-        {
-            return v switch
+            static char GetClosing(char v) => v switch
             {
                 '(' => ')',
                 '[' => ']',
@@ -68,49 +40,38 @@ namespace AoC_2021.Days
             };
         }
 
+        public override async ValueTask<string> Solve_1()
+        {
+            return _input.Select(ParseLine)
+                .SelectMany(it => it.LeftAsEnumerable())
+                .Sum(GetScore)
+                .ToString();
+
+            static int GetScore(char c) => c switch
+            {
+                ')' => 3,
+                ']' => 57,
+                '}' => 1197,
+                '>' => 25137,
+                _ => throw new NotImplementedException(),
+            };
+        }
+
         public override async ValueTask<string> Solve_2()
         {
-            var allscore = new List<long>();
-            foreach (var line in _input)
+            var scores = _input.Select(ParseLine)
+                .SelectMany(it => it.RightAsEnumerable())
+                .Select(GetScore)
+                .ToList();
+
+            scores.Sort();
+            return scores.CenterItem().ToString();
+
+            static long GetScore(string s)
             {
-                var stack = new Stack<char>();
-                bool isLegal = true;
-                foreach (var chr in line)
-                {
-                    if ("([{<".Contains(chr))
-                        stack.Push(chr);
-                    else
-                    {
-                        var expected = GetMatching(stack.Pop());
-                        if (chr != expected)
-                        {
-                            isLegal = false;
-                            break;
-                        }
-                    }
-                }
-                if (isLegal)
-                {
-                    // likely incomplete
-                    var suffix = string.Concat(stack.Select(GetMatching));
-                    long score = 0L;
-                    for (int i = 0; i < suffix.Length; i++)
-                    {
-                        score *= 5;
-                        score += suffix[i] switch
-                        {
-                            ')' => 1,
-                            ']' => 2,
-                            '}' => 3,
-                            '>' => 4,
-                            _ => throw new NotImplementedException(),
-                        };
-                    }
-                    allscore.Add(score);
-                }
+                const string chars = "=)]}>";
+                return s.Aggregate(0L, (sum, c) => sum * 5 + chars.IndexOf(c));
             }
-            allscore.Sort();
-            return allscore.Median().ToString();
         }
     }
 }
