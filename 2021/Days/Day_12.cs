@@ -1,32 +1,32 @@
 ﻿using Core;
-using Core.Combinatorics;
-using System.Collections.Immutable;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2021.Days
 {
     public class Day_12 : BaseDay
     {
-        private readonly List<(string src, string dest)> _input;
         readonly Dictionary<string, List<string>> Edges = new();
 
         public Day_12()
         {
-            _input = File.ReadAllLines(InputFilePath).Select(ParseLine).ToList();
-        }
+            var input = File.ReadAllLines(InputFilePath).Select(ParseLine).ToList();
 
-        private (string src, string dest) ParseLine(string line) => line.Split("-").ToTuple2();
+            foreach (var (left, right) in input)
+            {
+                AddEdge(left, right);
+                AddEdge(right, left);
+            }
+
+            (string src, string dest) ParseLine(string line) => line.Split("-").ToTuple2();
+
+            void AddEdge(string from, string to)
+            {
+                if (to != "start")
+                    Edges.AddToList(from, to);
+            }
+        }
 
         public override async ValueTask<string> Solve_1()
         {
-            foreach (var (src, dest) in _input)
-            {
-                Edges.AddToList(src, dest);
-                Edges.AddToList(dest, src);
-            }
-
             return Explore("start", false).ToString();
         }
 
@@ -43,7 +43,7 @@ namespace AoC_2021.Days
             ExploreRecursively(start, allowOneDuplicate);
             return pathCount;
 
-            void ExploreRecursively(string node, bool allowDuplicate)
+            void ExploreRecursively(string node, bool allowOneDuplicate)
             {
                 if (node == "end")
                 {
@@ -51,30 +51,22 @@ namespace AoC_2021.Days
                     return;
                 }
 
-                foreach (var (next, isSmall) in Expand(node))
+                foreach (var neighbor in Edges[node])
                 {
-                    if (isSmall)
+                    if (IsSmallCave(neighbor))
                     {
-                        var wasNew = seenSmallCaves.Add(next);
+                        var isExcitingNewCave = seenSmallCaves.Add(neighbor);
 
-                        if (allowDuplicate)
-                            ExploreRecursively(next, wasNew);
-                        else if (wasNew)
-                            ExploreRecursively(next, allowDuplicate);
+                        if (allowOneDuplicate || isExcitingNewCave)
+                            ExploreRecursively(neighbor, allowOneDuplicate && isExcitingNewCave);
 
-                        if (wasNew)
-                            seenSmallCaves.Remove(next);
+                        if (isExcitingNewCave)
+                            seenSmallCaves.Remove(neighbor);
                     }
                     else
-                        ExploreRecursively(next, allowDuplicate);
+                        ExploreRecursively(neighbor, allowOneDuplicate);
                 }
             }
-        }
-
-        private IEnumerable<(string neighbor, bool isSmall)> Expand(string currentCave)
-        {
-            var neighbors = Edges[currentCave];
-            return neighbors.ExceptFor("start").Select(n => (n, IsSmallCave(n)));
 
             static bool IsSmallCave(string s) => char.IsLower(s[0]);
         }
