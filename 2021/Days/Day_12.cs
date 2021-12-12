@@ -60,10 +60,10 @@ namespace AoC_2021.Days
         {
             var pathCount = 0;
             var visitedCaves = new HashSet<int>();
-            ExploreRecursively(Start, allowOneDuplicate);
+            ExploreCave(Start, allowOneDuplicate);
             return pathCount;
 
-            void ExploreRecursively(int node, bool allowOneDuplicate)
+            void ExploreCave(int node, bool allowSecondVisit)
             {
                 if (node == End)
                 {
@@ -73,15 +73,20 @@ namespace AoC_2021.Days
 
                 foreach (var neighbor in Edges[node])
                 {
-                    var isExcitingNewCave = visitedCaves.Add(neighbor);
+                    var isNewCave = WalkIntoCave(neighbor);
 
-                    if (allowOneDuplicate || isExcitingNewCave)
-                        ExploreRecursively(neighbor, allowOneDuplicate && isExcitingNewCave);
+                    if (isNewCave || allowSecondVisit)
+                    {
+                        var allowSecondVisitInFuture = allowSecondVisit && isNewCave;
+                        ExploreCave(neighbor, allowSecondVisitInFuture);
+                    }
 
-                    if (isExcitingNewCave)
+                    if (isNewCave)
                         visitedCaves.Remove(neighbor);
                 }
             }
+
+            bool WalkIntoCave(int cave) => visitedCaves.Add(cave);
         }
     }
 }
