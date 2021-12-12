@@ -27,77 +27,56 @@ namespace AoC_2021.Days
                 Edges.AddToList(dest, src);
             }
 
-            var paths = new List<Path>();
-            Explore(new Path("start", false), paths);
-            return paths.Count.ToString();
+            return Explore("start", false).ToString();
         }
 
         public override async ValueTask<string> Solve_2()
         {
-            var paths = new List<Path>();
-            Explore(new Path("start", true), paths);
-            return paths.Count.ToString();
+            return Explore("start", true).ToString();
         }
 
-        private void Explore(Path currentPath, List<Path> paths)
+        private int Explore(string start, bool allowOneDuplicate)
         {
-            if (currentPath.LastNode == "end")
+            var pathCount = 0; 
+            var seenSmallCaves = new HashSet<string>();
+
+            ExploreRecursively(start, allowOneDuplicate);
+            return pathCount;
+
+            void ExploreRecursively(string node, bool allowDuplicate)
             {
-                paths.Add(currentPath);
-            }
-            else
-            {
-                foreach (var n in Expand(currentPath))
+                if (node == "end")
                 {
-                    Explore(n, paths);
+                    pathCount++;
+                    return;
+                }
+
+                foreach (var (next, isSmall) in Expand(node))
+                {
+                    if (isSmall)
+                    {
+                        var wasNew = seenSmallCaves.Add(next);
+
+                        if (allowDuplicate)
+                            ExploreRecursively(next, wasNew);
+                        else if (wasNew)
+                            ExploreRecursively(next, allowDuplicate);
+
+                        if (wasNew)
+                            seenSmallCaves.Remove(next);
+                    }
+                    else
+                        ExploreRecursively(next, allowDuplicate);
                 }
             }
         }
 
-        private IEnumerable<Path> Expand(Path p)
+        private IEnumerable<(string neighbor, bool isSmall)> Expand(string currentCave)
         {
-            var neighbors = Edges[p.LastNode];
-            var list = new List<Path>();
-            foreach (var neighbor in neighbors.ExceptFor("start"))
-            {
-                if (IsSmallCave(neighbor))
-                {
-                    if (p.AllowOneDuplicate)
-                        list.Add( p.ExtendBy(neighbor, !p.Nodes.Contains(neighbor)));
-                    else if(!p.Nodes.Contains(neighbor))
-                        list.Add(p.ExtendBy(neighbor));
-                }
-                else
-                    list.Add(p.ExtendByLarge(neighbor));
-            }
-            return list;
+            var neighbors = Edges[currentCave];
+            return neighbors.ExceptFor("start").Select(n => (n, IsSmallCave(n)));
 
             static bool IsSmallCave(string s) => char.IsLower(s[0]);
-        }
-
-        private record Path
-        {
-            public bool AllowOneDuplicate { get; init; }
-            public ImmutableHashSet<string> Nodes { get; private init; }
-            public string LastNode { get; private init; }
-
-            public Path(string start, bool allowDuplicate)
-                : this(ImmutableHashSet.Create<string>(), start, allowDuplicate)
-            {
-            }
-
-            private Path(ImmutableHashSet<string> nodes, string lastNode, bool allowDuplicate)
-            {
-                AllowOneDuplicate = allowDuplicate;
-                Nodes = nodes;
-                LastNode = lastNode;
-            }
-
-            public Path ExtendBy(string node) => ExtendBy(node, AllowOneDuplicate);
-            public Path ExtendBy(string node, bool allowDuplicate)
-                => new(Nodes.Add(node), node, allowDuplicate);
-
-            public Path ExtendByLarge(string node) => new(Nodes, node, AllowOneDuplicate);
         }
     }
 }
