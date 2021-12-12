@@ -1,5 +1,7 @@
 ﻿using Core;
 using Core.Combinatorics;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -8,80 +10,94 @@ namespace AoC_2021.Days
     public class Day_12 : BaseDay
     {
         private readonly List<(string src, string dest)> _input;
+        readonly Dictionary<string, List<string>> Edges = new();
 
         public Day_12()
         {
             _input = File.ReadAllLines(InputFilePath).Select(ParseLine).ToList();
         }
 
-        private (string src, string dest) ParseLine(string line)
-        {
-            return line.Split("-").ToTuple2();
-        }
-
-        Dictionary<string, List<string>> edges = new();
+        private (string src, string dest) ParseLine(string line) => line.Split("-").ToTuple2();
 
         public override async ValueTask<string> Solve_1()
         {
             foreach (var (src, dest) in _input)
             {
-                edges.GetOrAdd(src, new List<string>()).Add(dest);
-                edges.GetOrAdd(dest, new List<string>()).Add(src);
+                Edges.AddToList(src, dest);
+                Edges.AddToList(dest, src);
             }
 
-            var paths = new List<List<string>>();
-            Explore(new List<string> { "start" }, paths, Expand1);
+            var paths = new List<Path>();
+            Explore(new Path("start", false), paths);
             return paths.Count.ToString();
-        }
-
-        private void Explore(List<string> path, List<List<string>> paths,
-            Func<List<string>, IEnumerable<string>> expander)
-        {
-            if (path.Last() == "end")
-            {
-                paths.Add(path.ToList());
-            }
-            else
-            {
-                foreach (var n in expander(path).ToList())
-                {
-                    path.Add(n);
-                    Explore(path, paths, expander);
-                    path.RemoveAt(path.Count - 1);
-                }
-            }
-        }
-
-        private IEnumerable<string> Expand1(List<string> path)
-        {
-            var nei = edges[path.Last()];
-            var seenSmallCaves = path.Where(x => char.IsLower(x[0])).ToHashSet();
-            return nei.Where(it => !seenSmallCaves.Contains(it));
-        }
-
-        private IEnumerable<string> Expand2(List<string> path)
-        {
-            var nei = edges[path.Last()];
-            var seenSmallCaves = path.Where(x => char.IsLower(x[0])).ToList();
-
-            if (ContainsDuplicates(seenSmallCaves))
-            {
-                return nei.Where(it => !seenSmallCaves.Contains(it));
-            }
-            return nei.Where(it => it != "start");
-        }
-        public static bool ContainsDuplicates<T>(IEnumerable<T> enumerable)
-        {
-            var knownKeys = new HashSet<T>();
-            return enumerable.Any(item => !knownKeys.Add(item));
         }
 
         public override async ValueTask<string> Solve_2()
         {
-
-            var paths = new List<List<string>>();
-            Explore(new List<string> { "start" }, paths, Expand2);
+            var paths = new List<Path>();
+            Explore(new Path("start", true), paths);
             return paths.Count.ToString();
+        }
+
+        private void Explore(Path currentPath, List<Path> paths)
+        {
+            if (currentPath.LastNode == "end")
+            {
+                paths.Add(currentPath);
+            }
+            else
+            {
+                foreach (var n in Expand(currentPath))
+                {
+                    Explore(n, paths);
+                }
+            }
+        }
+
+        private IEnumerable<Path> Expand(Path p)
+        {
+            var neighbors = Edges[p.LastNode];
+            var list = new List<Path>();
+            foreach (var neighbor in neighbors.ExceptFor("start"))
+            {
+                if (IsSmallCave(neighbor))
+                {
+                    if (p.AllowOneDuplicate)
+                        list.Add( p.ExtendBy(neighbor, !p.Nodes.Contains(neighbor)));
+                    else if(!p.Nodes.Contains(neighbor))
+                        list.Add(p.ExtendBy(neighbor));
+                }
+                else
+                    list.Add(p.ExtendByLarge(neighbor));
+            }
+            return list;
+
+            static bool IsSmallCave(string s) => char.IsLower(s[0]);
+        }
+
+        private record Path
+        {
+            public bool AllowOneDuplicate { get; init; }
+            public ImmutableHashSet<string> Nodes { get; private init; }
+            public string LastNode { get; private init; }
+
+            public Path(string start, bool allowDuplicate)
+                : this(ImmutableHashSet.Create<string>(), start, allowDuplicate)
+            {
+            }
+
+            private Path(ImmutableHashSet<string> nodes, string lastNode, bool allowDuplicate)
+            {
+                AllowOneDuplicate = allowDuplicate;
+                Nodes = nodes;
+                LastNode = lastNode;
+            }
+
+            public Path ExtendBy(string node) => ExtendBy(node, AllowOneDuplicate);
+            public Path ExtendBy(string node, bool allowDuplicate)
+                => new(Nodes.Add(node), node, allowDuplicate);
+
+            public Path ExtendByLarge(string node) => new(Nodes, node, AllowOneDuplicate);
         }
     }
 }
