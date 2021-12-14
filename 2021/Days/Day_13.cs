@@ -11,7 +11,7 @@ namespace AoC_2021.Days
     public class Day_13 : BaseDay
     {
         private List<Point> _numbers;
-        private List<(string coord, string amount)> _instr;
+        private List<(string coord, int amount)> _instr;
         private int maxx;
         private int maxy;
 
@@ -20,8 +20,7 @@ namespace AoC_2021.Days
             var input = File.ReadAllLines(InputFilePath).Split("").ToList();
 
             _numbers = input[0].Select(line => line.ParseInts(2)).Select(t => new Point(t[0], t[1])).ToList();
-            _instr = input[1].Select(l => l[11..].Split("=").ToTuple2()).ToList();
-
+            _instr = input[1].Select(l => l[11..].Split("=").ToTuple2<string, int>()).ToList();
             maxx = _numbers.Max(p => p.X);
             maxy = _numbers.Max(p => p.Y);
         }
