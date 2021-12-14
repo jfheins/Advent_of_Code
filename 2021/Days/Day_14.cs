@@ -39,8 +39,9 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            var polymer = "HBHVVNPCNFPSVKBPPCBH";
-            var pairs = polymer.PairwiseWithOverlap().Select(p => string.Concat(p.Item1, p.Item2)).ToDictionary(x => x, x => 1L);
+            var polymer = _template;
+            var ppp = polymer.PairwiseWithOverlap().Select(p => string.Concat(p.Item1.ToString(), p.Item2.ToString())).ToList();
+            var pairs = ppp.ToLookup(x => x).ToDictionary(x => x.Key, x => x.LongCount());
             var firstLetter = polymer[0];
 
             for (int i = 0; i < 40; i++)
@@ -56,13 +57,14 @@ namespace AoC_2021.Days
             }
             var stats = new Dictionary<char, long>();
             stats[firstLetter] = 1;
+            stats[polymer[^1]] = 1;
             foreach (var p in pairs)
             {
                 stats.AddOrModify(p.Key[0], 0, x => x + p.Value);
                 stats.AddOrModify(p.Key[1], 0, x => x + p.Value);
             }
 
-            var finalStats = stats.Values.MinMax(x => x/2)!.Value;
+            var finalStats = stats.Values.MinMax(x => (x+1)/2)!.Value;
             return (finalStats.max - finalStats.min).ToString();
 
             string NewChain(string pair)
