@@ -43,40 +43,38 @@ namespace AoC_2021.Days
         {
             var clone = _numbers.ToList();
 
-            foreach (var ins in _instr)
+            foreach (var (coord, amount) in _instr)
             {
-                var val = int.Parse(ins.amount);
-                if (ins.coord == "x")
+                if (coord == "x")
                 {
                     for (int i = 0; i < clone.Count; i++)
                     {
-                        if (clone[i].X > val)
+                        if (clone[i].X > amount)
                         {
                             var p = clone[i];
-                            clone[i] = new Point(2 * val - p.X, p.Y);
+                            clone[i] = new Point(2 * amount - p.X, p.Y);
                         }
                     }
                 }
-                if (ins.coord == "y")
+                if (coord == "y")
                 {
                     for (int i = 0; i < clone.Count; i++)
                     {
-                        if (clone[i].Y > val)
+                        if (clone[i].Y > amount)
                         {
                             var p = clone[i];
-                            clone[i] = new Point(p.X, 2 * val - p.Y);
+                            clone[i] = new Point(p.X, 2 * amount - p.Y);
                         }
                     }
                 }
             }
 
-            for (int y = 0; y < 24; y++)
+            foreach (var line in clone.PointsInBoundingRect())
             {
-                for (int x = 0; x < 80; x++)
+                foreach (var p in line)
                 {
-                    var p = new Point(x, y);
                     if (clone.Any(it => it == p))
-                        Console.Write("#");
+                        Console.Write("◼");
                     else
                         Console.Write(" ");
                 }
