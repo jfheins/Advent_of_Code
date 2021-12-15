@@ -53,8 +53,8 @@ namespace AoC_2021.Days
                 var gridY = y / _grid.Height;
                 var totalWrap = gridX + gridY;
 
-                var originValue = _grid.GetValueWraparound(x, y) - '0';
-                return (short)(originValue + totalWrap).OneBasedModulo(9);
+                var originalValue = _grid.GetValueWraparound(x, y) - '0';
+                return (short)(originalValue + totalWrap).OneBasedModulo(9);
             }
         }
     }
