@@ -1,9 +1,5 @@
 ﻿using Core;
-using Core.Combinatorics;
-using MoreLinq.Extensions;
 using System.Drawing;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2021.Days
 {
@@ -18,53 +14,48 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_1()
         {
-            var s = new DijkstraSearch<Point>(null, Expand);
-            var dest = new Point(_grid.Width - 1, _grid.Height - 1);
-            var path = s.FindFirst(new Point(0, 0), x => x == dest);
-            var risk = path.Cost;
-            return risk.ToString();
-        }
+            var dest = _grid.BottomRight;
+            var s = new AStarSearch<Point>(null, Expand);
+            var path = s.FindFirst(new Point(0, 0), x => x == dest, x => x.ManhattanDistTo(dest))!;
+            var totalRisk = path.Cost;
+            return totalRisk.ToString();
 
-        private IEnumerable<(Point node, float cost)> Expand(Point p)
-        {
-            foreach (var neighbor in _grid.Get4NeighborsOf(p))
+            IEnumerable<(Point node, float cost)> Expand(Point p)
             {
-                var digit = _grid[neighbor];
-                yield return (neighbor, float.Parse(digit.ToString()));
+                foreach (var n in _grid.Get4NeighborsOf(p))
+                    yield return (n, _grid[n] - '0');
             }
         }
-
 
         public override async ValueTask<string> Solve_2()
         {
-            var largerGrid = new FiniteGrid2D<int>(_grid.Width * 5, _grid.Height * 5, Filler);
-            var s = new DijkstraSearch<Point>(null, Expand2);
-            var dest = new Point(largerGrid.Width - 1, largerGrid.Height - 1);
-            var path = s.FindFirst(new Point(0, 0), x => x == dest);
-            var risk = path.Cost;
-            return risk.ToString();
+            var largerGrid = ExtendGrindFiveTimes();
+            var dest = largerGrid.BottomRight;
+            var s = new AStarSearch<Point>(null, Expand);
+            var path = s.FindFirst(new Point(0, 0), x => x == dest, x => x.ManhattanDistTo(dest))!;
+            var totalRisk = path.Cost;
+            return totalRisk.ToString();
 
-            IEnumerable<(Point node, float cost)> Expand2(Point p)
+            IEnumerable<(Point node, float cost)> Expand(Point p)
             {
                 foreach (var neighbor in largerGrid.Get4NeighborsOf(p))
-                {
-                    var digit = largerGrid[neighbor];
-                    yield return (neighbor, digit);
-                }
+                    yield return (neighbor, largerGrid[neighbor]);
             }
         }
 
-        private int Filler(int x, int y)
+        public FiniteGrid2D<short> ExtendGrindFiveTimes()
         {
-            var xWrap = x / _grid.Width;
-            var yWrap = y / _grid.Height;
-            if (xWrap >= 1)
+            return new FiniteGrid2D<short>(_grid.Width * 5, _grid.Height * 5, Filler);
+
+            short Filler(int x, int y)
             {
-                ;
+                var gridX = x / _grid.Width;
+                var gridY = y / _grid.Height;
+                var totalWrap = gridX + gridY;
+
+                var originValue = _grid.GetValueWraparound(x, y) - '0';
+                return (short)(originValue + totalWrap).OneBasedModulo(9);
             }
-            var totalWrap = xWrap + yWrap;
-            var originValue = int.Parse(_grid[x % _grid.Width, y % _grid.Height].ToString());
-            return (originValue-1 + totalWrap) % 9 +1;
         }
     }
 }
