@@ -8,24 +8,23 @@ namespace AoC_2021.Days
 {
     public class Day_16 : BaseDay
     {
-        private string _input;
+        private long _versionSum;
         private long _value;
 
         public Day_16()
         {
-            _input = File.ReadAllText(InputFilePath);
+            var input = File.ReadAllText(InputFilePath);
+            (_versionSum, _value) = ParseSinglePacket(HexToBin(input));
         }
 
-        public override ValueTask<string> Solve_1()
+        public override async ValueTask<string> Solve_1()
         {
-            var (versionSum, value) = ParseSinglePacket(HexToBin(_input));
-            _value = value;
-            return ValueTask.FromResult(versionSum.ToString());
+            return _versionSum.ToString();
         }
 
-        public override ValueTask<string> Solve_2()
+        public override async ValueTask<string> Solve_2()
         {
-            return ValueTask.FromResult(_value.ToString());
+            return _value.ToString();
         }
 
         private (long versionSum, long value) ParseSinglePacket(string binaryString)
