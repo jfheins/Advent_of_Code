@@ -9,6 +9,7 @@ namespace AoC_2021.Days
     public class Day_16 : BaseDay
     {
         private string _input;
+        private long _value;
 
         public Day_16()
         {
@@ -17,116 +18,103 @@ namespace AoC_2021.Days
 
         public override ValueTask<string> Solve_1()
         {
-            var bin = HexToBin(_input).AsSpan();
-            var first = ParsePacket(bin);
-
-            return ValueTask.FromResult(first.versionSum.ToString());
+            var (versionSum, value) = ParseSinglePacket(HexToBin(_input));
+            _value = value;
+            return ValueTask.FromResult(versionSum.ToString());
         }
 
         public override ValueTask<string> Solve_2()
         {
-            var bin = HexToBin(_input).AsSpan();
-            var first = ParsePacket(bin);
+            return ValueTask.FromResult(_value.ToString());
+        }
 
-            return ValueTask.FromResult(first.value.ToString());
+        private (long versionSum, long value) ParseSinglePacket(string binaryString)
+        {
+            var (versionSum, value, _) = ParsePacket(binaryString.AsSpan());
+            return (versionSum, value);
         }
 
         private (long versionSum, long value, int length) ParsePacket(ReadOnlySpan<char> binaryString)
         {
-            var header = GetHeader(binaryString);
-            long versionSum = header.version;
-            int readBits = 6;
+            var (version, typeId) = GetHeader(binaryString);
+            long versionSum = version;
+            int processedBits = 6;
 
-            if (header.typeId == 4) // literal packet
+            if (typeId == 4) // literal packet
             {
-                long value = 0;
-                while (true)
-                {
-                    var group = Bin2Int(binaryString[readBits..(readBits + 5)]);
-                    readBits += 5;
-                    value = (value << 4) | (group & 15);
-                    if (group < 16) // Final
-                        break;
-                }
-                return (versionSum, value, readBits);
+                long literalValue = 0;
+                while (ReadNextGroup(binaryString, ref literalValue)) { }
+                return (versionSum, literalValue, processedBits);
             }
-            else
-            {
-                var lengthTypeId = binaryString[6];
-                readBits += 1;
-                var subValues = new List<long>();
 
-                if (lengthTypeId == '0') // 15 bits are a number that represents the total length in bits
-                {
-                    var lengthInBits = Bin2Int(binaryString[7..22]);
-                    readBits += 15;
-                    while (readBits < 22 + lengthInBits)
-                    {
-                        var subpacket = ParsePacket(binaryString[readBits..]);
-                        versionSum += subpacket.versionSum;
-                        subValues.Add(subpacket.value);
-                        readBits += subpacket.length;
-                    }
-                }
-                else // 11 bits are a number that represents the number of sub-packets immediately contained 
-                {
-                    var subPacketCount = Bin2Int(binaryString[7..18]);
-                    readBits += 11;
-                    for (int i = 0; i < subPacketCount; i++)
-                    {
-                        var subpacket = ParsePacket(binaryString[readBits..]);
-                        versionSum += subpacket.versionSum;
-                        subValues.Add(subpacket.value);
-                        readBits += subpacket.length;
-                    }
-                }
-                long value = 0;
-                switch (header.typeId)
-                {
-                    case 0:
-                        value = subValues.Sum(); 
-                        break;
-                    case 1:
-                        value = subValues.Product();
-                        break;
-                    case 2:
-                        value = subValues.Min();
-                        break;
-                    case 3:
-                        value = subValues.Max();
-                        break;
-                    case 5:
-                        value = subValues[0] > subValues[1] ? 1 : 0;
-                        break;
-                    case 6:
-                        value = subValues[0] < subValues[1] ? 1 : 0;
-                        break;
-                    case 7:
-                        value = subValues[0] == subValues[1] ? 1 : 0;
-                        break;
-                }
-                return (versionSum, value, readBits);
+            var subValues = new List<long>();
+            var lengthTypeId = ReadBits(binaryString, 1);
+
+            if (lengthTypeId == 0) // 15 bits are a number that represents the total length in bits
+            {
+                var lengthInBits = ReadBits(binaryString, 15);
+                var endOffset = processedBits + lengthInBits;
+                while (processedBits < endOffset)
+                    ParseSubPacket(binaryString);
+            }
+            else // 11 bits are a number that represents the number of sub-packets immediately contained 
+            {
+                var subPacketCount = ReadBits(binaryString, 11);
+                for (int i = 0; i < subPacketCount; i++)
+                    ParseSubPacket(binaryString);
+            }
+            var operatorValue = CalculateValue(typeId, subValues);
+            return (versionSum, operatorValue, processedBits);
+
+            // Local helper methods
+            uint ReadBits(ReadOnlySpan<char> str, int count)
+            {
+                var value = Bin2UInt(str.Slice(processedBits, count));
+                processedBits += count;
+                return value;
+            }
+
+            bool ReadNextGroup(ReadOnlySpan<char> str, ref long value)
+            {
+                var group = ReadBits(str, 5);
+                value = (value << 4) | (group & 15);
+                return group > 15;
+            }
+
+            void ParseSubPacket(ReadOnlySpan<char> str)
+            {
+                var (vSum, val, len) = ParsePacket(str[processedBits..]);
+                versionSum += vSum;
+                subValues?.Add(val);
+                processedBits += len;
             }
         }
 
-        private (int version, int typeId) GetHeader(ReadOnlySpan<char> bin)
+        private static long CalculateValue(uint typeId, IReadOnlyList<long> subValues) => typeId switch
         {
-            var version = Bin2Int(bin[..3]);
-            var packetTypeId = Bin2Int(bin[3..6]);
+            0 => subValues.Sum(),
+            1 => subValues.Product(),
+            2 => subValues.Min(),
+            3 => subValues.Max(),
+            5 => subValues[0] > subValues[1] ? 1 : 0,
+            6 => subValues[0] < subValues[1] ? 1 : 0,
+            7 => subValues[0] == subValues[1] ? 1 : 0,
+            _ => throw new NotImplementedException(),
+        };
+
+        private (uint version, uint typeId) GetHeader(ReadOnlySpan<char> bin)
+        {
+            var version = Bin2UInt(bin[..3]);
+            var packetTypeId = Bin2UInt(bin[3..6]);
             return (version, packetTypeId);
         }
 
-        private string HexToBin(string v)
+        private static string HexToBin(string s)
+            => string.Concat(s.Select(c => Convert.ToString(Convert.ToInt32(c.ToString(), 16), 2).PadLeft(4, '0')));
+
+        private static uint Bin2UInt(ReadOnlySpan<char> str)
         {
-            return string.Join(string.Empty,
-              v.Select(
-                c => Convert.ToString(Convert.ToInt32(c.ToString(), 16), 2).PadLeft(4, '0')
-              )
-            );
-        }
-        private static int Bin2Int(ReadOnlySpan<char> v)
-        {
-            return Convert.ToInt32(v.ToString(), 2);
+            return Convert.ToUInt32(str.ToString(), 2);
         }
     }
 }
