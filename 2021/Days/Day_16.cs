@@ -23,7 +23,15 @@ namespace AoC_2021.Days
             return ValueTask.FromResult(first.versionSum.ToString());
         }
 
-        private (long versionSum, int length) ParsePacket(ReadOnlySpan<char> binaryString)
+        public override ValueTask<string> Solve_2()
+        {
+            var bin = HexToBin(_input).AsSpan();
+            var first = ParsePacket(bin);
+
+            return ValueTask.FromResult(first.value.ToString());
+        }
+
+        private (long versionSum, long value, int length) ParsePacket(ReadOnlySpan<char> binaryString)
         {
             var header = GetHeader(binaryString);
             long versionSum = header.version;
@@ -31,19 +39,22 @@ namespace AoC_2021.Days
 
             if (header.typeId == 4) // literal packet
             {
+                long value = 0;
                 while (true)
                 {
                     var group = Bin2Int(binaryString[readBits..(readBits + 5)]);
                     readBits += 5;
+                    value = (value << 4) | (group & 15);
                     if (group < 16) // Final
                         break;
                 }
-                return (versionSum, readBits);
+                return (versionSum, value, readBits);
             }
             else
             {
                 var lengthTypeId = binaryString[6];
                 readBits += 1;
+                var subValues = new List<long>();
 
                 if (lengthTypeId == '0') // 15 bits are a number that represents the total length in bits
                 {
@@ -53,6 +64,7 @@ namespace AoC_2021.Days
                     {
                         var subpacket = ParsePacket(binaryString[readBits..]);
                         versionSum += subpacket.versionSum;
+                        subValues.Add(subpacket.value);
                         readBits += subpacket.length;
                     }
                 }
@@ -64,11 +76,37 @@ namespace AoC_2021.Days
                     {
                         var subpacket = ParsePacket(binaryString[readBits..]);
                         versionSum += subpacket.versionSum;
+                        subValues.Add(subpacket.value);
                         readBits += subpacket.length;
                     }
                 }
+                long value = 0;
+                switch (header.typeId)
+                {
+                    case 0:
+                        value = subValues.Sum(); 
+                        break;
+                    case 1:
+                        value = subValues.Product();
+                        break;
+                    case 2:
+                        value = subValues.Min();
+                        break;
+                    case 3:
+                        value = subValues.Max();
+                        break;
+                    case 5:
+                        value = subValues[0] > subValues[1] ? 1 : 0;
+                        break;
+                    case 6:
+                        value = subValues[0] < subValues[1] ? 1 : 0;
+                        break;
+                    case 7:
+                        value = subValues[0] == subValues[1] ? 1 : 0;
+                        break;
+                }
+                return (versionSum, value, readBits);
             }
-            return (versionSum, readBits);
         }
 
         private (int version, int typeId) GetHeader(ReadOnlySpan<char> bin)
@@ -89,11 +127,6 @@ namespace AoC_2021.Days
         private static int Bin2Int(ReadOnlySpan<char> v)
         {
             return Convert.ToInt32(v.ToString(), 2);
-        }
-
-        public override async ValueTask<string> Solve_2()
-        {
-            return "";
         }
     }
 }
