@@ -10,7 +10,6 @@ namespace AoC_2021.Days
     {
         private (int left, int right, int bottom, int top) _target;
         private Rectangle _area;
-        private List<Velocity> _hits;
 
         public Day_17()
         {
@@ -23,71 +22,57 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_1()
         {
-            _hits = new List<Velocity>();
-            var minVx = CalculateMinVx(_target.left);
-            // Downward
-            for (int vx = minVx; vx <= _target.right; vx++)
-                for (int vy = _target.bottom; vy < 0; vy++)
-                    TestHit(vx, vy);
-
-            // Upward
-            var maxVx = CalculateMaxVx(_target.right);
-            for (int vx = minVx; vx <= maxVx+1; vx++)
-                for (int vy = 0; vy < 1200; vy++)
-                    TestHit(vx, vy);
-
-                return _hits.Max(CalculateMaxHeight).ToString();
-
-            void TestHit(int vx, int vy)
-            {
-                var v = new Velocity(vx, vy);
-                if (HitsTargetArea(v))
-                    _hits.Add(v);
-            }
+            // Vy is limited by the target area as the points down have
+            // the same y value as the points up. So the maximum permissible 
+            // y speed is the one that barely hits the bottom line of the target.
+            var maxVy = _target.bottom;
+            return (maxVy * (maxVy + 1) / 2).ToString();
         }
 
         public override async ValueTask<string> Solve_2()
         {
-            return _hits.Count().ToString();
-        }
+            var hits = 0;
 
-        private int CalculateMaxHeight(Velocity v)
-        {
-            // s = v*t + 0.5*a*t*(t-1)
-            //var a = -1;
-            if (v.Y <= 0)
-                return 0;
-            else
-                return (v.Y * (v.Y + 1)) / 2;
-        }
+            var slope = _target.left / (double)_target.bottom;
+            var globalMinVx = (int)Math.Floor((Math.Sqrt(8 * _target.left + 1) - 1) / 2);
+            for (int vy = _target.bottom; vy < -_target.bottom; vy++)
+            {
+                var slopeBound = (int)Math.Floor(vy * slope);
+                var localMinVx = Math.Max(slopeBound, globalMinVx);
+                var previousHit = false;
+                for (int vx = localMinVx; vx <= _target.right; vx++)
+                {
+                    var hitTarget = TestHit(vx, vy);
+                    if (previousHit && !hitTarget)
+                        break;
+                    previousHit = hitTarget;
+                }
+            }
 
-        private int CalculateMinVx(int x)
-        {
-            // Below a threshold, the probe will never hit the target
-            return (int)(Math.Sqrt(8*x+1) - 1)/2;
-        }
+            return hits.ToString();
 
-        private int CalculateMaxVx(int x)
-        {
-            // Above a threshold, x will be right of the target
-            return (int)Math.Ceiling((Math.Sqrt(8 * x + 1) - 1) / 2);
+            bool TestHit(int vx, int vy)
+            {
+                if (HitsTargetArea(new Velocity(vx, vy)))
+                {
+                    hits++;
+                    return true;
+                }
+                return false;
+            }
         }
 
         private bool HitsTargetArea(Velocity v)
         {
-            var minT = (int)Math.Floor(CalcTime(_area.Bottom, v.Y));
-            var maxT = (int)Math.Ceiling(CalcTime(_area.Top, v.Y));
-
-            var xState = (pos: 0, speed: v.X);
-            for (int i = 0; i < minT; i++)
-                xState = NextX(xState);
+            var minT = (int)Math.Floor(CalcTime(_target.top, v.Y));
+            var maxT = (int)Math.Ceiling(CalcTime(_target.bottom, v.Y));
 
             for (int t = minT; t <= maxT; t++)
             {
-                var posY = v.Y * t - (t * (t-1)) /2;
-                if (_area.Contains(xState.pos, posY))
+                var posY = v.Y * t - (t * (t - 1)) / 2;
+                var posX = CalcX(t);
+                if (_area.Contains(posX, posY))
                     return true;
-                xState = NextX(xState);
             }
             return false;
 
@@ -98,12 +83,16 @@ namespace AoC_2021.Days
                 var a = -1.0;
 
                 var tmp = Math.Sqrt(a * a - 4 * a * v + 8 * a * s + 4 * v * v);
-                var t = (-tmp + a - 2 * v) / (2 * a);
-                return t;
+                return (double)((-tmp + a - 2 * v) / (2 * a));
             }
 
-            (int pos, int speed) NextX((int pos, int speed) x)
-                => (x.pos + x.speed, x.speed > 0 ? x.speed - 1 : 0);
+            int CalcX(int time)
+            {
+                if (time >= v.X)
+                    return v.X * (v.X + 1) / 2;
+                else
+                    return time * (2 * v.X - time + 1) / 2;
+            }
         }
     }
 
