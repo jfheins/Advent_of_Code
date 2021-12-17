@@ -8,9 +8,8 @@ namespace AoC_2021.Days
 {
     public class Day_17 : BaseDay
     {
+        private (int left, int right, int bottom, int top) _target;
         private Rectangle _area;
-        private int _rightmostTarget;
-        private int _bottommostTarget;
         private List<Velocity> _hits;
 
         public Day_17()
@@ -18,24 +17,33 @@ namespace AoC_2021.Days
             var input = File.ReadAllText(InputFilePath).ParseInts(4);
             var width = input[1] + 1 - input[0];
             var height = input[3] + 1 - input[2];
+            _target = (left: input[0], right: input[1], bottom: input[2], top: input[3]);
             _area = new Rectangle(input[0], input[2], width, height);
-            _rightmostTarget = input[1];
-            _bottommostTarget = input[2];
         }
 
         public override async ValueTask<string> Solve_1()
         {
             _hits = new List<Velocity>();
-            for (int vx = 0; vx <= _rightmostTarget; vx++)
+            var minVx = CalculateMinVx(_target.left);
+            // Downward
+            for (int vx = minVx; vx <= _target.right; vx++)
+                for (int vy = _target.bottom; vy < 0; vy++)
+                    TestHit(vx, vy);
+
+            // Upward
+            var maxVx = CalculateMaxVx(_target.right);
+            for (int vx = minVx; vx <= maxVx+1; vx++)
+                for (int vy = 0; vy < 1200; vy++)
+                    TestHit(vx, vy);
+
+                return _hits.Max(CalculateMaxHeight).ToString();
+
+            void TestHit(int vx, int vy)
             {
-                for (int vy = _bottommostTarget; vy < 1000; vy++)
-                {
-                    var v = new Velocity(vx, vy);
-                    if (HitsTargetArea(v))
-                        _hits.Add(v);
-                }
+                var v = new Velocity(vx, vy);
+                if (HitsTargetArea(v))
+                    _hits.Add(v);
             }
-            return _hits.Max(CalculateMaxHeight).ToString();
         }
 
         public override async ValueTask<string> Solve_2()
@@ -51,6 +59,18 @@ namespace AoC_2021.Days
                 return 0;
             else
                 return (v.Y * (v.Y + 1)) / 2;
+        }
+
+        private int CalculateMinVx(int x)
+        {
+            // Below a threshold, the probe will never hit the target
+            return (int)(Math.Sqrt(8*x+1) - 1)/2;
+        }
+
+        private int CalculateMaxVx(int x)
+        {
+            // Above a threshold, x will be right of the target
+            return (int)Math.Ceiling((Math.Sqrt(8 * x + 1) - 1) / 2);
         }
 
         private bool HitsTargetArea(Velocity v)
