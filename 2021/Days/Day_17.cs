@@ -9,6 +9,7 @@ namespace AoC_2021.Days
     public class Day_17 : BaseDay
     {
         private Rectangle _area;
+        private List<(Size v, (int maxHeight, bool isHit) res)> _results;
 
         public Day_17()
         {
@@ -23,13 +24,13 @@ namespace AoC_2021.Days
             var test = new List<Size>();
             for (int vx = 0; vx < 1000; vx++)
             {
-                for (int vy = 1; vy < 1000; vy++)
+                for (int vy = -100; vy < 1000; vy++)
                 {
                     test.Add(new Size(vx, vy));
                 }
             }
-            var r = test.Select(x => (v: x, res: CalculateProbe(x)))
-                .Where(x => x.res.isHit)
+            _results = test.Select(x => (v: x, res: CalculateProbe(x))).ToList();
+            var r = _results.Where(x => x.res.isHit)
                 .MaxBy(x => x.res.maxHeight);
             return r.ToString();
         }
@@ -53,7 +54,7 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            return "";
+            return _results.Where(x => x.res.isHit).Distinct().Count().ToString();
         }
     }
 }
