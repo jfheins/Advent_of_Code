@@ -1,8 +1,5 @@
 ﻿using Core;
-using Core.Combinatorics;
 using System.Drawing;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2021.Days
 {
@@ -80,7 +77,7 @@ namespace AoC_2021.Days
             {
                 var s = displacement;
                 var v = speed;
-                var a = -1.0;
+                const double a = -1.0;
 
                 var tmp = Math.Sqrt(a * a - 4 * a * v + 8 * a * s + 4 * v * v);
                 return (double)((-tmp + a - 2 * v) / (2 * a));
