@@ -1,6 +1,5 @@
 ﻿using Core;
 using Core.Combinatorics;
-using MoreLinq.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
@@ -33,6 +32,18 @@ namespace AoC_2021.Days
             }
             var magnitude = CalcMagnitude(result);
             return magnitude.ToString();
+        }
+
+        public override async ValueTask<string> Solve_2()
+        {
+            var lines = File.ReadAllLines(InputFilePath);
+            var newInput = new Variations<string>(lines, 2, GenerateOption.WithoutRepetition);
+
+            var combis = newInput.Select(t => (ParseLine(t[0]), ParseLine(t[1])));
+            var mag = combis.Select(t => Add(t.Item1, t.Item2)).ToList();
+            var mags = mag.Select(CalcMagnitude)
+             .ToList();
+            return mags.Max().ToString();
         }
 
         private int CalcMagnitude(JArray x)
@@ -178,11 +189,6 @@ namespace AoC_2021.Days
             var left = number / 2;
             var right = number - left;
             return new JArray(left, right);
-        }
-
-        public override async ValueTask<string> Solve_2()
-        {
-            return "";
         }
     }
 }
