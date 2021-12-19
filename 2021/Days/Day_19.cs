@@ -11,6 +11,7 @@ namespace AoC_2021.Days
     public class Day_19 : BaseDay
     {
         private List<Scanner> _scanners;
+        private List<Scanner> _knownScanners;
 
         public record Scanner(string Name, Point3[] Scan, IReadOnlyList<Triangle> Triangles)
         {
@@ -69,25 +70,13 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_1()
         {
-            //var one = new Triangle(new Point3(100, 100, 100), new Point3(101, 100, 100), new Point3(101, 100, 107));
-            //var two = new Triangle(new Point3(0, 0, 0), new Point3(0, -1, 0), new Point3(0, -1, -7));
-
-            //foreach (var potRot in Rotations())
-            //{
-            //    var r = Rotate(two.ToEnumerable(), potRot)[0];
-            //    if (IsKongruent(one, r))
-            //    {
-            //        Console.WriteLine(potRot);
-            //    }
-            //}
-
-            var knownScanners = new List<Scanner> { _scanners[0] };
+            _knownScanners = new List<Scanner> { _scanners[0] };
             var beacons = new HashSet<Point3>(_scanners[0].Scan);
 
             for (int i = 1; i < _scanners.Count; i++)
             {
                 // pick a scanner with big overlap out of the list
-                var pair = GetNextScanner(knownScanners);
+                var pair = GetNextScanner(_knownScanners);
 
                 var intersectingTriangles = Overlap(pair.known, pair.next);
 
@@ -125,19 +114,26 @@ namespace AoC_2021.Days
                 var offset3 = match.Sum - knownTri[knownIdx].Sum;
                 var offset = new Point3(offset3.X / 3, offset3.Y / 3, offset3.Z / 3);
 
-                var newScannerPos = pair.known.Position + offset.Inverse();
+                var newScannerPos = offset.Inverse();
 
-                var offsetScanner = Scanner.WithOffset(pair.next, rot, offset.Inverse());
-                knownScanners.Add(offsetScanner);
+                var offsetScanner = Scanner.WithOffset(pair.next, rot, newScannerPos);
+                offsetScanner.Position = newScannerPos;
+                _knownScanners.Add(offsetScanner);
 
                 foreach (var newBeacon in offsetScanner.Scan)
                 {
                     beacons.Add(newBeacon);
                 }
 
-                Console.WriteLine($"added {offsetScanner.Name}");
+                Console.WriteLine($"added {offsetScanner.Name} at {newScannerPos}");
             }
             return beacons.Count.ToString();
+        }
+
+        public override async ValueTask<string> Solve_2()
+        {
+            var c = new Combinations<Scanner>(_knownScanners, 2);
+            return c.Max(pair => pair[0].Position.ManhattanDistTo(pair[1].Position)).ToString();
         }
 
         protected static IReadOnlyList<Triangle> Transform(IReadOnlyList<Triangle> triangles, Matrix4x4 matrix, Point3 offset)
@@ -300,11 +296,6 @@ namespace AoC_2021.Days
 
             if (lefta.ManhattanDistTo(Point3.Empty) == righta.ManhattanDistTo(Point3.Empty)) ;
             return lefta == righta && leftb == rightb;
-        }
-
-        public override async ValueTask<string> Solve_2()
-        {
-            return "";
         }
     }
 }
