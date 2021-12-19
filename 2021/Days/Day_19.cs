@@ -1,8 +1,6 @@
 ﻿using Core;
 using Core.Combinatorics;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Numerics;
 using static MoreLinq.Extensions.SplitExtension;
 
@@ -76,22 +74,22 @@ namespace AoC_2021.Days
             for (int i = 1; i < _scanners.Count; i++)
             {
                 // pick a scanner with big overlap out of the list
-                var pair = GetNextScanner(_knownScanners);
+                var (known, next) = GetNextScanner(_knownScanners);
 
-                var intersectingTriangles = Overlap(pair.known, pair.next);
+                var intersectingTriangles = Overlap(known, next);
 
-                var knownTri = pair.known.Triangles
+                var knownTri = known.Triangles
                     .Where(t => intersectingTriangles.Contains(t.Hash)).ToList();
                 var p = knownTri.SelectMany(t => t.Points).ToHashSet();
 
-                var nextTri = knownTri.Select(kt => pair.next.Triangles.First(t => t.Hash == kt.Hash)).ToList();
+                var nextTri = knownTri.Select(kt => next.Triangles.First(t => t.Hash == kt.Hash)).ToList();
 
                 // Rotation
                 var rot = Matrix4x4.Identity;
-                var rotatedTriangles = pair.next.Triangles;
+                var rotatedTriangles = next.Triangles;
                 foreach (var potRot in Rotations())
                 {
-                    rotatedTriangles = Rotate(pair.next.Triangles, potRot);
+                    rotatedTriangles = Rotate(next.Triangles, potRot);
                     var matches = rotatedTriangles.Sum(rot => knownTri.Count(k => IsKongruent(rot, k)));
                     if (matches > 160)
                     {
@@ -116,7 +114,7 @@ namespace AoC_2021.Days
 
                 var newScannerPos = offset.Inverse();
 
-                var offsetScanner = Scanner.WithOffset(pair.next, rot, newScannerPos);
+                var offsetScanner = Scanner.WithOffset(next, rot, newScannerPos);
                 offsetScanner.Position = newScannerPos;
                 _knownScanners.Add(offsetScanner);
 
@@ -125,7 +123,7 @@ namespace AoC_2021.Days
                     beacons.Add(newBeacon);
                 }
 
-                Console.WriteLine($"added {offsetScanner.Name} at {newScannerPos}");
+                Console.WriteLine($"Added {offsetScanner.Name} at {newScannerPos}");
             }
             return beacons.Count.ToString();
         }
@@ -136,20 +134,6 @@ namespace AoC_2021.Days
             return c.Max(pair => pair[0].Position.ManhattanDistTo(pair[1].Position)).ToString();
         }
 
-        protected static IReadOnlyList<Triangle> Transform(IReadOnlyList<Triangle> triangles, Matrix4x4 matrix, Point3 offset)
-        {
-            return triangles.Select(RotateTriangle).ToList();
-
-            Triangle RotateTriangle(Triangle t) => new(transform(t.A), transform(t.B), transform(t.C));
-            Point3 transform(Point3 p)
-            {
-                var v = new Vector3(p.X, p.Y, p.Z);
-                var rotated = Vector3.Transform(v, matrix);
-                Debug.Assert(v.LengthSquared() == rotated.LengthSquared());
-                return new Point3((int)rotated.X, (int)rotated.Y, (int)rotated.Z).TranslateBy(offset);
-            }
-        }
-
         protected static IReadOnlyList<Point3> Transform(IReadOnlyList<Point3> points, Matrix4x4 matrix, Point3 offset)
         {
             return points.Select(transform).ToList();
@@ -157,8 +141,7 @@ namespace AoC_2021.Days
             {
                 var v = new Vector3(p.X, p.Y, p.Z);
                 var rotated = Vector3.Transform(v, matrix);
-                var p2 = new Point3((int)rotated.X, (int)rotated.Y, (int)rotated.Z).TranslateBy(offset);
-                return p2;
+                return new Point3((int)rotated.X, (int)rotated.Y, (int)rotated.Z).TranslateBy(offset);
             }
         }
 
@@ -198,26 +181,6 @@ namespace AoC_2021.Days
             }
 
             return (known, next);
-        }
-
-        private float GetError(ICollection<Point3> kpoints, ICollection<Point3> points)
-        {
-            var error = 0f;
-            foreach (var can in points)
-            {
-                var closestDist = kpoints.Min(p => p.EuklidDistTo(can));
-                error += closestDist;
-            }
-            return error;
-        }
-
-        private Point3 Mean(IEnumerable<Point3> points)
-        {
-            var set = points.ToHashSet();
-            var xm = set.Select(p => p.X).Average();
-            var ym = set.Select(p => p.Y).Average();
-            var zm = set.Select(p => p.Z).Average();
-            return new Point3((int)xm, (int)ym, (int)zm);
         }
 
         private static IReadOnlyCollection<(int, int, int)> Overlap(
@@ -260,21 +223,12 @@ namespace AoC_2021.Days
                             face.Z, right.Z, up.Z, 0,
                             0, 0, 0, 1);
 
-                        yield return new Matrix4x4(
-                            face.X, right.X, -up.X, 0,
-                            face.Y, right.Y, -up.Y, 0,
-                            face.Z, right.Z, -up.Z, 0,
-                            0, 0, 0, 1);
-
-
-                        //yield return p =>
-                        //{
-                        //    var newx = face * p.X;
-                        //    var newy = right * p.Y;
-                        //    var newz = up * p.Z;
-                        //    var newPoint = newx + newy + newz;
-                        //    return new Point3((int)newPoint.X, (int)newPoint.Y, (int)newPoint.Z);
-                        //};
+                        // Likely not needed
+                        //yield return new Matrix4x4(
+                        //    face.X, right.X, -up.X, 0,
+                        //    face.Y, right.Y, -up.Y, 0,
+                        //    face.Z, right.Z, -up.Z, 0,
+                        //    0, 0, 0, 1);
                     }
                 }
             }
@@ -286,7 +240,7 @@ namespace AoC_2021.Days
         /// <param name="left"></param>
         /// <param name="right"></param>
         /// <returns></returns>
-        private bool IsKongruent(Triangle left, Triangle right)
+        private static bool IsKongruent(Triangle left, Triangle right)
         {
             if (left.Hash != right.Hash)
                 return false;
