@@ -42,17 +42,6 @@ namespace AoC_2021.Days
             return grid.Count(cell => cell.value == '#').ToString();
         }
 
-        private int AreaToIndex(IEnumerable<(Point pos, char value)> pixels)
-        {
-            var idx = 0;
-            foreach (var item in pixels)
-            {
-                var chr = item.value;
-                idx = idx << 1 | (chr == '#' ? 1 : 0);
-            }
-            return idx;
-        }
-
         public override async ValueTask<string> Solve_2()
         {
             var grid = _img;
@@ -60,20 +49,32 @@ namespace AoC_2021.Days
             var infCharToggle = _algo[0] == '#';
             for (int i = 0; i < 50; i++)
             {
-                grid = new FiniteGrid2D<char>(grid, 1, infChar);
-                var nextgrid = new FiniteGrid2D<char>(grid);
-                foreach (var (pos, _) in grid)
-                {
-                    var area = AreaToIndex(grid.GetPointWith8Neighbors(pos, infChar));
-                    nextgrid[pos] = _algo[area];
-                }
-                grid = nextgrid;
+                var inflated = grid.Bounds.InflatedCopy(1, 1);
+                grid = new FiniteGrid2D<char>(inflated, Step);
+
                 if (infCharToggle)
                     infChar = infChar == '.' ? '#' : '.';
             }
             //Console.WriteLine(grid.ToString());
 
             return grid.Count(cell => cell.value == '#').ToString();
+
+            char Step(Point p)
+            {
+                var area = grid.GetPointWith8Neighbors(p, infChar);
+                return _algo[AreaToIndex(area)];
+            }
+        }
+
+        private int AreaToIndex(IEnumerable<(Point pos, char value)> pixels)
+        {
+            var idx = 0;
+            foreach (var (_, value) in pixels)
+            {
+                var chr = value;
+                idx = idx << 1 | (chr == '#' ? 1 : 0);
+            }
+            return idx;
         }
     }
 }
