@@ -1,9 +1,5 @@
 ﻿using Core;
-using Core.Combinatorics;
-using MoreLinq.Extensions;
 using System.Drawing;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2021.Days
 {
@@ -66,12 +62,11 @@ namespace AoC_2021.Days
             }
         }
 
-        private int AreaToIndex(IEnumerable<(Point pos, char value)> pixels)
+        private static int AreaToIndex(IEnumerable<char> pixels)
         {
             var idx = 0;
-            foreach (var (_, value) in pixels)
+            foreach (var chr in pixels)
             {
-                var chr = value;
                 idx = idx << 1 | (chr == '#' ? 1 : 0);
             }
             return idx;
