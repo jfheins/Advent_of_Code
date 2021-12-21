@@ -9,11 +9,13 @@ namespace AoC_2021.Days
     public class Day_19 : BaseDay
     {
         private List<Scanner> _scanners;
-        private List<Scanner> _knownScanners;
+        private List<Scanner> _solvedScanners;
 
         public record Scanner(string Name, Point3[] Scan, IReadOnlyList<Triangle> Triangles)
         {
             public Point3 Position { get; set; }
+
+            public ICollection<long> Hashes { get; } = Triangles.Select(t => t.Hash).ToHashSet();
 
             internal static Scanner WithOffset(Scanner next, Matrix4x4 rot, Point3 offset)
             {
@@ -54,8 +56,9 @@ namespace AoC_2021.Days
 
         public Day_19()
         {
-            var input = File.ReadAllLines(InputFilePath).Split("").Select(x => x.ToArray()).ToArray();
+            var input = File.ReadAllLines(InputFilePath).Split("").Select(x => x.ToArray()).ToList();
             _scanners = input.Select(ParseBlock).ToList();
+            _solvedScanners = new List<Scanner> { _scanners[0] };
         }
 
         private Scanner ParseBlock(string[] block)
@@ -69,15 +72,14 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_1()
         {
-            _knownScanners = new List<Scanner> { _scanners[0] };
             var beacons = new HashSet<Point3>(_scanners[0].Scan);
 
             for (int i = 1; i < _scanners.Count; i++)
             {
                 // pick a scanner with big overlap out of the list
-                var (known, next) = GetNextScanner(_knownScanners);
+                var (known, next) = GetNextScanner(_solvedScanners);
 
-                var intersectingTriangles = Overlap(known, next);
+                IReadOnlySet<long> intersectingTriangles = Overlap(known, next);
 
                 var knownTri = known.Triangles.Where(t => intersectingTriangles.Contains(t.Hash)).ToList();
                 var nextTri = knownTri.Select(kt => next.Triangles.First(t => t.Hash == kt.Hash)).ToList();
@@ -107,7 +109,7 @@ namespace AoC_2021.Days
                 
                 var offsetScanner = Scanner.WithOffset(next, rotated.rotation, newScannerPos);
                 offsetScanner.Position = newScannerPos;
-                _knownScanners.Add(offsetScanner);
+                _solvedScanners.Add(offsetScanner);
 
                 foreach (var newBeacon in offsetScanner.Scan)
                 {
@@ -119,7 +121,7 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            var c = new Combinations<Scanner>(_knownScanners, 2);
+            var c = new Combinations<Scanner>(_solvedScanners, 2);
             return c.Max(pair => pair[0].Position.ManhattanDistTo(pair[1].Position)).ToString();
         }
 
@@ -149,33 +151,22 @@ namespace AoC_2021.Days
 
         private (Scanner known, Scanner next) GetNextScanner(List<Scanner> knownScanners)
         {
-            var maxOverlap = 0;
-            var next = _scanners[1];
-            var known = knownScanners[0];
             var knownList = knownScanners.Select(s => s.Name).ToHashSet();
-            foreach (var potNext in _scanners.Where(s => !knownList.Contains(s.Name)))
+            foreach (var potNext in _scanners.ExceptBy(knownList, s => s.Name))
             {
-                foreach (var knownScanner in knownScanners)
-                {
-                    var overlap = Overlap(potNext, knownScanner).Count;
-                    if (overlap > maxOverlap)
-                    {
-                        next = potNext;
-                        known = knownScanner;
-                        maxOverlap = overlap;
-                    }
-                }
+                var known = knownScanners.FirstOrDefault(k => Overlap(potNext, k).Count >= 220);
+                if (known != null)
+                    return (known, potNext);
             }
 
-            return (known, next);
+            throw new Exception("No suitable scanner found!");
         }
 
         private static IReadOnlySet<long> Overlap(
             Scanner a,
             Scanner b)
         {
-            return a.Triangles.Select(t => t.Hash)
-                .Intersect(b.Triangles.Select(t => t.Hash)).ToHashSet();
+            return a.Hashes.Intersect(b.Hashes).ToHashSet();
         }
 
         private static IEnumerable<Matrix4x4> Rotations()
