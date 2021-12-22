@@ -62,7 +62,7 @@ namespace AoC_2021.Days
                     Depth = area[5] - area[4] + 1
                 };
 
-                // Level the playing field and "remove" any exiisting on areas by adding
+                // Level the playing field and "remove" any existing on areas by adding
                 // them with opposite sign.
                 // in case some areas have also been switched off later, we need to cancel that as well
                 foreach (var (p, sign) in volumes.ToList())
