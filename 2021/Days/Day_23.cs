@@ -1,11 +1,5 @@
 ﻿using Core;
-using Core.Combinatorics;
-using MoreLinq.Extensions;
 using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Drawing;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2021.Days
 {
@@ -38,9 +32,7 @@ namespace AoC_2021.Days
             }
 
             public override int GetHashCode()
-            {
-                return new string(WaitingSpaces.ToArray()).GetHashCode();
-            }
+                => string.Concat(WaitingSpaces).GetHashCode();
         }
 
         private FiniteGrid2D<char> _grid;
@@ -54,38 +46,29 @@ namespace AoC_2021.Days
 
         public override async ValueTask<string> Solve_1()
         {
-            var room1 = MakeRoom1(3);
-            var room2 = MakeRoom1(5);
-            var room3 = MakeRoom1(7);
-            var room4 = MakeRoom1(9);
-
             var initial = new State
             {
-                Rooms = new ImmutableStack<char>[] { room1, room2, room3, room4 },
+                Rooms = RoomIdxToX.Values.Select(MakeRoom1).ToArray(),
                 WaitingSpaces = ImmutableList.Create(".......".ToCharArray())
             };
 
-            var s = new AStarSearch<State>(null, Expander);
-            var path = s.FindFirst(initial, Check, Heuristic)!;
+            var path = new AStarSearch<State>(null, Expander)
+                .FindFirst(initial, IsFinal, Heuristic)!;
             return path.Cost.ToString();
         }
 
         public override async ValueTask<string> Solve_2()
         {
             stackdepth = 4;
-            var room1 = MakeRoom2(3);
-            var room2 = MakeRoom2(5);
-            var room3 = MakeRoom2(7);
-            var room4 = MakeRoom2(9);
 
             var initial = new State
             {
-                Rooms = new ImmutableStack<char>[] { room1, room2, room3, room4 },
+                Rooms = RoomIdxToX.Values.Select(MakeRoom2).ToArray(),
                 WaitingSpaces = ImmutableList.Create(".......".ToCharArray())
             };
 
-            var s = new AStarSearch<State>(null, Expander);
-            var path = s.FindFirst(initial, Check, Heuristic)!;
+            var path = new AStarSearch<State>(null, Expander)
+                .FindFirst(initial, IsFinal, Heuristic)!;
             return path.Cost.ToString();
         }
 
@@ -98,11 +81,11 @@ namespace AoC_2021.Days
         private ImmutableStack<char> MakeRoom2(int x)
         {
             var newLines = new string[] { "#D#C#B#A#", "#D#B#A#C#" };
-            var items = new char[] { _grid[x, 3], newLines[1][x-2], newLines[0][x-2], _grid[x, 2] };
+            var items = new char[] { _grid[x, 3], newLines[1][x - 2], newLines[0][x - 2], _grid[x, 2] };
             return ImmutableStack.Create(items);
         }
 
-        private bool Check(State state)
+        private bool IsFinal(State state)
         {
             return state.WaitingSpaces.All(it => it == '.')
                 && state.Rooms[0].All(it => it == 'A')
@@ -113,19 +96,26 @@ namespace AoC_2021.Days
 
         private float Heuristic(State s)
         {
+            // Heuristic: For each pod that is not in the right room:
+            // What are the costs to move up and across the hallway above its room?
             var res = 0;
-            for (int i = 0; i < 3; i++)
+
+            foreach (var (room, idx) in s.Rooms.Select((room, idx) => (room, idx)))
             {
-                var room = s.Rooms[i];
-                var ds = room.Select((pod, i) => (pod, i)).Where(t => t.pod == 'D');
-                var len1 = ds.Select(t => t.i + 1);
-                var len2 = (3 - i) * 2;
-                res += len1.Sum(l => l + len2) * 1000;
+                var roomName = "ABCD"[idx];
+                var wayToHallway = stackdepth - room.Count() + 1;
+                var pods = room.Select((name, pos) => (name, pos)).Where(t => t.name != roomName);
+                foreach (var pod in pods)
+                {
+                    var homeRoomIdx = "ABCD".IndexOf(pod.name);
+                    var wayToRoom = Math.Abs(RoomIdxToX[homeRoomIdx] - RoomIdxToX[idx]);
+                    res += (wayToHallway + pod.pos + wayToRoom + 1) * GetStepCost(pod.name);
+                }
             }
             return res;
         }
 
-        private Dictionary<int, int> WaitingIdxToX = new()
+        private readonly Dictionary<int, int> WaitingIdxToX = new()
         {
             { 0, 1 },
             { 1, 2 },
@@ -136,7 +126,7 @@ namespace AoC_2021.Days
             { 6, 11 },
         };
 
-        private Dictionary<int, int> RoomIdxToX = new()
+        private readonly Dictionary<int, int> RoomIdxToX = new()
         {
             { 0, 3 },
             { 1, 5 },
@@ -151,7 +141,7 @@ namespace AoC_2021.Days
                 (room: 1, name: 'B'),
                 (room: 2, name: 'C'),
                 (room: 3, name: 'D') };
-            
+
             // Move out
             foreach (var (roomIdx, name) in param)
             {
@@ -183,8 +173,7 @@ namespace AoC_2021.Days
             (State, float) MovePodOut(int fromRoom, int toIdx)
             {
                 var newRooms = (ImmutableStack<char>[])state.Rooms.Clone();
-                var mover = state.Rooms[fromRoom].Peek();
-                newRooms[fromRoom] = state.Rooms[fromRoom].Pop();
+                newRooms[fromRoom] = state.Rooms[fromRoom].Pop(out var mover);
                 var newHallway = state.WaitingSpaces.SetItem(toIdx, mover);
 
                 var len1 = stackdepth - newRooms[fromRoom].Count(); // 1 or 2
