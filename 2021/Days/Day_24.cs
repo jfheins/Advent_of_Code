@@ -43,7 +43,7 @@ namespace AoC_2021.Days
             Debug.Assert(Interpret(digits) == 0);
             return ToNumber(digits);
 
-            static bool IsValidDigit(int d) => d >= 0 && d < 10;
+            static bool IsValidDigit(int d) => d > 0 && d < 10;
         }
 
         private static int[] ToDigits(long l)
