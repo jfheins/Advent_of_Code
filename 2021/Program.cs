@@ -8,7 +8,7 @@ namespace AoC_2021
     {
         static void Main()
         {
-            Solver.SolveLast(new SolverConfiguration
+            Solver.SolveAll(new SolverConfiguration
             {
                 ShowConstructorElapsedTime = true,
                 ShowTotalElapsedTimePerDay = true,
