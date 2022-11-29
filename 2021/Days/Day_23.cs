@@ -5,10 +5,10 @@ namespace AoC_2021.Days
 {
     public class Day_23 : BaseDay
     {
-        public record State : IEquatable<State>
+        public record State
         {
             // 01.2.3.4.56
-            public ImmutableList<char> WaitingSpaces { get; set; }
+            public ImmutableList<char> WaitingSpaces { get; init; }
 
             public ImmutableStack<char>[] Rooms { get; set; } = new ImmutableStack<char>[4];
 
