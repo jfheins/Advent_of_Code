@@ -1,10 +1,4 @@
-﻿using System.IO;
-using System.Linq;
-
-using Core;
-using Core.Combinatorics;
-
-using static MoreLinq.Extensions.WindowExtension;
+﻿using Core;
 
 namespace AoC_2015.Days
 {

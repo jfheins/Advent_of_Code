@@ -1,6 +1,4 @@
-﻿using System;
-
-using AoCHelper;
+﻿using AoCHelper;
 
 namespace AoC_2015
 {

@@ -1,7 +1,4 @@
 ﻿using Core;
-using Core.Combinatorics;
-using System.IO;
-using System.Linq;
 
 namespace AoC_2021.Days
 {

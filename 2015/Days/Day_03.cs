@@ -1,12 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Drawing;
-using System.IO;
-using System.Linq;
-
 using Core;
-using Core.Combinatorics;
-
-using MoreLinq.Extensions;
 
 namespace AoC_2015.Days
 {

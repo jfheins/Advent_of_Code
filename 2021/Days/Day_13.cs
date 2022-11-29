@@ -1,9 +1,5 @@
 ﻿using Core;
-using Core.Combinatorics;
 using System.Drawing;
-using System.IO;
-using System.Linq;
-
 using static MoreLinq.Extensions.SplitExtension;
 
 namespace AoC_2021.Days

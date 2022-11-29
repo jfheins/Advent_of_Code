@@ -1,5 +1,4 @@
 ﻿using Core;
-using System.Diagnostics;
 
 namespace AoC_2021.Days
 {

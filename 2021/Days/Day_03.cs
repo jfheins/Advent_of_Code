@@ -1,12 +1,4 @@
-﻿using System.IO;
-using System.Linq;
-
-using Core;
-using Core.Combinatorics;
-
-using MoreLinq.Extensions;
-
-namespace AoC_2021.Days
+﻿namespace AoC_2021.Days
 {
     public class Day_03 : BaseDay
     {

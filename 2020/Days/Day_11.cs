@@ -1,14 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
-using System.Runtime.Intrinsics.X86;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks.Dataflow;
-using System.Transactions;
-
 using Core;
 
 namespace AoC_2020.Days

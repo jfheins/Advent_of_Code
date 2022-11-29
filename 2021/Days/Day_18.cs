@@ -1,11 +1,7 @@
-﻿using Core;
-using Core.Combinatorics;
+﻿using Core.Combinatorics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
 
 namespace AoC_2021.Days
 {
