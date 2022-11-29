@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
-
 using Core;
-
-using MoreLinq;
+using static MoreLinq.Extensions.ToDictionaryExtension;
 
 namespace AoC_2020.Days
 {
@@ -32,7 +27,6 @@ namespace AoC_2020.Days
 
         public override string Solve_1()
         {
-
             var result = new int[12, 12];
 
             edges = new Dictionary<int, List<char[]>>();
@@ -57,6 +51,7 @@ namespace AoC_2020.Days
                     prod *= tile.Key;
                     cornerid = tile.Key;
                 }
+
                 Debug.Assert(matchingEdges <= 5);
             }
 
@@ -68,7 +63,8 @@ namespace AoC_2020.Days
             return a.CartesianProduct(b).Any(t => t.Item1.SequenceEqual(t.Item2));
         }
 
-        private static List<(bool flipped, Direction dir, char[] edge)> GetEdgesWithFlips(FiniteGrid2D<char> grid, Direction[] dirs)
+        private static List<(bool flipped, Direction dir, char[] edge)> GetEdgesWithFlips(FiniteGrid2D<char> grid,
+            Direction[] dirs)
         {
             var edges = dirs.Select(d => (false, d, grid.GetEdge(d).ToArray()));
             return edges.Concat(edges.Select(e => (flipped: true, e.d, e.Item3.Reverse().ToArray()))).ToList();
@@ -80,44 +76,53 @@ namespace AoC_2020.Days
             var dim = grid.Width - 1;
             yield return grid;
             yield return new FiniteGrid2D<char>(grid.Width, grid.Height, (x, y) => grid[dim - y, x]); // rotated
-            yield return new FiniteGrid2D<char>(grid.Width, grid.Height, (x, y) => grid[dim - x, dim - y]); // rotated twice
-            yield return new FiniteGrid2D<char>(grid.Width, grid.Height, (x, y) => grid[y, dim - x]); // rotated three times
+            yield return
+                new FiniteGrid2D<char>(grid.Width, grid.Height, (x, y) => grid[dim - x, dim - y]); // rotated twice
+            yield return
+                new FiniteGrid2D<char>(grid.Width, grid.Height, (x, y) => grid[y, dim - x]); // rotated three times
             // 4 flipped rotations
             var flipped = new FiniteGrid2D<char>(grid.Width, grid.Height, (x, y) => grid[dim - x, y]);
             yield return flipped;
-            yield return new FiniteGrid2D<char>(flipped.Width, flipped.Height, (x, y) => flipped[dim - y, x]); // rotated
-            yield return new FiniteGrid2D<char>(flipped.Width, flipped.Height, (x, y) => flipped[dim - x, dim - y]); // rotated twice
-            yield return new FiniteGrid2D<char>(flipped.Width, flipped.Height, (x, y) => flipped[y, dim - x]); // rotated three times
+            yield return
+                new FiniteGrid2D<char>(flipped.Width, flipped.Height, (x, y) => flipped[dim - y, x]); // rotated
+            yield return
+                new FiniteGrid2D<char>(flipped.Width, flipped.Height,
+                    (x, y) => flipped[dim - x, dim - y]); // rotated twice
+            yield return
+                new FiniteGrid2D<char>(flipped.Width, flipped.Height,
+                    (x, y) => flipped[y, dim - x]); // rotated three times
         }
 
         private KeyValuePair<int, List<char[]>> GetNeighbor(int exclude, List<char[]> boundary)
         {
             return edges
-               .Where(e => e.Key != exclude)
-               .Where(e => !placed.Contains(e.Key))
-               .Where(e => ShareEdge(e.Value, boundary)).Single();
+                .Where(e => e.Key != exclude)
+                .Where(e => !placed.Contains(e.Key)).Single(e => ShareEdge(e.Value, boundary));
         }
+
         private KeyValuePair<int, List<char[]>> GetNeighbor(int exclude, List<char[]> boundary1, List<char[]> boundary2)
         {
             return edges
-               .Where(e => e.Key != exclude)
-               .Where(e => !placed.Contains(e.Key))
-               .Where(e => ShareEdge(e.Value, boundary1) && ShareEdge(e.Value, boundary2)).Single();
+                .Where(e => e.Key != exclude)
+                .Where(e => !placed.Contains(e.Key))
+                .Single(e => ShareEdge(e.Value, boundary1) && ShareEdge(e.Value, boundary2));
         }
 
         private IList<KeyValuePair<int, List<char[]>>> GetNeighbors(int exclude, List<char[]> boundary)
         {
             return edges
-               .Where(e => e.Key != exclude)
-               .Where(e => !placed.Contains(e.Key))
-               .Where(e => ShareEdge(e.Value, boundary)).ToList();
+                .Where(e => e.Key != exclude)
+                .Where(e => !placed.Contains(e.Key))
+                .Where(e => ShareEdge(e.Value, boundary)).ToList();
         }
-        private IList<KeyValuePair<int, List<char[]>>> GetNeighbors(int exclude, List<char[]> boundary1, List<char[]> boundary2)
+
+        private IList<KeyValuePair<int, List<char[]>>> GetNeighbors(int exclude, List<char[]> boundary1,
+            List<char[]> boundary2)
         {
             return edges
-               .Where(e => e.Key != exclude)
-               .Where(e => !placed.Contains(e.Key))
-               .Where(e => ShareEdge(e.Value, boundary1) && ShareEdge(e.Value, boundary2)).ToList();
+                .Where(e => e.Key != exclude)
+                .Where(e => !placed.Contains(e.Key))
+                .Where(e => ShareEdge(e.Value, boundary1) && ShareEdge(e.Value, boundary2)).ToList();
         }
 
         private int[,] field = new int[12, 12];
@@ -141,7 +146,7 @@ namespace AoC_2020.Days
             for (int i = 1; i < dim; i++)
             {
                 var rightN = neighbors.Where(n => n.Value.Any(ne => current.Any(te => te.edge.SequenceEqual(ne))))
-                    .MinBy(n => GetNeighbors(n.Key, n.Value).Count).First();
+                    .MinBy(n => GetNeighbors(n.Key, n.Value).Count)!;
 
                 if (!placed.Add(rightN.Key))
                     break;
@@ -170,7 +175,6 @@ namespace AoC_2020.Days
 
                     current2 = rightN;
                 }
-
             }
             // ids passen, nur noch richtig flippen und drehen
 
@@ -179,12 +183,13 @@ namespace AoC_2020.Days
             {
                 var right = p.GetEdge(Direction.Right).ToArray();
                 var down = p.GetEdge(Direction.Down).ToArray();
-                return edges[field[1, 0]].Any(e => e.SequenceEqual(right)) && edges[field[0, 1]].Any(e => e.SequenceEqual(down));
+                return edges[field[1, 0]].Any(e => e.SequenceEqual(right)) &&
+                       edges[field[0, 1]].Any(e => e.SequenceEqual(down));
             });
             orientedTiles[(0, 0)] = orientation;
             for (int x = 1; x < dim; x++)
             {
-                var reference = orientedTiles[(x-1, 0)];
+                var reference = orientedTiles[(x - 1, 0)];
                 orientedTiles[(x, 0)] = GetMixed(tiles[field[x, 0]]).Single(t => MatchesLR(reference, t));
             }
 
@@ -192,7 +197,7 @@ namespace AoC_2020.Days
             {
                 for (int x = 0; x < dim; x++)
                 {
-                    var reference = orientedTiles[(x, y-1)];
+                    var reference = orientedTiles[(x, y - 1)];
                     orientedTiles[(x, y)] = GetMixed(tiles[field[x, y]]).Single(t => MatchesTB(reference, t));
                 }
             }
@@ -209,15 +214,16 @@ namespace AoC_2020.Days
                 return clipped[tile][inner];
             });
 
-            var properImage = GetMixed(merged).MaxBy(grid => CountMonstersInGrid(grid)).First();
+            var properImage = GetMixed(merged).MaxBy(CountMonstersInGrid)!;
             var water = properImage.Count(x => x.value == '#');
             var monsterCount = properImage.Count(x => IsMonsterAt(x.pos, properImage));
 
-            return (water - 15* monsterCount).ToString();
+            return (water - 15 * monsterCount).ToString();
         }
 
         private bool MatchesLR(FiniteGrid2D<char> left, FiniteGrid2D<char> right)
             => left.GetEdge(Direction.Right).SequenceEqual(right.GetEdge(Direction.Left));
+
         private bool MatchesTB(FiniteGrid2D<char> top, FiniteGrid2D<char> bottom)
             => top.GetEdge(Direction.Down).SequenceEqual(bottom.GetEdge(Direction.Up));
 
@@ -233,13 +239,15 @@ namespace AoC_2020.Days
             string getLine(Point p) => string.Concat(Enumerable.Range(0, 20)
                 .Select(dx => new Point(p.X + dx, p.Y)).Select(p => grid.GetValueOrDefault(p, 'x')));
 
-            var lines = new[] {
+            var lines = new[]
+            {
                 new Regex("..................#."),
                 new Regex("#....##....##....###"),
-                new Regex(".#..#..#..#..#..#...") };
+                new Regex(".#..#..#..#..#..#...")
+            };
             return lines[0].IsMatch(getLine(p))
-                && lines[1].IsMatch(getLine(p.MoveTo(Direction.Down)))
-                && lines[2].IsMatch(getLine(p.MoveTo(Direction.Down, 2)));
+                   && lines[1].IsMatch(getLine(p.MoveTo(Direction.Down)))
+                   && lines[2].IsMatch(getLine(p.MoveTo(Direction.Down, 2)));
         }
     }
 }
