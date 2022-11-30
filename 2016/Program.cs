@@ -8,11 +8,11 @@ namespace AoC_2016
     {
         static async Task Main()
         {
-            await Solver.Solve<Day_02>(new SolverConfiguration
+            await Solver.SolveLast(c => 
             {
-                ShowConstructorElapsedTime = true,
-                ShowTotalElapsedTimePerDay = true,
-                ElapsedTimeFormatSpecifier = "0.0",
+                c.ShowConstructorElapsedTime = true;
+                c.ShowTotalElapsedTimePerDay = true;
+                c.ElapsedTimeFormatSpecifier = "0.0";
             });
             _ = Console.ReadLine();
         }

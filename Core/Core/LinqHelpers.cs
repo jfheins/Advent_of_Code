@@ -295,6 +295,7 @@ namespace Core
         }
 
         // https://stackoverflow.com/questions/419019/split-list-into-sublists-with-linq/20953521#20953521
+        [Obsolete("Use .net 7 Chunk")]
         public static IEnumerable<IEnumerable<T>> Chunks<T>(this IEnumerable<T> enumerable,
             int chunkSize)
         {
