@@ -1,6 +1,4 @@
-﻿using AoC_2016.Days;
-
-using AoCHelper;
+﻿using AoCHelper;
 
 namespace AoC_2016
 {

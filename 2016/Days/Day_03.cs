@@ -1,7 +1,5 @@
-﻿using System.Collections.Immutable;
-using System.Drawing;
+﻿using Core;
 
-using Core;
 using static MoreLinq.Extensions.TransposeExtension;
 
 namespace AoC_2016.Days
