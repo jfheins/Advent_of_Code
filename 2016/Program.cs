@@ -1,12 +1,14 @@
-﻿using AoCHelper;
+﻿using AoC_2016.Days;
 
-namespace AoC_2015
+using AoCHelper;
+
+namespace AoC_2016
 {
     class Program
     {
         static async Task Main()
         {
-            await Solver.SolveLast(new SolverConfiguration
+            await Solver.Solve<Day_02>(new SolverConfiguration
             {
                 ShowConstructorElapsedTime = true,
                 ShowTotalElapsedTimePerDay = true,

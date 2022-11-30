@@ -2,7 +2,7 @@
 using System.Drawing;
 using Core;
 
-namespace AoC_2015.Days
+namespace AoC_2016.Days
 {
     public class Day_03 : BaseDay
     {

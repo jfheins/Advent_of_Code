@@ -1,6 +1,6 @@
 ﻿using AoCHelper;
 
-namespace AoC_2015
+namespace AoC_2016
 {
     public abstract class BaseDay : BaseProblem
     {
