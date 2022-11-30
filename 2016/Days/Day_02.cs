@@ -6,12 +6,22 @@ namespace AoC_2016.Days
 {
     public class Day_02 : BaseDay
     {
-        private readonly string[] _input;
+        private readonly List<ICollection<Direction>> _input;
 
         public Day_02()
         {
-            _input = File.ReadAllLines(InputFilePath);
+            _input = File.ReadAllLines(InputFilePath).Select(ParseLine).ToList();
         }
+
+        private static ICollection<Direction> ParseLine(string line)
+            => line.Select(move => move switch
+                {
+                    'L' => Direction.Left,
+                    'U' => Direction.Up,
+                    'R' => Direction.Right,
+                    'D' => Direction.Down,
+                    _ => throw new NotImplementedException()
+                }).ToList();
 
         public override async ValueTask<string> Solve_1()
         {
@@ -22,14 +32,7 @@ namespace AoC_2016.Days
             {
                 foreach (var move in line)
                 {
-                    var newpos = pos.MoveTo(move switch
-                    {
-                        'L' => Direction.Left,
-                        'U' => Direction.Up,
-                        'R' => Direction.Right,
-                        'D' => Direction.Down,
-                        _ => throw new NotImplementedException()
-                    });
+                    var newpos = pos.MoveTo(move);
                     pos = guessedKeypad.Contains(newpos) ? newpos : pos;
                 }
                 combination += guessedKeypad[pos];
@@ -52,14 +55,7 @@ namespace AoC_2016.Days
             {
                 foreach (var move in line)
                 {
-                    var newpos = pos.MoveTo(move switch
-                    {
-                        'L' => Direction.Left,
-                        'U' => Direction.Up,
-                        'R' => Direction.Right,
-                        'D' => Direction.Down,
-                        _ => throw new NotImplementedException()
-                    });
+                    var newpos = pos.MoveTo(move);
                     pos = keypad.GetValueOrDefault(newpos, ' ') != ' ' ? newpos : pos;
                 }
                 combination += keypad[pos];
