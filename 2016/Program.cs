@@ -1,8 +1,8 @@
 ﻿using AoCHelper;
 
-namespace AoC_2022
+namespace AoC_2015
 {
-    static class Program
+    class Program
     {
         static async Task Main()
         {
