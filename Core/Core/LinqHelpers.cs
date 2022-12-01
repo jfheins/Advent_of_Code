@@ -135,7 +135,7 @@ namespace Core
             return source.All(x => x.Equals(first));
         }
 
-        public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T> source)
+        public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> source) where T : class
         {
             return source.Where(x => x != null);
         }
@@ -371,6 +371,7 @@ namespace Core
             var list = source.ToList();
             return Enumerable.Repeat(list, count).SelectMany(l => l);
         }
+
         public static IEnumerable<int> CumulativeSum(this IEnumerable<int> sequence)
         {
             Contract.Assert(sequence != null, nameof(sequence));
@@ -418,6 +419,11 @@ namespace Core
                     yield return item;
                 counter = (counter + 1) % stepSize;
             }
+        }
+
+        public static List<TResult> SelectList<T, TResult>(this IEnumerable<T> source, Func<T, TResult> selector)
+        {
+            return source.Select(selector).ToList();
         }
 
         public static TResult[] SelectArray<T, TResult>(this T[] source, Func<T, TResult> selector)
