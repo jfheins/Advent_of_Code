@@ -12,7 +12,7 @@ namespace AoC_2022.Days
         {
             _input = File.ReadAllLines(InputFilePath)
                 .Split("")
-                .SelectList(block => block.Select(line => int.Parse(line)).Sum());
+                .SelectList(block => block.Select(int.Parse).Sum());
         }
 
         public override async ValueTask<string> Solve_1()
