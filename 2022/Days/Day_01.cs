@@ -1,6 +1,6 @@
 ﻿using Core;
-
 using static MoreLinq.Extensions.SplitExtension;
+using static MoreLinq.Extensions.PartialSortByExtension;
 
 namespace AoC_2022.Days
 {
@@ -22,7 +22,7 @@ namespace AoC_2022.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            return _input.OrderDescending().Take(3).Sum().ToString();
+            return _input.PartialSortBy(3, it => -it).Sum().ToString();
         }
     }
 }
