@@ -288,7 +288,7 @@ namespace Core
             var startIdx = 0;
             var strMem = source.AsMemory();
 
-            for (int i = 0; i < source.Length; i++)
+            for (var i = 0; i < source.Length; i++)
             {
                 if (!comparer.Equals(source[i], source[startIdx]))
                 {
@@ -340,7 +340,7 @@ namespace Core
             var (minx, maxx) = list.MinMax(p => p.X);
             var (miny, maxy) = list.MinMax(p => p.Y);
 
-            for (int y = miny; y <= maxy; y++)
+            for (var y = miny; y <= maxy; y++)
             {
                 yield return Enumerable.Range(minx, maxx - minx + 1).Select(x => new Point(x, y)).ToList();
             }
@@ -351,8 +351,8 @@ namespace Core
             Contract.Assert(x != null, nameof(x));
             Contract.Assert(y != null, nameof(y));
             // https://stackoverflow.com/a/1780481
-            IEnumerable<int> index = Enumerable.Range(0, x.Count - y.Count + 1);
-            for (int i = 0; i < y.Count; i++)
+            var index = Enumerable.Range(0, x.Count - y.Count + 1);
+            for (var i = 0; i < y.Count; i++)
             {
                 index = index.Where(n => x[n + i]!.Equals(y[i])).ToArray();
             }
@@ -380,7 +380,7 @@ namespace Core
         public static IEnumerable<int> CumulativeSum(this IEnumerable<int> sequence)
         {
             Contract.Assert(sequence != null, nameof(sequence));
-            int sum = 0;
+            var sum = 0;
             foreach (var item in sequence)
             {
                 sum += item;
@@ -434,11 +434,36 @@ namespace Core
         public static TResult[] SelectArray<T, TResult>(this T[] source, Func<T, TResult> selector)
         {
             var result = new TResult[source.Length];
-            for (int i = 0; i < source.Length; i++)
+            for (var i = 0; i < source.Length; i++)
             {
                 result[i] = selector(source[i]);
             }
             return result;
+        }
+
+        public static string AsString(this Range r)
+        {
+            Debug.Assert(!r.Start.IsFromEnd && !r.End.IsFromEnd);
+            var length = r.End.Value - r.Start.Value + 1;
+            var result = string.Create(length, r, static (span, r) =>
+            {
+                for (var i = 0; i < span.Length; i++)
+                    span[i] = (char)(i + r.Start.Value);
+            });
+            return result;
+        }
+
+        public static IEnumerator<int> GetEnumerator(this Range range)
+        {
+            var start = range.Start.GetOffset(int.MaxValue);
+            var end = range.End.GetOffset(int.MaxValue);
+            var acc = end.CompareTo(start);
+            var current = start;
+            do
+            {
+                yield return current;
+                current += acc;
+            } while (current != end);
         }
     }
 }

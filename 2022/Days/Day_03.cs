@@ -1,15 +1,11 @@
 ﻿using Core;
 
-using System.Diagnostics;
-
-using static MoreLinq.Extensions.SplitExtension;
-
 namespace AoC_2022.Days
 {
     public sealed class Day_03 : BaseDay
     {
         private string[] _input;
-        private string prio = " " + Constants.LowerCaseAbc + Constants.UpperCaseAbc;
+        private readonly string prio = " " + Constants.LowerCaseAbc + Constants.UpperCaseAbc;
 
         public Day_03()
         {
