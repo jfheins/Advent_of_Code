@@ -6,11 +6,11 @@ namespace AoC_2022
     {
         static async Task Main()
         {
-            await Solver.SolveLast(new SolverConfiguration
+            await Solver.SolveLast(c => 
             {
-                ShowConstructorElapsedTime = true,
-                ShowTotalElapsedTimePerDay = true,
-                ElapsedTimeFormatSpecifier = "0.0",
+                c.ShowConstructorElapsedTime = true;
+                c.ShowTotalElapsedTimePerDay = true;
+                c.ElapsedTimeFormatSpecifier = "0.0";
             });
             _ = Console.ReadLine();
         }
