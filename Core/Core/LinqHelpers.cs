@@ -453,6 +453,12 @@ namespace Core
             return result;
         }
 
+        public static int IndexOfOrThrow(this string s, char c)
+        {
+            var idx = s.IndexOf(c);
+            return idx >= 0 ? idx : throw new Exception("Char not found in string");
+        }
+
         public static IEnumerator<int> GetEnumerator(this Range range)
         {
             var start = range.Start.GetOffset(int.MaxValue);

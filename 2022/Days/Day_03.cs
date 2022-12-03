@@ -22,7 +22,7 @@ namespace AoC_2022.Days
                 var left = line[..half];
                 var right = line[half..];
                 var common = left.Intersect(right);
-                return prio.IndexOf(common.Single());
+                return prio.IndexOfOrThrow(common.Single());
             }
         }
 
@@ -33,7 +33,7 @@ namespace AoC_2022.Days
             int CalcPriority(string[] group)
             {
                 var common = group[0].Intersect(group[1]).Intersect(group[2]);
-                return prio.IndexOf(common.Single());
+                return prio.IndexOfOrThrow(common.Single());
             }
         }
     }
