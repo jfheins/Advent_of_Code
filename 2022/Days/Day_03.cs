@@ -14,27 +14,26 @@ namespace AoC_2022.Days
 
         public override async ValueTask<string> Solve_1()
         {
-            return _input.Sum(CalcPriority).ToString();
-
-            int CalcPriority(string line)
-            {
-                var half = line.Length / 2;
-                var left = line[..half];
-                var right = line[half..];
-                var common = left.Intersect(right);
-                return prio.IndexOfOrThrow(common.Single());
-            }
+            return _input
+                .Select(line => NonEmptyList.Create(line.SplitInto(2)))
+                .Sum(PriorityOfCommonItem).ToString();
         }
 
         public override async ValueTask<string> Solve_2()
         {
-            return _input.Chunk(3).Sum(CalcPriority).ToString();
+            return _input.Select(it => it.ToCharArray()).Chunk(3)
+                .Select(group => NonEmptyList.Create(group))
+                .Sum(PriorityOfCommonItem).ToString();
+        }
 
-            int CalcPriority(string[] group)
+        private int PriorityOfCommonItem(NonEmptyList<char[]> parts)
+        {
+            var commonItems = parts.Head.ToHashSet();
+            foreach (var nextPart in parts.Tail)
             {
-                var common = group[0].Intersect(group[1]).Intersect(group[2]);
-                return prio.IndexOfOrThrow(common.Single());
+                commonItems.IntersectWith(nextPart);
             }
+            return prio.IndexOfOrThrow(commonItems.Single());
         }
     }
 }
