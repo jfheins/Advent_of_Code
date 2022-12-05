@@ -1,7 +1,4 @@
 ﻿using Core;
-using System.Diagnostics;
-using System.Collections.Immutable;
-
 using static MoreLinq.Extensions.SplitExtension;
 using static MoreLinq.Extensions.TransposeExtension;
 
@@ -9,8 +6,8 @@ namespace AoC_2022.Days
 {
     public sealed class Day_05 : BaseDay
     {
-        private IReadOnlyList<Stack<char>> _state;
-        private IReadOnlyList<(int c, int from, int to)> _moves;
+        private readonly IReadOnlyList<Stack<char>> _state;
+        private readonly IReadOnlyList<(int c, int from, int to)> _moves;
 
         public Day_05()
         {
@@ -28,6 +25,7 @@ namespace AoC_2022.Days
             {
                 Move(state[from - 1], state[to - 1], c, true);
             }
+
             return TopItems(state);
         }
 
@@ -38,6 +36,7 @@ namespace AoC_2022.Days
             {
                 Move(state[from - 1], state[to - 1], c, false);
             }
+
             return TopItems(state);
         }
 
