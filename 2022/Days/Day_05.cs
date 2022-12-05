@@ -23,7 +23,7 @@ namespace AoC_2022.Days
 
         public override async ValueTask<string> Solve_1()
         {
-            var state = _state.SelectList(col => new Stack<char>(col));
+            var state = CloneState();
             foreach (var (c, from, to) in _moves)
             {
                 Move(state[from - 1], state[to - 1], c, true);
@@ -33,10 +33,10 @@ namespace AoC_2022.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            var state = _state.SelectList(col => new Stack<char>(col));
+            var state = CloneState();
             foreach (var (c, from, to) in _moves)
             {
-                Move(state[from-1], state[to-1], c, false);
+                Move(state[from - 1], state[to - 1], c, false);
             }
             return TopItems(state);
         }
@@ -44,10 +44,14 @@ namespace AoC_2022.Days
         private string TopItems(IEnumerable<Stack<char>> state)
             => string.Concat(state.Select(col => col.First()));
 
+        private IReadOnlyList<Stack<char>> CloneState()
+            => _state.SelectList(col => new Stack<char>(col));
+
         private void Move(Stack<char> source, Stack<char> destination, int count, bool firstOutFirstIn)
         {
             var items = source.PopMany(count).ToList();
-            if (!firstOutFirstIn) items.Reverse();
+            if (!firstOutFirstIn)
+                items.Reverse();
             foreach (var item in items)
                 destination.Push(item);
         }
