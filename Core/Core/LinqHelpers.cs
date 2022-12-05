@@ -101,7 +101,8 @@ public static class LinqHelpers
     }
     public static int Modulo(this int x, int ringSize)
     {
-        while (x < 0) x += ringSize;
+        while (x < 0)
+            x += ringSize;
         return x % ringSize;
     }
 
@@ -145,7 +146,7 @@ public static class LinqHelpers
         return source.Where(x => x != null);
     }
 
-    public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> source) where T: struct
+    public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> source) where T : struct
     {
         return source.Where(x => x != null).Select(x => x!.Value);
     }
@@ -497,5 +498,12 @@ public static class LinqHelpers
             yield return current;
             current += acc;
         } while (current != end);
+    }
+
+    public static IEnumerable<T> PopMany<T>(this Stack<T> source, int count)
+    {
+        Debug.Assert(source.Count >= count);
+        for (var i = 0; i < count; i++)
+            yield return source.Pop();
     }
 }
