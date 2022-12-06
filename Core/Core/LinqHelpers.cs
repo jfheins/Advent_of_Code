@@ -144,12 +144,7 @@ public static class LinqHelpers
     public static bool AreAllDistinct<T>(this IEnumerable<T> source) where T : IEquatable<T>
     {
         var seen = new HashSet<T>();
-        foreach (var item in source)
-        {
-            if (!seen.Add(item))
-                return false;
-        }
-        return true;
+        return source.All(item => seen.Add(item));
     }
 
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> source) where T : class
