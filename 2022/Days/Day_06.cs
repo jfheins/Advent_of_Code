@@ -1,9 +1,6 @@
 ﻿using Core;
-using System.Diagnostics;
-using System.Collections.Immutable;
 
-using static MoreLinq.Extensions.SplitExtension;
-using static MoreLinq.Extensions.TransposeExtension;
+using static MoreLinq.Extensions.WindowExtension;
 
 namespace AoC_2022.Days
 {
@@ -16,26 +13,8 @@ namespace AoC_2022.Days
             _input = File.ReadAllText(InputFilePath);
         }
 
-        public override async ValueTask<string> Solve_1()
-        {
-            for (int i = 4; i < _input.Length; i++)
-            {
-                var last4 = _input.Substring(i - 4, 4);
-                if (last4.Distinct().Count() == 4)
-                    return i.ToString();
-            }
-            return "-";
-        }
-
-        public override async ValueTask<string> Solve_2()
-        {
-            for (int i = 14; i < _input.Length; i++)
-            {
-                var last4 = _input.Substring(i - 14, 14);
-                if (last4.Distinct().Count() == 14)
-                    return i.ToString();
-            }
-            return "-";
-        }
+        public override async ValueTask<string> Solve_1() => Solve(4).ToString();
+        public override async ValueTask<string> Solve_2() => Solve(14).ToString();
+        private int Solve(int wndSize) => _input.Window(wndSize).IndexWhere(x => x.AreAllDistinct()).First() + wndSize;
     }
 }

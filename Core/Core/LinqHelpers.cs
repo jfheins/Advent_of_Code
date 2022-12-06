@@ -141,9 +141,22 @@ public static class LinqHelpers
         return source.All(x => x.Equals(first));
     }
 
+    public static bool AreAllDistinct<T>(this IEnumerable<T> source) where T : IEquatable<T>
+    {
+        var seen = new HashSet<T>();
+        foreach (var item in source)
+        {
+            if (!seen.Add(item))
+                return false;
+        }
+        return true;
+    }
+
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> source) where T : class
     {
+#pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
         return source.Where(x => x != null);
+#pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
     }
 
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> source) where T : struct
