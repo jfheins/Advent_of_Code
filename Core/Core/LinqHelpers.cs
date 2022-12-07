@@ -147,6 +147,19 @@ public static class LinqHelpers
         return source.All(item => seen.Add(item));
     }
 
+    public static bool AreAllDistinct2<T>(this IList<T> source) where T : IEquatable<T>
+    {
+        for (int i = 0; i < source.Count - 1; i++)
+        {
+            for (int j = i+1; j < source.Count; j++)
+            {
+                if (source[i].Equals(source[j]))
+                    return false;
+            }
+        }
+        return true;
+    }
+
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> source) where T : class
     {
 #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
@@ -513,5 +526,13 @@ public static class LinqHelpers
         Debug.Assert(source.Count >= count);
         for (var i = 0; i < count; i++)
             yield return source.Pop();
+    }
+
+    public static IEnumerable<ArraySegment<TSource>> WindowArr<TSource>(this TSource[] source, int size)
+    {
+        for (var start = 0; start <= source.Length - size; start++)
+        {
+            yield return new ArraySegment<TSource>(source, start, size);
+        }
     }
 }

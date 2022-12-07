@@ -22,7 +22,7 @@ namespace AoC_2022.Days
         public override async ValueTask<string> Solve_2()
         {
             return _input.Select(it => it.ToCharArray()).Chunk(3)
-                .Select(group => NonEmptyList.Create(group))
+                .Select(NonEmptyList.Create)
                 .Sum(PriorityOfCommonItem).ToString();
         }
 
