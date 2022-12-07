@@ -498,7 +498,8 @@ public static class LinqHelpers
     public static (T first, IEnumerable<T> rest) FirstAndRest<T>(this IEnumerable<T> source)
     {
         var enumerator = source.GetEnumerator();
-        Debug.Assert(enumerator.MoveNext());
+        var res = enumerator.MoveNext();
+        Debug.Assert(res);
         return (enumerator.Current, enumerator.AsEnumerable());
     }
 
