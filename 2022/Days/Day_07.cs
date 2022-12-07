@@ -1,72 +1,83 @@
-﻿using Core;
-
-using static MoreLinq.Extensions.WindowExtension;
+﻿using LanguageExt;
 
 namespace AoC_2022.Days
 {
     public sealed class Day_07 : BaseDay
     {
         private readonly string[] _input;
-        private Dictionary<string, Item> tree;
+        private Directory root = new Directory("", null);
+        private IReadOnlyList<long> _folderSizes = Array.Empty<long>();
 
         public Day_07()
         {
             _input = File.ReadAllLines(InputFilePath);
         }
 
-        private record Item(string Path, bool IsFile, Item? Parent)
+        private sealed record Directory(string Name, Directory? Parent)
         {
-            public long Size { get; set; }
+            public long Size { get; private set; }
+            public ICollection<Directory> Children { get; } = new List<Directory>();
+
+            public Directory MakeChild(string name)
+            {
+                var item = new Directory(name, this);
+                Children.Add(item);
+                return item;
+            }
+
+            public void AddToSize(long size)
+            {
+                Size += size;
+                Parent?.AddToSize(size);
+            }
+
+            public void AddContent(string line)
+            {
+                var sizeStr = line[..(line.IndexOf(' '))];
+                AddToSize(long.Parse(sizeStr));
+            }
         }
 
         public override async ValueTask<string> Solve_1()
         {
-            tree = new Dictionary<string, Item>();
-            var currentPath = Path.Combine("D:\\");
-            var currentDir = new Item(currentPath, false, null);
-            tree.Add(currentPath, currentDir);
+            Directory? current = null;
+
             foreach (var line in _input)
             {
-                if (line.StartsWith("$ cd"))
-                {
-                    currentPath = Path.GetFullPath(Path.Combine(currentPath, line[5..]));
-                    currentDir = 
-                        tree.GetOrAdd(currentPath, p => new Item(p, false, currentDir));
-                }
-                else if (line[0] != '$')
-                {
-                    if (!line.StartsWith("dir"))
-                    {
-                        var details = line.Split(" ");
-                        var path = Path.GetFullPath(Path.Combine(currentPath, details[1]));
-                        tree.Add(path, new Item(path, true, currentDir)
-                        { Size = int.Parse(details[0]) });
-                        var p = currentDir;
-                        do
-                        {
-                            p.Size += long.Parse(details[0]);
-                            p = p.Parent;
-                        } while (p != null);
-                    }
-
-                }
+                if (line.StartsWith("$ cd", StringComparison.Ordinal))
+                    current = ChangeFolder(line[5..]);
+                else if (char.IsAsciiDigit(line[0]))
+                    current!.AddContent(line);
             }
 
-            var dirs = tree.Values.Where(kvp => !kvp.IsFile && kvp.Size <= 100000).ToList();
+            _folderSizes = AllFolderSizes().ToList();
+            return _folderSizes.Where(it => it <= 100_000).Sum().ToString();
 
-            return dirs
-                .Sum(kvp => kvp.Size).ToString();
+            Directory ChangeFolder(string folderName)
+            {
+                if (current == null)
+                    return root = new Directory(folderName, null);
+
+                return folderName == ".." && current.Parent != null
+                    ? current.Parent
+                    : current.MakeChild(folderName);
+            }
         }
 
-        public override async ValueTask<string> Solve_2() {
+        public override async ValueTask<string> Solve_2()
+        {
+            var unusedSpace = 70000000 - root.Size;
+            var neededSpace = 30000000 - unusedSpace;
 
-            var exSpace = 70000000 - tree.Values.Max(x => x.Size);
-            var neededSpace = 30000000 - exSpace;
+            return _folderSizes.Where(it => it >= neededSpace).Min().ToString();
+        }
 
-            var toDelete = tree.Values.Where(kvp => !kvp.IsFile && kvp.Size >= neededSpace)
-                .MinBy(it => it.Size);
+        private IEnumerable<long> AllFolderSizes()
+        {
+            return Descendants(root).Select(it => it.Size);
 
-            return toDelete.Size.ToString();
+            static IEnumerable<Directory> Descendants(Directory item)
+                => item.Children.SelectMany(Descendants).Prepend(item);
         }
     }
 }
