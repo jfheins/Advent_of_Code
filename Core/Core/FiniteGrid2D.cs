@@ -79,8 +79,7 @@ namespace Core
             }
         }
 
-
-        public virtual bool Contains(Point pos) => Bounds.Contains(pos);
+        public virtual bool Contains(Point pos) => _bounds.Contains(pos);
 
         public virtual TNode this[int x, int y]
         {
@@ -153,8 +152,18 @@ namespace Core
         public IEnumerable<Point> Line(Point exclusiveStart, Size direction)
         {
             return Enumerable.Range(1, int.MaxValue).Select(n => exclusiveStart + n * direction)
-                .TakeWhile(Contains);
+                .TakeWhile(it => _bounds.Contains(it));
         }
+
+        public IEnumerable<IEnumerable<Point>> Lines(Point exclusiveStart, Direction[] dirs)
+        {
+            var range = Enumerable.Range(1, int.MaxValue);
+            return dirs.Select(d => d.ToSize())
+                .Select(dir => range.Select(n => exclusiveStart + n * dir)
+                .TakeWhile(it => _bounds.Contains(it)));
+        }
+
+        public IEnumerable<Point> Line(Point exclusiveStart, Direction dir) => Line(exclusiveStart, dir.ToSize());
 
         public void Add((Point pos, TNode value) item) => _values.Add(item.pos, item.value);
         public void Clear() => _values.Clear();
