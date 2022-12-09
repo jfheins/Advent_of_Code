@@ -10,12 +10,12 @@ namespace AoC_2022.Days
     public sealed class Day_09 : BaseDay
     {
         private readonly List<(char dir, int dist)> _input;
-        private readonly Dictionary<char, Direction> charMap = new()
+        private readonly Dictionary<char, Size> _charToSize = new()
         {
-                { 'L', Direction.Left },
-                { 'U', Direction.Up },
-                { 'R', Direction.Right },
-                { 'D', Direction.Down }
+                { 'L', Direction.Left.ToSize() },
+                { 'U', Direction.Up.ToSize() },
+                { 'R', Direction.Right.ToSize() },
+                { 'D', Direction.Down.ToSize() }
         };
 
         public Day_09()
@@ -44,10 +44,10 @@ namespace AoC_2022.Days
 
             foreach (var (dir, dist) in _input)
             {
-                for (int i = 0; i < dist; i++)
+                for (var i = 0; i < dist; i++)
                 {
-                    rope[0] += charMap[dir].ToSize();
-                    for (int moveIdx = 1; moveIdx < rope.Length; moveIdx++)
+                    rope[0] += _charToSize[dir];
+                    for (var moveIdx = 1; moveIdx < rope.Length; moveIdx++)
                     {
                         var diff = rope[moveIdx - 1].Minus(rope[moveIdx]);
                         if (diff.MaxAbs() > 1)
