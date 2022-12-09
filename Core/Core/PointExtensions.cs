@@ -18,6 +18,8 @@ namespace Core
 
         public static Point MoveTo(this Point p, Direction dir, int steps = 1) => p + (steps * _mapDirectionToSize[dir]);
         public static Point MoveBy(this Point p, int dx, int dy) => p + new Size(dx, dy);
+        public static Point Minus(this Point a, Point b) => new (a.X - b.X, a.Y - b.Y);
+
         public static IEnumerable<Point> MoveLURD(this Point p)
             => _mapDirectionToSize.Values.Select(s => p + s);
         public static IEnumerable<Point> MoveLURDDiag(this Point p)
@@ -29,6 +31,7 @@ namespace Core
             return sizes.Select(s => p + s);
         }
         public static int Manhattan(this Point p) => Math.Abs(p.X) + Math.Abs(p.Y);
+        public static int MaxAbs(this Point p) => Math.Max(Math.Abs(p.X), Math.Abs(p.Y));
         public static int ManhattanDistTo(this Point p, Point other)
             => Math.Abs(p.X - other.X) + Math.Abs(p.Y - other.Y);
         public static int ManhattanDistTo(this Point3 p, Point3 other)
