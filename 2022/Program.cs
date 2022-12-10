@@ -13,7 +13,6 @@ namespace AoC_2022
                 c.ElapsedTimeFormatSpecifier = "0.0";
                 c.ClearConsole = false;
             });
-            _ = Console.ReadLine();
         }
     }
 }

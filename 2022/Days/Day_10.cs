@@ -20,83 +20,44 @@ namespace AoC_2022.Days
 
         public override async ValueTask<string> Solve_1()
         {
-            var cycle = 1;
-            var register = 1;
-            var xx = new List<int>();
-            foreach (var line in _input)
-            {
-                if (line == "noop")
-                {
-                    if ((cycle + 20) % 40 == 0)
-                    {
-                        xx.Add(cycle * register);
-                    }
-
-                    cycle++;
-                }
-                else if (line.StartsWith("addx"))
-                {
-                    if ((cycle + 20) % 40 == 39)
-                    {
-                        xx.Add((cycle + 1) * register);
-                    }
-                    if ((cycle + 20) % 40 == 0)
-                    {
-                        xx.Add(cycle * register);
-                    }
-
-                    cycle += 2;
-                    register += line.ParseInts(1).First();
-                }
-                else
-                    Debug.Assert(false);
-
-               
-            }
-
-
-            return xx.Sum().ToString();
-        }
-
-
-        public override async ValueTask<string> Solve_2()
-        {
             var currentCycle = 1;
             var register = 1;
             var lineIdx = 0;
             int? carryOver = null;
+            var signalStrength = 0;
+            var crtLine = new char[40];
 
-            while (lineIdx < _input.Count)
+            while (true)
             {
-
+                var crtPos = (currentCycle - 1) % 40;
+                crtLine[crtPos] = Math.Abs(register - crtPos) > 1 ? '.' : '#';
+                if (crtPos == 39)
+                    Console.WriteLine(crtLine);
+                
+                if((currentCycle + 20) % 40 == 0)
+                    signalStrength += currentCycle * register;
+                
                 if (carryOver == null)
                 {
+                    if (lineIdx == _input.Count) // EOF
+                        break;
                     var line = _input[lineIdx++];
-                    if (line == "noop")
-                    {
-                        // nothing
-                    }
-                    else if (line.StartsWith("addx"))
-                    {
-                       carryOver = line.ParseInts(1).First();
-                    }
+                    if (line.StartsWith("addx"))
+                        carryOver = line.ParseInts(1).First();
                 }
                 else
                 {
                     register += carryOver.Value;
                     carryOver = null;
                 }
-
-                var xPos = currentCycle.OneBasedModulo(40);
-                var sprite = Math.Abs(register - xPos) > 1 ? '.' : '#';
-                Console.Write(sprite);
-                if (xPos == 40)
-                    Console.WriteLine();
-
                 currentCycle++;
             }
+            return signalStrength.ToString();
+        }
 
-            Console.WriteLine();
+
+        public override async ValueTask<string> Solve_2()
+        {
             return "^= See top =^";
         }
     }
