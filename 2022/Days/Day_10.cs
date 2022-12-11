@@ -26,11 +26,13 @@ namespace AoC_2022.Days
             int? carryOver = null;
             var signalStrength = 0;
             var crtLine = new char[40];
+            Console.WriteLine();
 
             while (true)
             {
                 var crtPos = (currentCycle - 1) % 40;
-                crtLine[crtPos] = Math.Abs(register - crtPos) > 1 ? '.' : '#';
+                var sprite = Math.Abs(register - crtPos) > 1 ? ' ' : '█';
+                crtLine[crtPos] = sprite;
                 if (crtPos == 39)
                     Console.WriteLine(crtLine);
                 
@@ -52,6 +54,8 @@ namespace AoC_2022.Days
                 }
                 currentCycle++;
             }
+
+            Console.WriteLine();
             return signalStrength.ToString();
         }
 
