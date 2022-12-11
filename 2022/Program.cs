@@ -1,11 +1,22 @@
-﻿using AoCHelper;
+﻿using AoC_2022.Days;
+
+using AoCHelper;
 
 namespace AoC_2022
 {
-    static class Program
+    static partial class Program
     {
         static async Task Main()
         {
+            for (int i = 0; i < 10; i++)
+            {
+                var d = new Day_11();
+                await d.Solve_1();
+                await d.Solve_2();
+            }
+            await Task.Delay(100);
+            HelloFrom("sdfsdvf");
+
             await Solver.SolveLast(c => 
             {
                 c.ShowConstructorElapsedTime = true;
@@ -14,5 +25,7 @@ namespace AoC_2022
                 c.ClearConsole = false;
             });
         }
+
+        static partial void HelloFrom(string name);
     }
 }

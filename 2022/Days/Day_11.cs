@@ -39,6 +39,17 @@ namespace AoC_2022.Days
 
         public override async ValueTask<string> Solve_1()
         {
+            var input = File.ReadAllLines(InputFilePath);
+            var monkeys = new List<int>();
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (input[i].StartsWith("Monkey"))
+                { 
+                    var x = (new ArraySegment<string>(input, i, 6) as IList<string>);
+                    var y = x.Last();
+                }
+            }
+
             var items = MakeItems<Part1Item>();
 
             foreach (var item in items)

@@ -1,11 +1,11 @@
 ﻿namespace AoC_2022.Days
 {
-    public abstract class MonkeyItem
+    public abstract class MonkeyItem2
     {
         public int CurrentMonkey { get; set; }
         public long WorryLevel { get; set; }
 
-        public readonly int[] Inspections = new int[8];
+        public int[] Inspections { get; } = new int[8];
 
         public void PlayRounds(int rounds)
         {
