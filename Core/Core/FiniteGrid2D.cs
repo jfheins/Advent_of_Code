@@ -104,6 +104,7 @@ namespace Core
             return _values[wrapped];
 
         }
+        public Point FindFirst(TNode x) => _values.First(kvp => kvp.Value.Equals(x)).Key;
         public virtual (Point pos, TNode value) GetTupleWraparound(Point p) => GetTupleWraparound(p.X, p.Y);
         public virtual (Point pos, TNode value) GetTupleWraparound(int x, int y)
         {
