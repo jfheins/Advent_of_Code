@@ -15,9 +15,8 @@ namespace AoC_2022
                 await d.Solve_2();
             }
             await Task.Delay(100);
-            HelloFrom("sdfsdvf");
 
-            await Solver.SolveLast(c => 
+            await Solver.Solve<Day_11>(c => 
             {
                 c.ShowConstructorElapsedTime = true;
                 c.ShowTotalElapsedTimePerDay = true;
@@ -25,7 +24,5 @@ namespace AoC_2022
                 c.ClearConsole = false;
             });
         }
-
-        static partial void HelloFrom(string name);
     }
 }

@@ -1,55 +1,42 @@
 ﻿using Core;
 
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-
 using static MoreLinq.Extensions.PartialSortByExtension;
 
 namespace AoC_2022.Days
 {
     public sealed partial class Day_11 : BaseDay
     {
-        private readonly List<(int m, int[] items)> _initialItems = new() {
-            (0, new[] { 57 }),
-            (1, new[] { 58, 93, 88, 81, 72, 73, 65 }),
-            (2, new[] { 65, 95 }),
-            (3, new[] { 58, 80, 81, 83 }),
-            (4, new[] { 58, 89, 90, 96, 55 }),
-            (5, new[] { 66, 73, 87, 58, 62, 67 }),
-            (6, new[] { 85, 55, 89 }),
-            (7, new[] { 73, 80, 54, 94, 90, 52, 69, 58 }),
-        };
+        private readonly List<(int monkey, int worryLevel)> _initialItems = new();
 
         public Day_11()
         {
+            var input = File.ReadAllLines(InputFilePath);
+            for (int i = 0; i < input.Length - 1; i++)
+            {
+                if (input[i].StartsWith("Monkey"))
+                {
+                    var monkeyIdx = input[i].ParseInts(1).First();
+                    var items = input[i + 1].ParseInts();
+                    foreach (var item in items)
+                    {
+                        _initialItems.Add((monkeyIdx, item));
+                    }
+                }
+            }
         }
 
         private sealed class Part1Item : MonkeyItem
         {
-
             protected override long Simplify(long x) => x / 3;
         }
 
         private sealed class Part2Item : MonkeyItem
         {
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             protected override long Simplify(long x) => x % 9699690;
         }
 
         public override async ValueTask<string> Solve_1()
         {
-            var input = File.ReadAllLines(InputFilePath);
-            var monkeys = new List<int>();
-            for (int i = 0; i < input.Length; i++)
-            {
-                if (input[i].StartsWith("Monkey"))
-                { 
-                    var x = (new ArraySegment<string>(input, i, 6) as IList<string>);
-                    var y = x.Last();
-                }
-            }
-
             var items = MakeItems<Part1Item>();
 
             foreach (var item in items)
@@ -68,11 +55,11 @@ namespace AoC_2022.Days
             return MonkeyBusinessLevel(items).ToString();
         }
 
-        private IEnumerable<T> MakeItems<T>() where T: MonkeyItem, new()
+        private IEnumerable<T> MakeItems<T>() where T : MonkeyItem, new()
         {
             return _initialItems
-               .SelectMany(t => t.items.Select(wl => new T()
-               { CurrentMonkey = t.m, WorryLevel = wl })).ToList();
+                .Select(t => new T() { CurrentMonkey = t.monkey, WorryLevel = t.worryLevel })
+               .ToList();
         }
 
         private long MonkeyBusinessLevel(IEnumerable<MonkeyItem> items)

@@ -33,11 +33,13 @@ namespace SourceGenerator
                 return;
             }
 
-            var input = monkeyTextFile.GetText()!.Lines
-                .Select(it => it.Text.ToString())
-                .ToArray();
-            var monkeyCount = (input.Length + 1) / 7;
-            var roundCode = Transform(input);
+            var input = new List<string>();
+            foreach (var line in monkeyTextFile.GetText(context.CancellationToken)!.Lines)
+            {
+                input.Add(line.ToString());
+            }
+            var monkeyCount = (input.Count + 1) / 7;
+            var roundCode = Transform(input.ToArray());
 
             // Add the source code to the compilation
             context.AddSource($"MonkeyItem.g.cs", $$"""
@@ -50,7 +52,7 @@ namespace SourceGenerator
                 {
                     public int CurrentMonkey { get; set; }
                     public long WorryLevel { get; set; }
-                    public int[] Inspections  { get; } = new int[{{monkeyCount}}];
+                    public int[] Inspections  { get; } = new int[{{ monkeyCount }}];
 
                     protected abstract long Simplify(long x);
 
@@ -65,8 +67,7 @@ namespace SourceGenerator
                         CurrentMonkey = newMonkey;
                         Inspections[CurrentMonkey]++;
                         switch (CurrentMonkey)
-                        {
-                            {{roundCode}}
+                        { {{ roundCode }}
                         }
                     }
                 }
@@ -76,13 +77,13 @@ namespace SourceGenerator
         private string Transform(string[] input)
         {
             var monkeys = new List<MonkeyInfo>();
-            for (int i = 0; i < input.Length - 6; i++)
+            for (int i = 0; i < input.Length; i++)
             {
                 if (input[i].StartsWith("Monkey"))
                     monkeys.Add(ParseMonkey(new ArraySegment<string>(input, i, 6)));
             }
 
-            var code = new StringBuilder();
+            var code = new StringBuilder(Environment.NewLine);
             foreach (var monkey in monkeys)
             {
                 var trueCode = JumpCode(monkey.Idx, monkey.TrueMonkey);
