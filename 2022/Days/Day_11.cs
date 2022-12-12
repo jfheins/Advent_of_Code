@@ -1,10 +1,9 @@
 ﻿using Core;
-
 using static MoreLinq.Extensions.PartialSortByExtension;
 
 namespace AoC_2022.Days
 {
-    public sealed partial class Day_11 : BaseDay
+    public sealed class Day_11 : BaseDay
     {
         private readonly List<(int monkey, int worryLevel)> _initialItems = new();
 
@@ -55,11 +54,11 @@ namespace AoC_2022.Days
             return MonkeyBusinessLevel(items).ToString();
         }
 
-        private IEnumerable<T> MakeItems<T>() where T : MonkeyItem, new()
+        private List<T> MakeItems<T>() where T : MonkeyItem, new()
         {
             return _initialItems
                 .Select(t => new T() { CurrentMonkey = t.monkey, WorryLevel = t.worryLevel })
-               .ToList();
+                .ToList();
         }
 
         private long MonkeyBusinessLevel(IEnumerable<MonkeyItem> items)
@@ -67,7 +66,7 @@ namespace AoC_2022.Days
             var sums = items
                 .Select(it => it.Inspections)
                 .Aggregate((a, b) => a.Zip(b, (x, y) => x + y)
-                .ToArray());
+                    .ToArray());
             return sums.PartialSortBy(2, it => -it).Product();
         }
     }
