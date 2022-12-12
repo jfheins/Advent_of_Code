@@ -12,14 +12,12 @@ namespace AoC_2022.Days
             var input = File.ReadAllLines(InputFilePath);
             for (int i = 0; i < input.Length - 1; i++)
             {
-                if (input[i].StartsWith("Monkey"))
+                if (!input[i].StartsWith("Monkey")) continue;
+                var monkeyIdx = input[i].ParseInts(1).First();
+                var items = input[i + 1].ParseInts();
+                foreach (var item in items)
                 {
-                    var monkeyIdx = input[i].ParseInts(1).First();
-                    var items = input[i + 1].ParseInts();
-                    foreach (var item in items)
-                    {
-                        _initialItems.Add((monkeyIdx, item));
-                    }
+                    _initialItems.Add((monkeyIdx, item));
                 }
             }
         }
@@ -44,13 +42,10 @@ namespace AoC_2022.Days
             return MonkeyBusinessLevel(items).ToString();
         }
 
-
         public override async ValueTask<string> Solve_2()
         {
             var items = MakeItems<Part2Item>();
-
             _ = Parallel.ForEach(items, item => item.PlayRounds(10_000));
-
             return MonkeyBusinessLevel(items).ToString();
         }
 
@@ -65,8 +60,7 @@ namespace AoC_2022.Days
         {
             var sums = items
                 .Select(it => it.Inspections)
-                .Aggregate((a, b) => a.Zip(b, (x, y) => x + y)
-                    .ToArray());
+                .Aggregate((a, b) => a.Zip(b, (x, y) => x + y).ToArray());
             return sums.PartialSortBy(2, it => -it).Product();
         }
     }
