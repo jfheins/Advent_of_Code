@@ -29,7 +29,7 @@ namespace AoC_2022.Days
         {
             'S' => 'a',
             'E' => 'z',
-            char c => c
+            var c => c
         };
 
         public override async ValueTask<string> Solve_2()
