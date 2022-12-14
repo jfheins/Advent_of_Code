@@ -118,6 +118,11 @@ public static class LinqHelpers
     {
         return source.MinMax(x => x);
     }
+    public static (T min, T max) MinMax<T>(params T[] source)
+    {
+        Debug.Assert(source.Length > 0);
+        return source.MinMax(x => x)!;
+    }
 
     public static (TResult min, TResult max)? MinMax<T, TResult>(this IEnumerable<T> source,
         Func<T, TResult> selector)
