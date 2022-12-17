@@ -1,4 +1,6 @@
-﻿using System;
+﻿using static MoreLinq.Extensions.IndexExtension;
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -63,6 +65,11 @@ namespace Core
 
             Bounds = source.Bounds.InflatedCopy(inflation, inflation);
             Fill(p => source.GetValueOrDefault(p, fillValue));
+        }
+
+        public void EnlargeTop(int amount)
+        {
+            Bounds = new Rectangle(Bounds.X, Bounds.Y - amount, Bounds.Width, Bounds.Height + amount);
         }
 
         private void Fill(Func<Point, TNode> dataCallback)
@@ -207,6 +214,13 @@ namespace Core
             return dx.CartesianProduct(dy).Select(t => this[t.Item1, t.Item2]);
         }
 
+        public void SetRow(int y, IEnumerable<TNode> values)
+        {
+            foreach (var item in values.Index())
+            {
+                this[item.Key, y] = item.Value;
+            }
+        }
 
         private struct EnumWrapper : IEnumerator<(Point pos, TNode value)>
         {
