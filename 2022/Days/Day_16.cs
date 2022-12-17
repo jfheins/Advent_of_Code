@@ -76,8 +76,8 @@ namespace AoC_2022.Days
                     if (ii++ % 4000 == 0)
                         Console.WriteLine($"Max sum: {current.MaximumSum} after { current.Time }");
 
-                    var nodes = Expander(current).Where(it => !closedSet.Contains(it.node)).ToList();
-                    foreach (var (node, _) in nodes)
+                    var nodes = Expander(current).Where(it => !closedSet.Contains(it)).ToList();
+                    foreach (var node in nodes)
                     {
                         queue.Enqueue(node, -node.MaximumSum);
                         if (node.Name == "Z")
@@ -90,23 +90,11 @@ namespace AoC_2022.Days
                 }
             }
             return result!.Pressure.ToString();
-
-            //var d = new DijkstraSearch<Node>(Node.Comparer, Expander);
-            //
-
-            //var paths = d.FindAll(new Node("AA", ImmutableList<string>.Empty, 0, 0),
-            //    it => it.Name == "Z", null, 1200);
-
-            //var exPath = paths.Where(p => p.Steps[1].Name == "DD" && p.Steps[2].Name == "DD").First();
-
-            //var bestPath = paths.MaxBy(it => it.Target.Pressure);
-
-            //return bestPath.Target.Pressure.ToString();
         }
 
         int valveCount = 0;
 
-        private IEnumerable<(Node node, float cost)> Expander(Node node)
+        private IEnumerable<Node> Expander(Node node)
         {
             var rate = node.Rate;
 
@@ -119,7 +107,7 @@ namespace AoC_2022.Days
             {
                 var remTime = 30 - node.Time;
                 var finalPres = node.Pressure + rate * remTime;
-                yield return (new Node("Z", node.Open, finalPres, 30), remTime);
+                yield return new Node("Z", node.Open, finalPres, 30);
                 yield break;
             }
 
@@ -130,7 +118,7 @@ namespace AoC_2022.Days
                 {
                     var futurePressure = node.Pressure + rate * n.dist;
                     var r = new Node(n.name, node.Open, futurePressure, destSteps);
-                    yield return (r, n.dist);
+                    yield return r;
                 }
             }
             if (!node.Open.Contains(node.Name) && rates[node.Name] > 0)
@@ -138,9 +126,46 @@ namespace AoC_2022.Days
                 var futurePressure = node.Pressure + rate;
                 var dest = new Node(node.Name, node.Open.Add(node.Name), futurePressure,
                     node.Time + 1);
-                yield return (dest, 1);
+                yield return dest;
             }
         }
+
+        private IEnumerable<Node2> Expander2(Node2 node)
+        {
+            var rate = node.Rate;
+
+            if (node.Open.Count == valveCount || node.Time == 26)
+            {
+                var remTime = 26 - node.Time;
+                var finalPres = node.Pressure + rate * remTime;
+                yield return new Node2("Z", "Z", node.Open, finalPres, 26);
+                yield break;
+            }
+
+            var myOptions = neighbors[node.Name].ToList();
+            if (usefulValves.Contains(node.Name) && !node.Open.Contains(node.Name))
+                myOptions.Add(node.Name);
+
+            var eleOptions = neighbors[node.EleName].ToList();
+            if (usefulValves.Contains(node.EleName) && !node.Open.Contains(node.EleName))
+                eleOptions.Add(node.EleName);
+
+            var futurePressure = node.Pressure + rate;
+            foreach (var a in myOptions)
+            {
+                foreach (var b in eleOptions)
+                {
+                    var newOpen = node.Open;
+                    if(a == node.Name)
+                        newOpen = node.Open.Add(node.Name);
+                    if (b == node.EleName)
+                        newOpen = node.Open.Add(node.EleName);
+                    yield return new Node2(a, b, newOpen, futurePressure, node.Time + 1);
+                }
+            }
+        }
+
+        private record Node2(string Name, string EleName, ImmutableList<string> Open, int Pressure, int Time) : Node(Name, Open, Pressure, Time);
 
         private record Node(string Name, ImmutableList<string> Open, int Pressure, int Time)
         {
@@ -195,6 +220,22 @@ namespace AoC_2022.Days
                 return HashCode.Combine(obj.Name, obj.Pressure, obj.Open.Count);
             }
         }
+        private class CompareIgnoreSteps2 : IEqualityComparer<Node2>
+        {
+            public bool Equals(Node2? x, Node2? y)
+            {
+
+                return x.Name == y.Name
+                    && x.EleName == y.EleName
+                    && x.Pressure == y.Pressure
+                    && x.Rate == y.Rate;
+            }
+
+            public int GetHashCode([DisallowNull] Node2 obj)
+            {
+                return HashCode.Combine(obj.Name, obj.EleName, obj.Pressure, obj.Rate);
+            }
+        }
 
         //private long CalcFlow(ReadOnlyCollection<string> path)
         //{
@@ -232,7 +273,36 @@ namespace AoC_2022.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            return "-";
+            valveCount = usefulValves.Count;
+
+            var queue = new PriorityQueue<Node2, int>();
+            var start = new Node2("AA", "AA", ImmutableList<string>.Empty, 0, 0);
+            queue.Enqueue(start, -start.MaximumSum);
+            Node2? result = null;
+            var closedSet = new HashSet<Node2>(new CompareIgnoreSteps2());
+            var ii = 0;
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (closedSet.Add(current))
+                {
+                    if (ii++ % 40 == 0)
+                        Console.WriteLine($"Max sum: {current.MaximumSum} after {current.Time}");
+
+                    var nodes = Expander2(current).Where(it => !closedSet.Contains(it)).ToList();
+                    foreach (var node in nodes)
+                    {
+                        queue.Enqueue(node, -node.MaximumSum);
+                        if (node.Name == "Z")
+                        {
+                            result = node;
+                            queue.Clear();
+                            break;
+                        }
+                    }
+                }
+            }
+            return result!.Pressure.ToString(); // 2634 too low
         }
     }
 }

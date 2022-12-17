@@ -1,7 +1,5 @@
 ﻿using Core;
 
-using Spectre.Console;
-
 using System.Diagnostics;
 using System.Drawing;
 
