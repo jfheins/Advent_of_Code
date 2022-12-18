@@ -51,20 +51,6 @@ namespace AoC_2022.Days
             var floor = Enumerable.Range(0, 7).Select(x => new Point(x, 0));
             initialState = new State(0, 0, floor.ToArray(), 0);
         }
-        private record State(int RockIdx, int ShiftIdx, Point[] Tower, long Height);
-
-        private class SamePatternComparer : IEqualityComparer<State>
-        {
-            public bool Equals(State? x, State? y)
-            {
-                return x.RockIdx == y.RockIdx && x.ShiftIdx == y.ShiftIdx && Enumerable.SequenceEqual(x.Tower, y.Tower);
-            }
-
-            public int GetHashCode([DisallowNull] State obj)
-            {
-                return HashCode.Combine(obj.RockIdx, obj.ShiftIdx);
-            }
-        }
 
         public override async ValueTask<string> Solve_1()
         {
@@ -83,6 +69,7 @@ namespace AoC_2022.Days
             while (true)
             {
                 state = CalcOneBlock(state);
+                blocks++;
                 if (!seenStates.TryAdd(state, blocks))
                 {
                     var prevStep = seenStates[state];
@@ -91,7 +78,6 @@ namespace AoC_2022.Days
                     heightPerPeriod = state.Height - prevState.Height;
                     break;
                 }
-                blocks++;
             }
             // State = prelude + one period
             var remBlocks = 1000000000000L - blocks;
@@ -102,9 +88,20 @@ namespace AoC_2022.Days
             for (var i = 0; i < epilog; i++)
                 state = CalcOneBlock(state);
 
-            var totalHeight = heightPerPeriod * remPeriods + state.Height - 1;
-
+            var totalHeight = heightPerPeriod * remPeriods + state.Height;
             return totalHeight.ToString();
+        }
+
+        private record State(int RockIdx, int ShiftIdx, Point[] Tower, long Height);
+
+        private class SamePatternComparer : IEqualityComparer<State>
+        {
+            public bool Equals(State? x, State? y) => x.RockIdx == y.RockIdx
+                    && x.ShiftIdx == y.ShiftIdx
+                    && Enumerable.SequenceEqual(x.Tower, y.Tower);
+
+            public int GetHashCode([DisallowNull] State obj)
+                => HashCode.Combine(obj.RockIdx, obj.ShiftIdx);
         }
 
         private long CalculateMany(int blocks, State state)
