@@ -2,10 +2,6 @@
 using Core.Combinatorics;
 
 using System.Diagnostics;
-using System.Drawing;
-using System.Reflection.Metadata.Ecma335;
-
-using static MoreLinq.Extensions.IndexExtension;
 
 namespace AoC_2022.Days
 {
@@ -49,7 +45,7 @@ namespace AoC_2022.Days
             var ylen = (yrange.max - yrange.min + 2);
             var zlen = (zrange.max - zrange.min + 2);
 
-            var cubes = new bool[xlen+xrange.min, ylen+yrange.min, zlen+zrange.min]; // true = rock or outside, false = unknown
+            var cubes = new bool[xlen + xrange.min, ylen + yrange.min, zlen + zrange.min]; // true = rock or outside, false = unknown
             foreach (var c in rockCubes)
             {
                 cubes[c.X, c.Y, c.Z] = true;
@@ -73,7 +69,7 @@ namespace AoC_2022.Days
                             inner.Add(new Point3(x, y, z));
                     }
             var innerFaces = inner.Count * 6;
-            if(inner.Count >= 3)
+            if (inner.Count >= 3)
                 foreach (var pair in new FastCombinations<Point3>(inner, 2))
                 {
                     var dx = pair[0].X - pair[1].X;
@@ -85,14 +81,12 @@ namespace AoC_2022.Days
                     }
                 }
 
-            //var volume = (xrange.max - xrange.min + 1) * (yrange.max - yrange.min + 1) * (zrange.max - zrange.min + 1);
-            //var inner = volume - cubes.Count;
-            return (rockSides - innerFaces).ToString(); 
+            return (rockSides - innerFaces).ToString();
 
             bool InRange(Point3 p)
             {
                 return p.X >= 0 && p.Y >= 0 && p.Z >= 0
-                    && p.X <= xrange.max+1 && p.Y <= yrange.max+1 && p.Z <= zrange.max+1;
+                    && p.X <= xrange.max + 1 && p.Y <= yrange.max + 1 && p.Z <= zrange.max + 1;
             }
         }
 
@@ -105,22 +99,6 @@ namespace AoC_2022.Days
             yield return p.TranslateBy(0, -1, 0);
             yield return p.TranslateBy(0, 0, 1);
             yield return p.TranslateBy(0, 0, -1);
-
-        }
-        private IEnumerable<Point3> Get26N(Point3 p)
-        {
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                for (int dy = -1; dy <= 1; dy++)
-                {
-                    for (int dz = -1; dz <= 1; dz++)
-                    {
-                        if (dx == 0 && dy == 0 && dz == 0)
-                            continue;
-                        yield return p.TranslateBy(dx, dy, dz);
-                    }
-                }
-            }
 
         }
     }
