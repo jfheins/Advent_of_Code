@@ -67,9 +67,28 @@ namespace Core
             Fill(p => source.GetValueOrDefault(p, fillValue));
         }
 
+        public IEnumerable<Point> Keys => _values.Keys;
+
         public void EnlargeTop(int amount)
         {
             Bounds = new Rectangle(Bounds.X, Bounds.Y - amount, Bounds.Width, Bounds.Height + amount);
+        }
+
+        public void SizeToFit()
+        {
+            var (minX, maxX, minY, maxY) = (int.MaxValue, int.MinValue, int.MaxValue, int.MinValue);
+            foreach (var p in _values.Keys)
+            {
+                if(p.X < minX)
+                    minX = p.X;
+                if(p.X > maxX)
+                    maxX = p.X;
+                if(p.Y < minY)
+                    minY = p.Y;
+                if(p.Y > maxY)
+                    maxY = p.Y;
+            }
+            _bounds = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         }
 
         private void Fill(Func<Point, TNode> dataCallback)
@@ -140,17 +159,19 @@ namespace Core
                     yield return _values.GetValueOrDefault(pos.MoveBy(dx, dy), defaultValue);
         }
 
-        public override string ToString()
+        public override string ToString() => ToString('?');
+        public string ToString(char filler)
         {
             var sb = new StringBuilder();
-            for (int y = Bounds.Top; y < Bounds.Height; y++)
+            for (int y = Bounds.Top; y < Bounds.Bottom; y++)
             {
-                for (int x = Bounds.Left; x < Bounds.Width; x++)
+                sb.AppendFormat("{0,5}|", y);
+                for (int x = Bounds.Left; x < Bounds.Right; x++)
                 {
                     if (_values.TryGetValue(new Point(x, y), out var v))
                         sb.Append(v.ToString());
                     else
-                        sb.Append('?');
+                        sb.Append(filler);
                 }
                 _ = sb.AppendLine();
             }
@@ -222,6 +243,27 @@ namespace Core
             }
         }
 
+        public IEnumerable<TNode> GetRow(int y, TNode defaultValue)
+        {
+            return Enumerable.Range(Bounds.Left, Bounds.Width)
+                .Select(x => GetValueOrDefault(new Point(x, y), defaultValue));
+        }
+
+        public IEnumerable<int> GetRowIndices() => Enumerable.Range(Bounds.Top, Bounds.Height);
+
+        public void RemoveAt(Point oldpoint)
+        {
+            _ =_values.Remove(oldpoint);
+        }
+
+        public void RemoveWhere(Func<Point, bool> predicate)
+        {
+            foreach(var item in _values.Keys.Where(predicate).ToList())
+            {
+                _values.Remove(item);
+            }
+        }
+
         private struct EnumWrapper : IEnumerator<(Point pos, TNode value)>
         {
             private readonly IEnumerator<KeyValuePair<Point, TNode>> _enumerator;
@@ -242,5 +284,4 @@ namespace Core
             public void Reset() => _enumerator.Reset();
         }
     }
-
 }
