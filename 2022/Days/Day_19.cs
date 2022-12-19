@@ -36,9 +36,19 @@ namespace AoC_2022.Days
             Vector<int> obsidianCost,
             Vector<int> geodeCost);
 
-        private record State(Vector<int> Robots, Vector<int> Ress, int RemTime, Blueprint Bp, bool[] buyOptions)
+        [Flags]
+        private enum BuyOptions : byte
         {
-            public int GeodBots() => Robots[3];
+            Ore = 1,
+            Clay = 2,
+            Obs = 4,
+            Geode = 8,
+            All = 15
+        }
+
+        private record struct State(Vector<int> Robots, Vector<int> Ress, int RemTime, Blueprint Bp, BuyOptions buyOptions)
+        {
+            public int GeodeBots() => Robots[3];
         }
 
         public override async ValueTask<string> Solve_1()
@@ -46,28 +56,42 @@ namespace AoC_2022.Days
             return _input.AsParallel().Sum(CalcQuality).ToString();
         }
 
+        public override async ValueTask<string> Solve_2()
+        {
+            return _input.Take(3).Select(bp => CalcGeodes(bp, 32)).Product().ToString();
+        }
+
         private int CalcQuality(Blueprint blueprint)
+        {
+            return blueprint.bpId * CalcGeodes(blueprint, 24);
+        }
+
+        private int CalcGeodes(Blueprint blueprint, int time)
         {
             var states = new HashSet<State>();
 
             var initRobots = new Vector<int>(new int[8] { 1, 0, 0, 0, 0, 0, 0, 0 });
             var ress = new Vector<int>(new int[8] { 0, 0, 0, 0, 0, 0, 0, 0 });
 
-            _ = states.Add(new State(initRobots, ress, 24, blueprint, new bool[] { true, true, true, false }));
+            _ = states.Add(new State(initRobots, ress, time, blueprint, BuyOptions.Ore | BuyOptions.Clay | BuyOptions.Obs));
 
-            for (int i = 0; i < 24; i++)
+            for (int i = 0; i < time; i++)
             {
-                states = states.SelectMany(Expand).ToHashSet();
+                var next = new List<State>(states.Count * 2);
+                next.AddRange(states.SelectMany(Expand));
+                var maxBots = next.Max(it => it.GeodeBots());
+                _ = next.RemoveAll(it => it.GeodeBots() < maxBots - 1);
+                states = next.ToHashSet();
+                Console.WriteLine(i);
             }
-            var max = states.Max(s => s.Ress[3]);
-            return blueprint.bpId * max;
+            var maxGeodes = states.Max(s => s.Ress[3]);
+            return maxGeodes;
         }
 
         private Vector<int> One = new Vector<int>(new int[] { 1, 0, 0, 0, 0, 0, 0, 0 });
         private Vector<int> Two = new Vector<int>(new int[] { 0, 1, 0, 0, 0, 0, 0, 0 });
         private Vector<int> Three = new Vector<int>(new int[] { 0, 0, 1, 0, 0, 0, 0, 0 });
         private Vector<int> Four = new Vector<int>(new int[] { 0, 0, 0, 1, 0, 0, 0, 0 });
-        private bool[] All = new bool[4] { true, true, true, true };
 
         private IEnumerable<State> Expand(State s)
         {
@@ -90,27 +114,28 @@ namespace AoC_2022.Days
             var canAffordClay = s.Ress[0] >= s.Bp.ClayCost[0];
             var canAffordOre = s.Ress[0] >= s.Bp.OreCost[0];
 
+            var maxCosts = Vector.Max(Vector.Max(s.Bp.OreCost, s.Bp.ClayCost), Vector.Max(s.Bp.obsidianCost, s.Bp.geodeCost));
+            var canUse = Vector.LessThan(s.Robots, maxCosts);
 
-            if (canAffordGeode && s.buyOptions[3])
-                yield return s with { Ress = nextRess - s.Bp.geodeCost, Robots = s.Robots + Four, RemTime = s.RemTime - 1, buyOptions = All };
+            if (canAffordGeode && s.buyOptions.HasFlag(BuyOptions.Geode))
+                yield return s with { Ress = nextRess - s.Bp.geodeCost, Robots = s.Robots + Four, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
 
-            if (canAffordObs && s.buyOptions[2]) // Obs robot
-                yield return s with { Ress = nextRess - s.Bp.obsidianCost, Robots = s.Robots + Three, RemTime = s.RemTime - 1, buyOptions = All };
+            if (canAffordObs && s.buyOptions.HasFlag(BuyOptions.Obs) && canUse[2] != 0) // Obs robot
+                yield return s with { Ress = nextRess - s.Bp.obsidianCost, Robots = s.Robots + Three, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
 
-            if (canAffordClay && s.buyOptions[1]) // Clay robot
-                yield return s with { Ress = nextRess - s.Bp.ClayCost, Robots = s.Robots + Two, RemTime = s.RemTime - 1, buyOptions = All };
+            if (canAffordClay && s.buyOptions.HasFlag(BuyOptions.Clay) && canUse[1] != 0) // Clay robot
+                yield return s with { Ress = nextRess - s.Bp.ClayCost, Robots = s.Robots + Two, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
 
-            if (canAffordOre && s.buyOptions[0]) // Build ore robot
-                yield return s with { Ress = nextRess - s.Bp.OreCost, Robots = s.Robots + One, RemTime = s.RemTime - 1, buyOptions = All };
+            if (canAffordOre && s.buyOptions.HasFlag(BuyOptions.Ore) && canUse[0] != 0) // Build ore robot
+                yield return s with { Ress = nextRess - s.Bp.OreCost, Robots = s.Robots + One, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
 
+            var optionsAfterWait = MakeOption(!canAffordGeode, BuyOptions.Geode)
+                | MakeOption(!canAffordObs, BuyOptions.Obs)
+                | MakeOption(!canAffordClay, BuyOptions.Clay)
+                | MakeOption(!canAffordOre, BuyOptions.Ore);
+            yield return s with { Ress = nextRess, RemTime = s.RemTime - 1, buyOptions = optionsAfterWait }; // Wait
 
-            yield return s with { Ress = nextRess, RemTime = s.RemTime - 1, buyOptions = new bool[] { !canAffordOre, !canAffordClay, !canAffordObs, !canAffordGeode } }; // Wait
-
-        }
-
-        public override async ValueTask<string> Solve_2()
-        {
-            return "00";
+            static BuyOptions MakeOption(bool enable, BuyOptions o) => enable ? o : 0;
         }
     }
 }
