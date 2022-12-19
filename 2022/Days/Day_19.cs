@@ -3,11 +3,7 @@
 using Spectre.Console;
 
 using System.Data;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using System.Runtime.CompilerServices;
-
-using static MoreLinq.Extensions.ZipLongestExtension;
 
 namespace AoC_2022.Days
 {
@@ -58,7 +54,7 @@ namespace AoC_2022.Days
 
         public override async ValueTask<string> Solve_2()
         {
-            return _input.Take(3).Select(bp => CalcGeodes(bp, 32)).Product().ToString();
+            return _input.Take(3).AsParallel().Select(bp => CalcGeodes(bp, 32)).Product().ToString();
         }
 
         private int CalcQuality(Blueprint blueprint)
@@ -82,16 +78,15 @@ namespace AoC_2022.Days
                 var maxBots = next.Max(it => it.GeodeBots());
                 _ = next.RemoveAll(it => it.GeodeBots() < maxBots - 1);
                 states = next.ToHashSet();
-                Console.WriteLine(i);
             }
             var maxGeodes = states.Max(s => s.Ress[3]);
             return maxGeodes;
         }
 
-        private Vector<int> One = new Vector<int>(new int[] { 1, 0, 0, 0, 0, 0, 0, 0 });
-        private Vector<int> Two = new Vector<int>(new int[] { 0, 1, 0, 0, 0, 0, 0, 0 });
-        private Vector<int> Three = new Vector<int>(new int[] { 0, 0, 1, 0, 0, 0, 0, 0 });
-        private Vector<int> Four = new Vector<int>(new int[] { 0, 0, 0, 1, 0, 0, 0, 0 });
+        private readonly Vector<int> One = new Vector<int>(new int[] { 1, 0, 0, 0, 0, 0, 0, 0 });
+        private readonly Vector<int> Two = new Vector<int>(new int[] { 0, 1, 0, 0, 0, 0, 0, 0 });
+        private readonly Vector<int> Three = new Vector<int>(new int[] { 0, 0, 1, 0, 0, 0, 0, 0 });
+        private readonly Vector<int> Four = new Vector<int>(new int[] { 0, 0, 0, 1, 0, 0, 0, 0 });
 
         private IEnumerable<State> Expand(State s)
         {
@@ -108,25 +103,26 @@ namespace AoC_2022.Days
                 yield return s with { Ress = nextRess, RemTime = 0 };
                 yield break;
             }
+            var True = -Vector<int>.One;
 
-            var canAffordGeode = s.Ress[0] >= s.Bp.geodeCost[0] && s.Ress[2] >= s.Bp.geodeCost[2];
-            var canAffordObs = s.Ress[0] >= s.Bp.obsidianCost[0] && s.Ress[1] >= s.Bp.obsidianCost[1];
-            var canAffordClay = s.Ress[0] >= s.Bp.ClayCost[0];
-            var canAffordOre = s.Ress[0] >= s.Bp.OreCost[0];
+            var canAffordGeode = Vector.GreaterThanOrEqual(s.Ress, s.Bp.geodeCost) == True;
+            var canAffordObs = Vector.GreaterThanOrEqual(s.Ress, s.Bp.obsidianCost) == True;
+            var canAffordClay = Vector.GreaterThanOrEqual(s.Ress, s.Bp.ClayCost) == True;
+            var canAffordOre = Vector.GreaterThanOrEqual(s.Ress, s.Bp.OreCost) == True;
 
             var maxCosts = Vector.Max(Vector.Max(s.Bp.OreCost, s.Bp.ClayCost), Vector.Max(s.Bp.obsidianCost, s.Bp.geodeCost));
-            var canUse = Vector.LessThan(s.Robots, maxCosts);
+            var canUse = Vector.LessThan(s.Robots, maxCosts); // if robots = max cost, no use for added bots
 
             if (canAffordGeode && s.buyOptions.HasFlag(BuyOptions.Geode))
                 yield return s with { Ress = nextRess - s.Bp.geodeCost, Robots = s.Robots + Four, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
 
-            if (canAffordObs && s.buyOptions.HasFlag(BuyOptions.Obs) && canUse[2] != 0) // Obs robot
+            if (canAffordObs && canUse[2] != 0 && s.buyOptions.HasFlag(BuyOptions.Obs)) // Obs robot
                 yield return s with { Ress = nextRess - s.Bp.obsidianCost, Robots = s.Robots + Three, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
 
-            if (canAffordClay && s.buyOptions.HasFlag(BuyOptions.Clay) && canUse[1] != 0) // Clay robot
+            if (canAffordClay && canUse[1] != 0 && s.buyOptions.HasFlag(BuyOptions.Clay)) // Clay robot
                 yield return s with { Ress = nextRess - s.Bp.ClayCost, Robots = s.Robots + Two, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
 
-            if (canAffordOre && s.buyOptions.HasFlag(BuyOptions.Ore) && canUse[0] != 0) // Build ore robot
+            if (canAffordOre && canUse[0] != 0 && s.buyOptions.HasFlag(BuyOptions.Ore)) // Build ore robot
                 yield return s with { Ress = nextRess - s.Bp.OreCost, Robots = s.Robots + One, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
 
             var optionsAfterWait = MakeOption(!canAffordGeode, BuyOptions.Geode)
