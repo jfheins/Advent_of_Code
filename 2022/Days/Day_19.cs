@@ -3,7 +3,7 @@
 using Spectre.Console;
 
 using System.Data;
-using System.Numerics;
+using System.Runtime.Intrinsics;
 
 namespace AoC_2022.Days
 {
@@ -17,20 +17,21 @@ namespace AoC_2022.Days
             _input = input.SelectList(ParseLine);
         }
 
-        private Blueprint ParseLine(int[] x)
+        private Blueprint ParseLine(int[] ints)
         {
-            var ore = new Vector<int>(new int[] { x[1], 0, 0, 0, 0, 0, 0, 0 });
-            var clay = new Vector<int>(new int[] { x[2], 0, 0, 0, 0, 0, 0, 0 });
-            var obs = new Vector<int>(new int[] { x[3], x[4], 0, 0, 0, 0, 0, 0 });
-            var geode = new Vector<int>(new int[] { x[5], 0, x[6], 0, 0, 0, 0, 0 });
+            var x = ints.SelectArray(it => (short)it);
+            var ore = Vector64.Create(new short[] { x[1], 0, 0, 0 });
+            var clay = Vector64.Create(new short[] { x[2], 0, 0, 0 });
+            var obs = Vector64.Create(new short[] { x[3], x[4], 0, 0 });
+            var geode = Vector64.Create(new short[] { x[5], 0, x[6], 0 });
             return new Blueprint(x[0], ore, clay, obs, geode);
         }
 
         private record Blueprint(int bpId,
-            Vector<int> OreCost,
-            Vector<int> ClayCost,
-            Vector<int> obsidianCost,
-            Vector<int> geodeCost);
+            Vector64<short> OreCost,
+            Vector64<short> ClayCost,
+            Vector64<short> ObsidianCost,
+            Vector64<short> GeodeCost);
 
         [Flags]
         private enum BuyOptions : byte
@@ -42,7 +43,7 @@ namespace AoC_2022.Days
             All = 15
         }
 
-        private record struct State(Vector<int> Robots, Vector<int> Ress, int RemTime, Blueprint Bp, BuyOptions buyOptions)
+        private record struct State(Vector64<short> Robots, Vector64<short> Ress, int RemTime, Blueprint Bp, BuyOptions buyOptions)
         {
             public int GeodeBots() => Robots[3];
         }
@@ -66,8 +67,8 @@ namespace AoC_2022.Days
         {
             var states = new HashSet<State>();
 
-            var initRobots = new Vector<int>(new int[8] { 1, 0, 0, 0, 0, 0, 0, 0 });
-            var ress = new Vector<int>(new int[8] { 0, 0, 0, 0, 0, 0, 0, 0 });
+            var initRobots = Vector64.Create(new short[4] { 1, 0, 0, 0 });
+            var ress = Vector64.Create(new short[4] { 0, 0, 0, 0 });
 
             _ = states.Add(new State(initRobots, ress, time, blueprint, BuyOptions.Ore | BuyOptions.Clay | BuyOptions.Obs));
 
@@ -83,10 +84,10 @@ namespace AoC_2022.Days
             return maxGeodes;
         }
 
-        private readonly Vector<int> One = new Vector<int>(new int[] { 1, 0, 0, 0, 0, 0, 0, 0 });
-        private readonly Vector<int> Two = new Vector<int>(new int[] { 0, 1, 0, 0, 0, 0, 0, 0 });
-        private readonly Vector<int> Three = new Vector<int>(new int[] { 0, 0, 1, 0, 0, 0, 0, 0 });
-        private readonly Vector<int> Four = new Vector<int>(new int[] { 0, 0, 0, 1, 0, 0, 0, 0 });
+        private readonly Vector64<short> One = Vector64.Create(new short[] { 1, 0, 0, 0 });
+        private readonly Vector64<short> Two = Vector64.Create(new short[] { 0, 1, 0, 0 });
+        private readonly Vector64<short> Three = Vector64.Create(new short[] { 0, 0, 1, 0});
+        private readonly Vector64<short> Four = Vector64.Create(new short[] { 0, 0, 0, 1 });
 
         private IEnumerable<State> Expand(State s)
         {
@@ -103,21 +104,21 @@ namespace AoC_2022.Days
                 yield return s with { Ress = nextRess, RemTime = 0 };
                 yield break;
             }
-            var True = -Vector<int>.One;
+            var True = Vector64<short>.AllBitsSet;
 
-            var canAffordGeode = Vector.GreaterThanOrEqual(s.Ress, s.Bp.geodeCost) == True;
-            var canAffordObs = Vector.GreaterThanOrEqual(s.Ress, s.Bp.obsidianCost) == True;
-            var canAffordClay = Vector.GreaterThanOrEqual(s.Ress, s.Bp.ClayCost) == True;
-            var canAffordOre = Vector.GreaterThanOrEqual(s.Ress, s.Bp.OreCost) == True;
+            var canAffordGeode = Vector64.GreaterThanOrEqual(s.Ress, s.Bp.GeodeCost) == True;
+            var canAffordObs = Vector64.GreaterThanOrEqual(s.Ress, s.Bp.ObsidianCost) == True;
+            var canAffordClay = Vector64.GreaterThanOrEqual(s.Ress, s.Bp.ClayCost) == True;
+            var canAffordOre = Vector64.GreaterThanOrEqual(s.Ress, s.Bp.OreCost) == True;
 
-            var maxCosts = Vector.Max(Vector.Max(s.Bp.OreCost, s.Bp.ClayCost), Vector.Max(s.Bp.obsidianCost, s.Bp.geodeCost));
-            var canUse = Vector.LessThan(s.Robots, maxCosts); // if robots = max cost, no use for added bots
+            var maxCosts = Vector64.Max(Vector64.Max(s.Bp.OreCost, s.Bp.ClayCost), Vector64.Max(s.Bp.ObsidianCost, s.Bp.GeodeCost));
+            var canUse = Vector64.LessThan(s.Robots, maxCosts); // if robots = max cost, no use for added bots
 
             if (canAffordGeode && s.buyOptions.HasFlag(BuyOptions.Geode))
-                yield return s with { Ress = nextRess - s.Bp.geodeCost, Robots = s.Robots + Four, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
+                yield return s with { Ress = nextRess - s.Bp.GeodeCost, Robots = s.Robots + Four, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
 
             if (canAffordObs && canUse[2] != 0 && s.buyOptions.HasFlag(BuyOptions.Obs)) // Obs robot
-                yield return s with { Ress = nextRess - s.Bp.obsidianCost, Robots = s.Robots + Three, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
+                yield return s with { Ress = nextRess - s.Bp.ObsidianCost, Robots = s.Robots + Three, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
 
             if (canAffordClay && canUse[1] != 0 && s.buyOptions.HasFlag(BuyOptions.Clay)) // Clay robot
                 yield return s with { Ress = nextRess - s.Bp.ClayCost, Robots = s.Robots + Two, RemTime = s.RemTime - 1, buyOptions = BuyOptions.All };
