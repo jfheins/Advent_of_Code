@@ -8,6 +8,7 @@ namespace AoC_2022.Days
     {
         private static readonly List<Valve> _valves = new();
         private readonly int StartPoint;
+        private readonly BreadthFirstSearch<State> _bfs;
 
         public Day_16()
         {
@@ -36,25 +37,26 @@ namespace AoC_2022.Days
                     valve.Distances.Add((otherIdx, path.Length));
                 }
             }
+            _bfs = new BreadthFirstSearch<State>(null, Expander) { PerformParallelSearch = false };
         }
 
         public override async ValueTask<string> Solve_1()
         {
-            var bfs = new BreadthFirstSearch<State>(null, Expander) { PerformParallelSearch = false };
-            var timeIsUp = bfs.FindAll(new State(StartPoint, new BitVector32(), 0, 0, 30), n => n.RemainingTime == 0);
-
-            return timeIsUp.Max(path => path.Target.Pressure).ToString();
+            return BfsBestPath(30).Pressure.ToString();
         }
 
         public override async ValueTask<string> Solve_2()
         {
-            var bfs = new BreadthFirstSearch<State>(null, Expander) { PerformParallelSearch = false };
-            var myValves = bfs.FindAll(new State(StartPoint, new BitVector32(), 0, 0, 26), n => n.RemainingTime == 0).MaxBy(it => it.Target.Pressure)!.Target;
-            var eleValves = bfs.FindAll(new State(StartPoint, myValves.Open, 0, 0, 26), n => n.RemainingTime == 0).MaxBy(it => it.Target.Pressure)!.Target;
-
+            var myValves = BfsBestPath(26);
+            var eleValves = BfsBestPath(26, myValves.Open);
             var totalPressure = myValves.Pressure + eleValves.Pressure;
-
             return totalPressure.ToString();
+        }
+
+        private State BfsBestPath(int time, BitVector32 openValves = default)
+        {
+            var start = new State(StartPoint, openValves, 0, 0, time);
+            return _bfs.FindAll(start, n => n.RemainingTime == 0).MaxBy(it => it.Target.Pressure)!.Target;
         }
 
         private record Valve(string Name, int Rate)
