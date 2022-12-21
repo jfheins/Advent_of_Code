@@ -105,6 +105,12 @@ public static class LinqHelpers
             x += ringSize;
         return x % ringSize;
     }
+    public static long Modulo(this long x, long ringSize)
+    {
+        while (x < 0)
+            x += ringSize;
+        return x % ringSize;
+    }
 
     public static int OneBasedModulo(this int x, int ringSize) => (x + ringSize - 1) % ringSize + 1;
     public static long OneBasedModulo(this long x, int ringSize) => (x + ringSize - 1) % ringSize + 1;
