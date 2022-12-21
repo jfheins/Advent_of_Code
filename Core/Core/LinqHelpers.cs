@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
@@ -28,6 +30,21 @@ public static class LinqHelpers
         return source.Select((value, index) => new { value, index })
             .Where(x => predicate(x.value))
             .Select(x => x.index);
+    }
+
+    public static IEnumerable<int> IndexWhereOn(this BitVector32 source)
+    {
+        var data = source.Data;
+        for (int i = 0; i < 32; i++)
+        {
+            if ((data & (1 << i)) != 0)
+                yield return i;
+        }
+    }
+
+    public static int PopCount(this BitVector32 source)
+    {
+        return BitOperations.PopCount((uint)source.Data);
     }
 
     public static IEnumerable<T> ExceptFor<T>(this IEnumerable<T> source, T exception)
@@ -162,7 +179,7 @@ public static class LinqHelpers
     {
         for (int i = 0; i < source.Count - 1; i++)
         {
-            for (int j = i+1; j < source.Count; j++)
+            for (int j = i + 1; j < source.Count; j++)
             {
                 if (source[i].Equals(source[j]))
                     return false;
