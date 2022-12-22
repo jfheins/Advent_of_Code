@@ -1,4 +1,6 @@
-﻿using AoCHelper;
+﻿using AoC_2022.Days;
+
+using AoCHelper;
 
 namespace AoC_2022
 {
@@ -6,7 +8,7 @@ namespace AoC_2022
     {
         static async Task Main()
         {
-            await Solver.SolveLast(c => 
+            await Solver.Solve<Day_22>(c => 
             {
                 c.ShowConstructorElapsedTime = true;
                 c.ShowTotalElapsedTimePerDay = true;

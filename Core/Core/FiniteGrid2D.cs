@@ -91,7 +91,7 @@ namespace Core
             _bounds = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         }
 
-        private void Fill(Func<Point, TNode> dataCallback)
+        private void Fill(Func<Point, TNode?> dataCallback)
         {
             for (int y = Bounds.Left; y < Bounds.Height; y++)
             {
@@ -100,7 +100,20 @@ namespace Core
                     var p = new Point(x, y);
                     var val = dataCallback(p);
                     if (val != null)
-                        _values[p] = dataCallback(p);
+                        _values[p] = val;
+                }
+            }
+        }
+
+        public void FillGaps(TNode fillValue)
+        {
+            for (int y = Bounds.Left; y < Bounds.Height; y++)
+            {
+                for (int x = Bounds.Top; x < Bounds.Width; x++)
+                {
+                    var p = new Point(x, y);
+                    if (!_values.ContainsKey(p))
+                        _values[p] = fillValue;
                 }
             }
         }
@@ -249,11 +262,25 @@ namespace Core
                 .Select(x => GetValueOrDefault(new Point(x, y), defaultValue));
         }
 
+        public IEnumerable<(Point pos, TNode value)> GetRowTuple(int y, TNode defaultValue)
+        {
+            return Enumerable.Range(Bounds.Left, Bounds.Width)
+                .Select(x => new Point(x, y))
+                .Select(p => (p, GetValueOrDefault(p, defaultValue)));
+        }
+
         public IEnumerable<int> GetRowIndices() => Enumerable.Range(Bounds.Top, Bounds.Height);
 
         public void RemoveAt(Point oldpoint)
         {
             _ =_values.Remove(oldpoint);
+        }
+
+        public IEnumerable<(Point pos, TNode value)> GetColTuple(int x, TNode defaultValue)
+        {
+            return Enumerable.Range(Bounds.Top, Bounds.Height)
+                .Select(y => new Point(x, y))
+                .Select(p => (p, GetValueOrDefault(p, defaultValue)));
         }
 
         public void RemoveWhere(Func<Point, bool> predicate)
