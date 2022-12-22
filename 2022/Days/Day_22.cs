@@ -134,7 +134,7 @@ namespace AoC_2022.Days
                     if (exitTile == (1, 1))
                     {
                         nextFace = Rotate(Turn.CounterCl);
-                        nextPos = FlipXYCC(Translate(1, -1));
+                        nextPos = FlipEdgeRight(Translate(1, -1), face);// FlipXYCC(Translate(1, -1));
                     }
                     if (exitTile == (1, 2))
                     {
@@ -144,7 +144,7 @@ namespace AoC_2022.Days
                     if (exitTile == (0, 3))
                     {
                         nextFace = Rotate(Turn.CounterCl);
-                        nextPos = FlipXYCC(Translate(1, -1));
+                        nextPos = FlipEdgeRight(Translate(1, -1), face);
                     }
                 }
                 if (face == Direction.Left)
@@ -157,7 +157,7 @@ namespace AoC_2022.Days
                     if (exitTile == (1, 1))
                     {
                         nextFace = Rotate(Turn.CounterCl);
-                        nextPos = FlipXYCC(Translate(-1, 1));
+                        nextPos = FlipEdgeRight(Translate(-1, 1), face);
                     }
                     if (exitTile == (0, 2))
                     {
@@ -167,7 +167,7 @@ namespace AoC_2022.Days
                     if (exitTile == (0, 3))
                     {
                         nextFace = Rotate(Turn.CounterCl);
-                        nextPos = FlipXYCC(Translate(1, -3));
+                        nextPos = FlipEdgeRight(Translate(1, -3), face);
                     }
                 }
 
@@ -175,18 +175,18 @@ namespace AoC_2022.Days
                 {
                     if (exitTile == (0, 3))
                     {
-                        nextFace = Rotate(Turn.Twice);
-                        nextPos = TurnXY(Translate(2, -3));
+                        nextFace = face;
+                        nextPos = FlipY(Translate(2, -3));
                     }
                     if (exitTile == (1, 2))
                     {
                         nextFace = Rotate(Turn.Clockwise);
-                        nextPos = FlipXYClockwise(Translate(-1, 1));
+                        nextPos = FlipEdgeLeft(Translate(-1, 1), face);
                     }
                     if (exitTile == (2, 0))
                     {
                         nextFace = Rotate(Turn.Clockwise);
-                        nextPos = FlipXYClockwise(Translate(-1, 1));
+                        nextPos = FlipEdgeLeft(Translate(-1, 1), face);
                     }
                 }
 
@@ -195,17 +195,17 @@ namespace AoC_2022.Days
                     if (exitTile == (0, 2))
                     {
                         nextFace = Rotate(Turn.Clockwise);
-                        nextPos = FlipXYClockwise(Translate(1, -1));
+                        nextPos = FlipEdgeLeft(Translate(1, -1), face);
                     }
                     if (exitTile == (1, 0))
                     {
                         nextFace = Rotate(Turn.Clockwise);
-                        nextPos = FlipXYClockwise(Translate(-1, 3));
+                        nextPos = FlipEdgeLeft(Translate(-1, 3), face);
                     }
                     if (exitTile == (2, 0))
                     {
-                        nextFace = Rotate(Turn.Twice);
-                        nextPos = TurnXY(Translate(-2, 3));
+                        nextFace = face;
+                        nextPos = FlipY(Translate(-2, 3));
                     }
                 }
                 if (_map[nextPos] == '#')
@@ -219,21 +219,49 @@ namespace AoC_2022.Days
 
             Direction Rotate(Turn t) => (Direction)((int)face + (int)t).Modulo(4);
             Point Translate(int dx, int dy) => pos.MoveBy(dx * 50, dy * 50);
+
+            Point FlipEdgeRight(Point p, Direction edge)
+            {
+                var xoff = p.X % 50;
+                var yoff = p.Y % 50;
+                if (edge == Direction.Right || edge == Direction.Left)
+                {
+                    return new Point(p.X - xoff + yoff, p.Y - yoff + xoff);
+                }
+                else
+                {
+                    // up becomes right (yoff = 0;
+                    return new Point(p.X - xoff + 49 - yoff, p.Y - yoff + 49 - xoff);
+                }
+            }
+            Point FlipEdgeLeft(Point p, Direction edge)
+            {
+                var xoff = p.X % 50;
+                var yoff = p.Y % 50;
+                if (edge == Direction.Down || edge == Direction.Up)
+                {
+                    return new Point(p.X - xoff + yoff, p.Y - yoff + xoff);
+                }
+                else
+                {
+                    // left becomes bottom (x=0 => y=49)
+                    // right becomes up (x=49 => y = 0)
+                    return new Point(p.X - xoff + 49 - yoff, p.Y - yoff + 49 - xoff);
+                }
+            }
+
             Point FlipY(Point p)
             {
                 var offs = p.Y % 50;
                 var xx = 49 - offs;
                 return new Point(p.X, p.Y - offs + xx);
             }
-            Point FlipXYCC(Point p)
+            Point TurnXY(Point p)
             {
                 var xoff = p.X % 50;
                 var yoff = p.Y % 50;
-                return new Point(p.X - xoff + yoff, p.Y - yoff + xoff);
+                return new Point(p.X - xoff + 49 - xoff, p.Y - yoff + 49 - yoff);
             }
-            Point FlipXYClockwise(Point p) => FlipXYCC(FlipXYCC(FlipXYCC(p)));
-            Point TurnXY(Point p) => FlipXYCC(FlipXYCC(p));
         }
-
     }
 }
