@@ -51,5 +51,11 @@ namespace Core
             return new Point(Convert.ToInt32(x), Convert.ToInt32(y));
         }
         public static Point TurnCounterClockwise(this Point p, int degrees) => p.TurnClockwise(-degrees);
+
+        public static (Point whole, Size rem) DivMod(this Point p, int x, int y)
+        {
+            var rem = new Size(p.X.Modulo(x), p.Y.Modulo(y));
+            return (p - rem, rem);
+        }
     }
 }

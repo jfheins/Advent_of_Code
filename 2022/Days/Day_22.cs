@@ -11,8 +11,6 @@ namespace AoC_2022.Days
         private readonly FiniteGrid2D<char> _map;
         private readonly string[] _moves;
 
-        private enum Turn { Clockwise = 1, Twice = 2, CounterCl = -1 };
-
         public Day_22()
         {
             var input = File.ReadAllLines(InputFilePath);
@@ -54,7 +52,6 @@ namespace AoC_2022.Days
                             pos = nextTile.pos;
                     }
                 }
-                Console.WriteLine(pos);
             }
 
             var solution = 1000 * (pos.Y + 1) + 4 * (pos.X + 1);
@@ -88,13 +85,6 @@ namespace AoC_2022.Days
                     {
                         (pos, face) = MoveAndWrapOnCube(pos, face);
                         Debug.Assert(_map[pos] == '.');
-                        //_map[pos] = face switch
-                        //{
-                        //    Direction.Left => '<',
-                        //    Direction.Right => '>',
-                        //    Direction.Up => '^',
-                        //    Direction.Down => 'v'
-                        //};
                     }
                 }
             }
@@ -109,7 +99,6 @@ namespace AoC_2022.Days
                 _ => throw new NotImplementedException(),
             };
             return solution.ToString();
-            // 95380 too high
         }
 
         private (Point pos, Direction facing) MoveAndWrapOnCube(Point pos, Direction face)
@@ -120,148 +109,111 @@ namespace AoC_2022.Days
                 return (pos, face);
             if (nextTile != ' ')
                 return (nextPos, face);
-            else
+
+            var exitTile = (x: pos.X / 50, y: pos.Y / 50);
+            var nextFace = face;
+            if (face == Direction.Right)
             {
-                var exitTile = (x: pos.X / 50, y: pos.Y / 50);
-                var nextFace = face;
-                if (face == Direction.Right)
+                if (exitTile == (2, 0))
                 {
-                    if (exitTile == (2, 0))
-                    {
-                        nextFace = Rotate(Turn.Twice);
-                        nextPos = FlipY(Translate(-1, 2));
-                    }
-                    if (exitTile == (1, 1))
-                    {
-                        nextFace = Rotate(Turn.CounterCl);
-                        nextPos = FlipEdgeRight(Translate(1, -1), face);// FlipXYCC(Translate(1, -1));
-                    }
-                    if (exitTile == (1, 2))
-                    {
-                        nextFace = Rotate(Turn.Twice);
-                        nextPos = FlipY(Translate(1, -2));
-                    }
-                    if (exitTile == (0, 3))
-                    {
-                        nextFace = Rotate(Turn.CounterCl);
-                        nextPos = FlipEdgeRight(Translate(1, -1), face);
-                    }
+                    nextFace = face.TurnClockwise(2);
+                    nextPos = MirrorY(Translate(-1, 2));
                 }
-                if (face == Direction.Left)
+                if (exitTile == (1, 1))
                 {
-                    if (exitTile == (1, 0))
-                    {
-                        nextFace = Rotate(Turn.Twice);
-                        nextPos = FlipY(Translate(-1, 2));
-                    }
-                    if (exitTile == (1, 1))
-                    {
-                        nextFace = Rotate(Turn.CounterCl);
-                        nextPos = FlipEdgeRight(Translate(-1, 1), face);
-                    }
-                    if (exitTile == (0, 2))
-                    {
-                        nextFace = Rotate(Turn.Twice);
-                        nextPos = FlipY(Translate(1, -2));
-                    }
-                    if (exitTile == (0, 3))
-                    {
-                        nextFace = Rotate(Turn.CounterCl);
-                        nextPos = FlipEdgeRight(Translate(1, -3), face);
-                    }
+                    nextFace = face.TurnCounterClockwise();
+                    nextPos = MirrorMainAxis(Translate(1, -1));
                 }
-
-                if (face == Direction.Down)
+                if (exitTile == (1, 2))
                 {
-                    if (exitTile == (0, 3))
-                    {
-                        nextFace = face;
-                        nextPos = FlipY(Translate(2, -3));
-                    }
-                    if (exitTile == (1, 2))
-                    {
-                        nextFace = Rotate(Turn.Clockwise);
-                        nextPos = FlipEdgeLeft(Translate(-1, 1), face);
-                    }
-                    if (exitTile == (2, 0))
-                    {
-                        nextFace = Rotate(Turn.Clockwise);
-                        nextPos = FlipEdgeLeft(Translate(-1, 1), face);
-                    }
+                    nextFace = face.TurnClockwise(2);
+                    nextPos = MirrorY(Translate(1, -2));
                 }
-
-                if (face == Direction.Up)
+                if (exitTile == (0, 3))
                 {
-                    if (exitTile == (0, 2))
-                    {
-                        nextFace = Rotate(Turn.Clockwise);
-                        nextPos = FlipEdgeLeft(Translate(1, -1), face);
-                    }
-                    if (exitTile == (1, 0))
-                    {
-                        nextFace = Rotate(Turn.Clockwise);
-                        nextPos = FlipEdgeLeft(Translate(-1, 3), face);
-                    }
-                    if (exitTile == (2, 0))
-                    {
-                        nextFace = face;
-                        nextPos = FlipY(Translate(-2, 3));
-                    }
+                    nextFace = face.TurnCounterClockwise();
+                    nextPos = MirrorMainAxis(Translate(1, -1));
                 }
-                if (_map[nextPos] == '#')
-                    return (pos, face);
-                else
-                    return (nextPos, nextFace);
-
-                throw new Exception("Unknown tile" + exitTile);
             }
-            throw new Exception("Unknown tile");
+            if (face == Direction.Left)
+            {
+                if (exitTile == (1, 0))
+                {
+                    nextFace = face.TurnClockwise(2);
+                    nextPos = MirrorY(Translate(-1, 2));
+                }
+                if (exitTile == (1, 1))
+                {
+                    nextFace = face.TurnCounterClockwise();
+                    nextPos = MirrorMainAxis(Translate(-1, 1));
+                }
+                if (exitTile == (0, 2))
+                {
+                    nextFace = face.TurnClockwise(2);
+                    nextPos = MirrorY(Translate(1, -2));
+                }
+                if (exitTile == (0, 3))
+                {
+                    nextFace = face.TurnCounterClockwise();
+                    nextPos = MirrorMainAxis(Translate(1, -3));
+                }
+            }
 
-            Direction Rotate(Turn t) => (Direction)((int)face + (int)t).Modulo(4);
+            if (face == Direction.Down)
+            {
+                if (exitTile == (0, 3))
+                {
+                    nextFace = face;
+                    nextPos = MirrorY(Translate(2, -3));
+                }
+                if (exitTile == (1, 2))
+                {
+                    nextFace = face.TurnClockwise();
+                    nextPos = MirrorMainAxis(Translate(-1, 1));
+                }
+                if (exitTile == (2, 0))
+                {
+                    nextFace = face.TurnClockwise();
+                    nextPos = MirrorMainAxis(Translate(-1, 1));
+                }
+            }
+
+            if (face == Direction.Up)
+            {
+                if (exitTile == (0, 2))
+                {
+                    nextFace = face.TurnClockwise();
+                    nextPos = MirrorMainAxis(Translate(1, -1));
+                }
+                if (exitTile == (1, 0))
+                {
+                    nextFace = face.TurnClockwise();
+                    nextPos = MirrorMainAxis(Translate(-1, 3));
+                }
+                if (exitTile == (2, 0))
+                {
+                    nextFace = face;
+                    nextPos = MirrorY(Translate(-2, 3));
+                }
+            }
+            return _map[nextPos] == '#'
+                ? (pos, face)
+                : (nextPos, nextFace);
+
+            throw new Exception("Unknown tile" + exitTile);
+
             Point Translate(int dx, int dy) => pos.MoveBy(dx * 50, dy * 50);
-
-            Point FlipEdgeRight(Point p, Direction edge)
-            {
-                var xoff = p.X % 50;
-                var yoff = p.Y % 50;
-                if (edge == Direction.Right || edge == Direction.Left)
-                {
-                    return new Point(p.X - xoff + yoff, p.Y - yoff + xoff);
-                }
-                else
-                {
-                    // up becomes right (yoff = 0;
-                    return new Point(p.X - xoff + 49 - yoff, p.Y - yoff + 49 - xoff);
-                }
-            }
-            Point FlipEdgeLeft(Point p, Direction edge)
-            {
-                var xoff = p.X % 50;
-                var yoff = p.Y % 50;
-                if (edge == Direction.Down || edge == Direction.Up)
-                {
-                    return new Point(p.X - xoff + yoff, p.Y - yoff + xoff);
-                }
-                else
-                {
-                    // left becomes bottom (x=0 => y=49)
-                    // right becomes up (x=49 => y = 0)
-                    return new Point(p.X - xoff + 49 - yoff, p.Y - yoff + 49 - xoff);
-                }
-            }
-
-            Point FlipY(Point p)
-            {
-                var offs = p.Y % 50;
-                var xx = 49 - offs;
-                return new Point(p.X, p.Y - offs + xx);
-            }
-            Point TurnXY(Point p)
-            {
-                var xoff = p.X % 50;
-                var yoff = p.Y % 50;
-                return new Point(p.X - xoff + 49 - xoff, p.Y - yoff + 49 - yoff);
-            }
         }
+
+        private static Point MirrorY(Point p) => p.DivMod(50, 50).Select((whole, rem)
+            => whole + new Size(rem.Width, 49 - rem.Height));
+
+        //private static Point MirrorOffAxis(Point p) => p.DivMod(50, 50).Select((whole, rem) => whole + MirrorOffAxis(rem));
+
+        //private static Size MirrorOffAxis(Size s) => new(49 - s.Height, 49 - s.Width);
+
+        private static Point MirrorMainAxis(Point p) => p.DivMod(50, 50).Select((whole, rem) => whole + MirrorMainAxis(rem));
+
+        private static Size MirrorMainAxis(Size s) => new(s.Height, s.Width);
     }
 }
