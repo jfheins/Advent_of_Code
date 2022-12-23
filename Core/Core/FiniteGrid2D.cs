@@ -93,9 +93,9 @@ namespace Core
 
         private void Fill(Func<Point, TNode?> dataCallback)
         {
-            for (int y = Bounds.Left; y < Bounds.Height; y++)
+            for (int y = Bounds.Top; y < Bounds.Bottom; y++)
             {
-                for (int x = Bounds.Top; x < Bounds.Width; x++)
+                for (int x = Bounds.Left; x < Bounds.Right; x++)
                 {
                     var p = new Point(x, y);
                     var val = dataCallback(p);
@@ -107,9 +107,9 @@ namespace Core
 
         public void FillGaps(TNode fillValue)
         {
-            for (int y = Bounds.Left; y < Bounds.Height; y++)
+            for (int y = Bounds.Top; y < Bounds.Bottom; y++)
             {
-                for (int x = Bounds.Top; x < Bounds.Width; x++)
+                for (int x = Bounds.Left; x < Bounds.Right; x++)
                 {
                     var p = new Point(x, y);
                     if (!_values.ContainsKey(p))
