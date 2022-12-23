@@ -119,6 +119,7 @@ namespace Core
         }
 
         public virtual bool Contains(Point pos) => _bounds.Contains(pos);
+        public virtual bool ContainsKey(Point pos) => _values.ContainsKey(pos);
 
         public virtual TNode this[int x, int y]
         {

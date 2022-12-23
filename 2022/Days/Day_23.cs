@@ -1,5 +1,6 @@
 ﻿using Core;
 
+using System.Collections.Concurrent;
 using System.Drawing;
 
 namespace AoC_2022.Days
@@ -20,7 +21,7 @@ namespace AoC_2022.Days
 
         public override async ValueTask<string> Solve_1()
         {
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
                 _ = PlayRound();
 
             _map.SizeToFit();
@@ -32,6 +33,7 @@ namespace AoC_2022.Days
 
         public override async ValueTask<string> Solve_2()
         {
+            _map.RemoveWhere(p => !HasElf(p));
             var rounds = 11;
             while (PlayRound())
             {
@@ -42,25 +44,25 @@ namespace AoC_2022.Days
 
         private bool PlayRound()
         {
-            var proposed = new List<(Point from, Point to)>();
-            foreach (var (elfPos, _) in _map.Where(t => t.value == '#'))
+            var proposed = new ConcurrentBag<(Point from, Point to)>();
+            _ = Parallel.ForEach(_map.Where(t => t.value == '#'), elf =>
             {
-                if (_map.Get8NeighborsOf(elfPos).Any(HasElf))
+                if (elf.pos.MoveLURDDiag().Any(it => HasElf(it)))
                 {
                     foreach (var dir in _directions)
                     {
-                        var one = elfPos.MoveTo(dir);
+                        var one = elf.pos.MoveTo(dir);
                         var two = one.MoveTo(dir.TurnClockwise());
                         var three = one.MoveTo(dir.TurnCounterClockwise());
 
                         if (!HasElf(one) && !HasElf(two) && !HasElf(three))
                         {
-                            proposed.Add((elfPos, one));
+                            proposed.Add((elf.pos, one));
                             break;
                         }
                     }
                 }
-            }
+            });
             var validMoves = proposed.ToLookup(it => it.to).Where(it => it.Count() == 1).Select(it => it.First());
             foreach (var (from, to) in validMoves)
             {
@@ -69,7 +71,6 @@ namespace AoC_2022.Days
             }
             _directions.Add(_directions.First());
             _directions.RemoveAt(0);
-            _map.SizeToFit();
 
             return proposed.Any();
         }
