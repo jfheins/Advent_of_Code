@@ -8,7 +8,7 @@ namespace AoC_2022
     {
         static async Task Main()
         {
-            await Solver.Solve<Day_22>(c => 
+            await Solver.SolveLast(c => 
             {
                 c.ShowConstructorElapsedTime = true;
                 c.ShowTotalElapsedTimePerDay = true;
