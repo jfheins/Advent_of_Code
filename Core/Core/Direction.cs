@@ -33,6 +33,15 @@ namespace Core
         public static Direction[] All4 => new Direction[] { Direction.Left, Direction.Up, Direction.Right, Direction.Down };
         public static Direction8[] All8 => new Direction8[] { Direction8.UpLeft, Direction8.Up, Direction8.UpRight,
             Direction8.Left, Direction8.Right, Direction8.DownLeft, Direction8.Down, Direction8.DownRight };
+
+        public static Direction Parse(this char s) => s switch
+        {
+            '<' => Direction.Left,
+            '^' => Direction.Up,
+            '>' => Direction.Right,
+            'v' => Direction.Down,
+            _ => throw new NotImplementedException()
+        };
     }
 
     public static class DirectionExtensions
