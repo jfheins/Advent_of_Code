@@ -481,10 +481,10 @@ public static class LinqHelpers
         return source.Select(selector).ToList();
     }
 
-    public static TResult[] SelectArray<T, TResult>(this T[] source, Func<T, TResult> selector)
+    public static TResult[] SelectArray<T, TResult>(this IList<T> source, Func<T, TResult> selector)
     {
-        var result = new TResult[source.Length];
-        for (var i = 0; i < source.Length; i++)
+        var result = new TResult[source.Count];
+        for (var i = 0; i < source.Count; i++)
         {
             result[i] = selector(source[i]);
         }

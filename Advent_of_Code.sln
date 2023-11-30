@@ -22,7 +22,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AoC_2022", "2022\AoC_2022.c
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AoC_2016", "2016\AoC_2016.csproj", "{8A944EBE-20BD-49E2-88FB-45AA7490583B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AoC_Generators", "AoC_Generators\AoC_Generators.csproj", "{880EBC22-E4E2-40C1-801A-B0377CD079B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AoC_Generators", "AoC_Generators\AoC_Generators.csproj", "{880EBC22-E4E2-40C1-801A-B0377CD079B5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AoC_2023", "2023\AoC_2023.csproj", "{63A8D10E-18F7-4F26-9C34-21272CD230AA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -62,6 +64,10 @@ Global
 		{880EBC22-E4E2-40C1-801A-B0377CD079B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{880EBC22-E4E2-40C1-801A-B0377CD079B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{880EBC22-E4E2-40C1-801A-B0377CD079B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63A8D10E-18F7-4F26-9C34-21272CD230AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63A8D10E-18F7-4F26-9C34-21272CD230AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63A8D10E-18F7-4F26-9C34-21272CD230AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63A8D10E-18F7-4F26-9C34-21272CD230AA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
