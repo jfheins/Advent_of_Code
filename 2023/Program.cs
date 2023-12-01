@@ -2,19 +2,18 @@
 
 using AoCHelper;
 
-namespace AoC_2023
+namespace AoC_2023;
+
+static class Program
 {
-    static class Program
+    static async Task Main()
     {
-        static async Task Main()
+        await Solver.SolveLast(c => 
         {
-            await Solver.SolveLast(c => 
-            {
-                c.ShowConstructorElapsedTime = true;
-                c.ShowTotalElapsedTimePerDay = true;
-                c.ElapsedTimeFormatSpecifier = "0.0";
-                c.ClearConsole = false;
-            });
-        }
+            c.ShowConstructorElapsedTime = true;
+            c.ShowTotalElapsedTimePerDay = true;
+            c.ElapsedTimeFormatSpecifier = "0.0";
+            c.ClearConsole = false;
+        });
     }
 }
