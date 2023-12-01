@@ -39,6 +39,7 @@ namespace Core
         }
 
         public static T[] ToArray<T>(this ValueTuple<T, T> source) => [source.Item1, source.Item2];
+        public static T[] ToArray<T>(this ValueTuple<T, T, T> source) => [source.Item1, source.Item2, source.Item3];
 
         public static ValueTuple<T, T> ToTuple2<T>(this IList<T> source) => (source[0], source[1]);
         public static ValueTuple<T, T, T> ToTuple3<T>(this IList<T> source) => (source[0], source[1], source[2]);

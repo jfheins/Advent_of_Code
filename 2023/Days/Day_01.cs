@@ -1,13 +1,10 @@
 ﻿using Core;
-using static MoreLinq.Extensions.SplitExtension;
-using static MoreLinq.Extensions.PartialSortByExtension;
-using System.Xml;
 
 namespace AoC_2023.Days;
 
 public sealed class Day_01 : BaseDay
 {
-    private string[] _input;
+    private readonly string[] _input;
 
     public Day_01()
     {
