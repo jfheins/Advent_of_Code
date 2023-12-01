@@ -16,56 +16,34 @@ public sealed class Day_01 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        return _input.Select(x => string.Concat(x.Where(char.IsDigit))).Select(x => x[0] + "" + x[^1]).Select(int.Parse).Sum().ToString();
+        return _input.Select(CalibrationValue).Sum().ToString();
+
+        static int CalibrationValue(string str) => ExtractFirstAndLastDigit(str);
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var replaced = _input.SelectList(Replace);
-        var values = replaced.Select(x => string.Concat(x.Where(char.IsDigit))).Select(x => x.First() + "" + x.Last()).ToList();
-        for (int i = 0; i < replaced.Count; i++)
+        return _input.Select(CalibrationValue).Sum().ToString();
+
+        static int CalibrationValue(string str)
         {
-            Console.WriteLine(values[i] + "\t" + replaced[i]);
+            var replaced = str
+                .Replace("one", "o1e")
+                .Replace("two", "t2o")
+                .Replace("three", "t3ree")
+                .Replace("four", "f4ur")
+                .Replace("five", "f5ve")
+                .Replace("six", "s6x")
+                .Replace("seven", "s7ven")
+                .Replace("eight", "e8ght")
+                .Replace("nine", "n9ne");
+            return ExtractFirstAndLastDigit(replaced);
         }
-        return values.Select(int.Parse).Sum().ToString(); // 55230
     }
 
-    private string Replace(string x)
+    private static int ExtractFirstAndLastDigit(string str)
     {
-        var xx = new[] {
-           ("one", "1"),
-           ("two", "2"),
-           ("three", "3"),
-           ("four", "4"),
-           ("five", "5"),
-           ("six", "6"),
-           ("seven", "7"),
-           ("eight", "8"),
-           ("nine", "9") };
-
-        var arr = x.ToCharArray();
-
-        foreach (var number in xx)
-        {
-            foreach (var idx in AllIndexesOf(x, number.Item1))
-            {
-                arr[idx + 1] = number.Item2[0];
-            }
-        }
-        return new string(arr);
-    }
-
-    public static List<int> AllIndexesOf(string str, string value)
-    {
-        if (String.IsNullOrEmpty(value))
-            throw new ArgumentException("the string to find may not be empty", "value");
-        List<int> indexes = [];
-        for (int index = 0; ; index += value.Length)
-        {
-            index = str.IndexOf(value, index);
-            if (index == -1)
-                return indexes;
-            indexes.Add(index);
-        }
+        var (first, last) = str.Where(char.IsDigit).FirstLast();
+        return int.Parse([first, last]);
     }
 }
