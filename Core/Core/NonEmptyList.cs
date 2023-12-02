@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Core;
@@ -11,7 +10,6 @@ public static class NonEmptyList
     public static NonEmptyList<T> Create<T>(IEnumerable<T> items) => new(items);
 }
 
-[SuppressMessage("Naming", "CA1710:Identifiers should have correct suffix", Justification = "Suffix: List")]
 public class NonEmptyList<T> : IList<T>
 {
     public T Head { get; private set; }
@@ -103,7 +101,7 @@ public class NonEmptyList<T> : IList<T>
             throw new ArgumentOutOfRangeException(nameof(index));
 
         if (Tail.Count == 0)
-            throw new NotSupportedException("Connot remove the last element!");
+            throw new NotSupportedException("Cannot remove the last element!");
 
 
         if (index == 0)

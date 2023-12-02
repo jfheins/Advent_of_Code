@@ -99,7 +99,7 @@ public static class LinqHelpers
     public static IEnumerable<ValueTuple<T1, T2>> CartesianProduct<T1, T2>(this IEnumerable<T1> a,
         IEnumerable<T2> b)
     {
-        if (!(b is ICollection<T2>))
+        if (b is not ICollection<T2>)
         {
             b = b.ToList();
         }
@@ -161,6 +161,21 @@ public static class LinqHelpers
         var min = source.Min(selector);
         var max = source.Max(selector);
         return (min!, max!);
+    }
+
+    public static (T first, T last) FirstLast<T>(this IEnumerable<T> source)
+    {
+        using var e = source.GetEnumerator();
+        var res = e.MoveNext();
+        Debug.Assert(res);
+
+        T first = e.Current;
+        T last = e.Current;
+
+        while (e.MoveNext())
+            last = e.Current;
+
+        return (first, last);
     }
 
     public static bool AreAllEqual<T>(this IEnumerable<T> source) where T : IEquatable<T>
@@ -481,10 +496,10 @@ public static class LinqHelpers
         return source.Select(selector).ToList();
     }
 
-    public static TResult[] SelectArray<T, TResult>(this T[] source, Func<T, TResult> selector)
+    public static TResult[] SelectArray<T, TResult>(this IList<T> source, Func<T, TResult> selector)
     {
-        var result = new TResult[source.Length];
-        for (var i = 0; i < source.Length; i++)
+        var result = new TResult[source.Count];
+        for (var i = 0; i < source.Count; i++)
         {
             result[i] = selector(source[i]);
         }
