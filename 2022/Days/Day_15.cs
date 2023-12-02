@@ -23,12 +23,12 @@ namespace AoC_2022.Days
             {
                 var ints = sensor.ParseInts(4);
                 var sensorPoint = new Point(ints[0], ints[1]);
-                var baconPoint = new Point(ints[2], ints[3]);
-                if (baconPoint.Y == rowY)
+                var beaconPoint = new Point(ints[2], ints[3]);
+                if (beaconPoint.Y == rowY)
                 {
-                    row[baconPoint.X] = 'B';
+                    row[beaconPoint.X] = 'B';
                 }
-                var bDist = sensorPoint.ManhattanDistTo(baconPoint);
+                var bDist = sensorPoint.ManhattanDistTo(beaconPoint);
                 var yDist = Math.Abs(sensorPoint.Y - rowY);
 
                 var lrDist = bDist - yDist;
@@ -50,9 +50,9 @@ namespace AoC_2022.Days
             {
                 var ints = line.ParseInts(4);
                 var sensorPoint = new Point(ints[0], ints[1]);
-                var baconPoint = new Point(ints[2], ints[3]);
-                var bDist = sensorPoint.ManhattanDistTo(baconPoint);
-                _ = beacons.Add(baconPoint);
+                var beaconPoint = new Point(ints[2], ints[3]);
+                var bDist = sensorPoint.ManhattanDistTo(beaconPoint);
+                _ = beacons.Add(beaconPoint);
                 sensors.Add((sensorPoint, bDist));
             }
             var avgX = (int)sensors.Average(s => s.pos.X);
@@ -66,8 +66,7 @@ namespace AoC_2022.Days
             {
                 var oldpos = pos;
                 pos = deltas.Aggregate(pos, (p, d) => checked(p + d));
-                if(steps++ % 10000 == 0)
-                    Console.WriteLine(pos);
+
                 if (oldpos == new Point(2633670, 3071499) && pos == new Point(2633671, 3071499))
                     pos = pos.MoveBy(700_000, 300_000);
                 if (beacons.Contains(pos))
@@ -82,7 +81,7 @@ namespace AoC_2022.Days
             Debug.Assert(!beacons.Contains(pos));
             Debug.Assert(sensors.All(s => s.pos.ManhattanDistTo(pos) > s.r));
             Debug.Assert(pos.X > 0 && pos.Y > 0);
-            Console.WriteLine(pos);
+
             return (pos.X * 4000000L + pos.Y).ToString();
 
             List<Size> CalcDeltas(Point p) => sensors.Select(s =>

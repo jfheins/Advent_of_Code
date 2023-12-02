@@ -2,7 +2,9 @@
 
 using Spectre.Console;
 
+using System.Collections;
 using System.Data;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 
 namespace AoC_2022.Days
@@ -46,6 +48,11 @@ namespace AoC_2022.Days
         private record struct State(Vector64<short> Robots, Vector64<short> Ress, int RemTime, Blueprint Bp, BuyOptions buyOptions)
         {
             public int GeodeBots() => Robots[3];
+            public override int GetHashCode()
+            {
+                var r = Vector64.Narrow(Ress, Vector64<short>.Zero).AsInt32().GetElement(0);
+                return r ^ (Bp.bpId << 28) ^ ((int)buyOptions << 22);
+            }
         }
 
         public override async ValueTask<string> Solve_1()
@@ -74,7 +81,7 @@ namespace AoC_2022.Days
 
             for (int i = 0; i < time; i++)
             {
-                var next = new List<State>(states.Count * 2);
+                var next = new List<State>(states.Count * 3);
                 next.AddRange(states.SelectMany(Expand));
                 var maxBots = next.Max(it => it.GeodeBots());
                 _ = next.RemoveAll(it => it.GeodeBots() < maxBots - 1);
@@ -86,7 +93,7 @@ namespace AoC_2022.Days
 
         private readonly Vector64<short> One = Vector64.Create(new short[] { 1, 0, 0, 0 });
         private readonly Vector64<short> Two = Vector64.Create(new short[] { 0, 1, 0, 0 });
-        private readonly Vector64<short> Three = Vector64.Create(new short[] { 0, 0, 1, 0});
+        private readonly Vector64<short> Three = Vector64.Create(new short[] { 0, 0, 1, 0 });
         private readonly Vector64<short> Four = Vector64.Create(new short[] { 0, 0, 0, 1 });
 
         private IEnumerable<State> Expand(State s)
@@ -135,4 +142,24 @@ namespace AoC_2022.Days
             static BuyOptions MakeOption(bool enable, BuyOptions o) => enable ? o : 0;
         }
     }
+}
+
+ref struct TinyList<T> where T : struct
+{
+    private readonly Span<T> _buffer;
+    public int Count { get; private set; }
+
+    public TinyList(Span<T> buffer)
+    {
+        _buffer = buffer;
+        Count = 0;
+    }
+
+    public void Add(T value) => _buffer[Count++] = value;
+
+    public readonly T Get(int index) => _buffer[index];
+
+    public readonly Span<T> AsSpan() => _buffer[..Count];
+
+    public readonly T this[int i] => _buffer[i];
 }
