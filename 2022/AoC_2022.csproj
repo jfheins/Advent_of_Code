@@ -2,15 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>default</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Inputs\Day_11.txt" />
-  </ItemGroup>
 
   <ItemGroup>
     <AdditionalFiles Include="Inputs\Day_11.txt" />
