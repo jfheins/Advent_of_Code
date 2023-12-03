@@ -47,9 +47,9 @@ public static class LinqHelpers
         return BitOperations.PopCount((uint)source.Data);
     }
 
-    public static IEnumerable<T> ExceptFor<T>(this IEnumerable<T> source, T exception)
+    public static IEnumerable<T> ExceptFor<T>(this IEnumerable<T> source, T exception) where T : notnull
     {
-        return source.Where(x => x is null || !x.Equals(exception));
+        return source.Where(x => !exception.Equals(x));
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
@@ -214,6 +214,10 @@ public static class LinqHelpers
     {
         return source.Where(x => x != null).Select(x => x!.Value);
     }
+
+    public static T? FirstOrNull<T>(this IEnumerable<T> source) where T : struct => source.Cast<T?>().FirstOrDefault();
+    public static T? FirstOrNull<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : struct
+        => source.Cast<T?>().FirstOrDefault(it => predicate(it!.Value), null);
 
     /// <summary>
     ///     Liefert zu einer Enumeration alle Paare zurück. Eine Enumeration mit n Elementen hat genau n-1 Paare.

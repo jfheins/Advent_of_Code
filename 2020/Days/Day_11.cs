@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using Core;
@@ -87,10 +88,12 @@ namespace AoC_2020.Days
                 new Size(-1, 1), new Size(0, 1),  new Size(1, 1),
             };
 
+            LinqHelpers.FirstOrNull(Array.Empty<Point>(), x => true);
+
             return sizes.Select(dir =>
-                    grid.Line(p, dir)
-                        .Cast<Point?>()
-                        .FirstOrDefault(p => grid[p!.Value] != '.'))
+                    grid.LineP(p, dir)
+                        .Skip(1)
+                        .FirstOrNull(p => grid[p] != '.'))
                     .WhereNotNull().ToArray();
         }
 

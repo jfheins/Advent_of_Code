@@ -7,6 +7,7 @@ using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 
 namespace Core
 {
@@ -79,13 +80,13 @@ namespace Core
             var (minX, maxX, minY, maxY) = (int.MaxValue, int.MinValue, int.MaxValue, int.MinValue);
             foreach (var p in _values.Keys)
             {
-                if(p.X < minX)
+                if (p.X < minX)
                     minX = p.X;
-                if(p.X > maxX)
+                if (p.X > maxX)
                     maxX = p.X;
-                if(p.Y < minY)
+                if (p.Y < minY)
                     minY = p.Y;
-                if(p.Y > maxY)
+                if (p.Y > maxY)
                     maxY = p.Y;
             }
             _bounds = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
@@ -192,11 +193,17 @@ namespace Core
             return sb.ToString();
         }
 
-        public IEnumerable<Point> Line(Point exclusiveStart, Size direction)
+        public IEnumerable<TNode> LineV(Point pos, Size direction) => LineP(pos, direction).Select(it => this[it]);
+
+        public IEnumerable<Point> LineP(Point pos, Size direction)
         {
-            return Enumerable.Range(1, int.MaxValue).Select(n => exclusiveStart + n * direction)
-                .TakeWhile(it => _bounds.Contains(it));
+            while (Contains(pos))
+            {
+                yield return pos;
+                pos += direction;
+            }
         }
+
 
         public IEnumerable<IEnumerable<Point>> Lines(Point exclusiveStart, Direction[] dirs)
         {
@@ -206,7 +213,7 @@ namespace Core
                 .TakeWhile(it => _bounds.Contains(it)));
         }
 
-        public IEnumerable<Point> Line(Point exclusiveStart, Direction dir) => Line(exclusiveStart, dir.ToSize());
+        public IEnumerable<TNode> Line(Point pos, Direction dir) => LineP(pos, dir.ToSize()).Select(it => this[it]);
 
         public void Add((Point pos, TNode value) item) => _values.Add(item.pos, item.value);
         public void Clear() => _values.Clear();
@@ -274,7 +281,7 @@ namespace Core
 
         public void RemoveAt(Point oldpoint)
         {
-            _ =_values.Remove(oldpoint);
+            _ = _values.Remove(oldpoint);
         }
 
         public IEnumerable<(Point pos, TNode value)> GetColTuple(int x, TNode defaultValue)
@@ -286,10 +293,22 @@ namespace Core
 
         public void RemoveWhere(Func<Point, bool> predicate)
         {
-            foreach(var item in _values.Keys.Where(predicate).ToList())
+            foreach (var item in _values.Keys.Where(predicate).ToList())
             {
                 _values.Remove(item);
             }
+        }
+
+        public Point MoveWhile(Direction dir, Point pos, Func<TNode, bool> predicate)
+        {
+            Debug.Assert(predicate(this[pos]));
+            var next = pos.MoveTo(dir);
+            while (Contains(next) && predicate(this[next]))
+            {
+                pos = next;
+                next = pos.MoveTo(dir);
+            }
+            return pos;
         }
 
         private readonly struct EnumWrapper : IEnumerator<(Point pos, TNode value)>

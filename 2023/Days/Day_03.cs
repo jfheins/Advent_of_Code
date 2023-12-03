@@ -43,28 +43,15 @@ public sealed partial class Day_03 : BaseDay
 
         return gears.Select(CalcGearRatio).Sum().ToString();
 
-        long CalcGearRatio((Point, Point) g) 
+        long CalcGearRatio((Point, Point) g)
             => GetNumberAt(g.Item1) * GetNumberAt(g.Item2);
     }
 
     private Point GetNumberStart(Point pos)
-    {
-        while (char.IsDigit(grid.GetValueOrDefault(pos.MoveTo(Direction.Left), '.')))
-        {
-            pos = pos.MoveTo(Direction.Left);
-        }
-        return pos;
-    }
+        => grid.MoveWhile(Direction.Left, pos, char.IsDigit);
 
     private long GetNumberAt(Point pos)
-    {
-        Debug.Assert(char.IsDigit(grid[pos]));
-        var result = 0;
-        while (char.IsDigit(grid.GetValueOrDefault(pos, '.')))
-        {
-            result = (result * 10) + (grid[pos] - '0');
-            pos = pos.MoveTo(Direction.Right);
-        }
-        return result;
-    }
+        => grid.Line(pos, Direction.Right)
+               .TakeWhile(char.IsDigit)
+               .Aggregate(0L, (sum, d) => (sum * 10) + (d - '0'));
 }
