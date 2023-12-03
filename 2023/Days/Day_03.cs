@@ -1,102 +1,70 @@
 ﻿using Core;
 
-using Spectre.Console;
-
+using System.Diagnostics;
 using System.Drawing;
-using System.Text.RegularExpressions;
 
 namespace AoC_2023.Days;
 
 public sealed partial class Day_03 : BaseDay
 {
-    private FiniteGrid2D<char> grid;
+    private readonly FiniteGrid2D<char> grid;
 
     public Day_03()
     {
-        //_input = File.ReadAllLines(InputFilePath);
         grid = Grid2D.FromFile(InputFilePath);
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        var numbers = new HashSet<Point>();
-        foreach (var (pos, value) in grid)
+        var numbers = new List<Point>();
+        foreach (var (pos, _) in grid.Where(it => IsSymbol(it.value)))
         {
-            var trigger = !(value == '.' || char.IsDigit(value));
-            if (trigger)
-            {
-                foreach (var item2 in grid.Get8NeighborsOf(pos).Where(p => char.IsDigit(grid[p])))
-                {
-                    var numberstart = item2;
-                    while (char.IsDigit(grid.GetValueOrDefault(numberstart.MoveTo(Direction.Left), '.')))
-                    {
-                        numberstart = numberstart.MoveTo(Direction.Left);
-                    }
-                    numbers.Add(numberstart);
-                }
-            }
+            numbers.AddRange(
+                grid.Get8NeighborsOf(pos).Where(p => char.IsDigit(grid[p])));
         }
 
-        var numm = new List<long>();
-        foreach (var pos in numbers)
-        {
-            Point digitpos = pos;
-            long number = grid[pos] - '0';
-            while (char.IsDigit(grid.GetValueOrDefault(digitpos.MoveTo(Direction.Right), '.')))
-            {
-                digitpos = digitpos.MoveTo(Direction.Right);
-                number = (number * 10) + (grid[digitpos] - '0');
-                Console.WriteLine(number);
-            }
-            numm.Add(number);
-            Console.WriteLine("> " + number);
-        }
+        var distinctNumbers = numbers.Select(GetNumberStart).ToHashSet();
+        return distinctNumbers.Sum(GetNumberAt).ToString();
 
-        return numm.Sum().ToString();
+        static bool IsSymbol(char x) => x != '.' && !char.IsDigit(x);
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var gears = new HashSet<(Point, Point)>();
-        foreach (var (pos, value) in grid)
+        var gears = new List<(Point, Point)>();
+        foreach (var (pos, _) in grid.Where(it => it.value == '*'))
         {
-            var trigger = value == '*';
-            if (trigger)
-            {
-                var numneigh = new HashSet<Point>();
-                foreach (var item2 in grid.Get8NeighborsOf(pos).Where(p => char.IsDigit(grid[p])))
-                {
-                    var numberstart = item2;
-                    while (char.IsDigit(grid.GetValueOrDefault(numberstart.MoveTo(Direction.Left), '.')))
-                    {
-                        numberstart = numberstart.MoveTo(Direction.Left);
-                    }
-                    numneigh.Add(numberstart);
-                }
-                if (numneigh.Count == 2)
-                    gears.Add(numneigh.ToTuple2());
-            }
+            var neighborNumbers = grid.Get8NeighborsOf(pos)
+                    .Where(p => char.IsDigit(grid[p]))
+                    .Select(GetNumberStart).ToHashSet();
+            if (neighborNumbers.Count == 2)
+                gears.Add(neighborNumbers.ToTuple2());
         }
 
-        var numm = new List<long>();
-        foreach (var pos in gears)
-        {
-            var rat = GetNumber(pos.Item1) * GetNumber(pos.Item2);
-            numm.Add(rat);
-        }
+        return gears.Select(CalcGearRatio).Sum().ToString();
 
-        return numm.Sum().ToString();
+        long CalcGearRatio((Point, Point) g) 
+            => GetNumberAt(g.Item1) * GetNumberAt(g.Item2);
+    }
 
-        long GetNumber(Point p)
+    private Point GetNumberStart(Point pos)
+    {
+        while (char.IsDigit(grid.GetValueOrDefault(pos.MoveTo(Direction.Left), '.')))
         {
-            Point digitpos = p;
-            long number = grid[p] - '0';
-            while (char.IsDigit(grid.GetValueOrDefault(digitpos.MoveTo(Direction.Right), '.')))
-            {
-                digitpos = digitpos.MoveTo(Direction.Right);
-                number = (number * 10) + (grid[digitpos] - '0');
-            }
-            return number;
+            pos = pos.MoveTo(Direction.Left);
         }
+        return pos;
+    }
+
+    private long GetNumberAt(Point pos)
+    {
+        Debug.Assert(char.IsDigit(grid[pos]));
+        var result = 0;
+        while (char.IsDigit(grid.GetValueOrDefault(pos, '.')))
+        {
+            result = (result * 10) + (grid[pos] - '0');
+            pos = pos.MoveTo(Direction.Right);
+        }
+        return result;
     }
 }

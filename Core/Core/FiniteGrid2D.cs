@@ -292,7 +292,7 @@ namespace Core
             }
         }
 
-        private struct EnumWrapper : IEnumerator<(Point pos, TNode value)>
+        private readonly struct EnumWrapper : IEnumerator<(Point pos, TNode value)>
         {
             private readonly IEnumerator<KeyValuePair<Point, TNode>> _enumerator;
 
