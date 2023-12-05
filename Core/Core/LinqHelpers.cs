@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Linq;
@@ -581,6 +582,21 @@ public static class LinqHelpers
         for (var start = 0; start <= source.Length - size; start++)
         {
             yield return new ArraySegment<TSource>(source, start, size);
+        }
+    }
+
+    public static bool TryPop<T>(this IList<T> source, [NotNullWhen(true)] out T? item)
+    {
+        if (source.Count > 0)
+        {
+            item = source[^1]!;
+            source.RemoveAt(source.Count - 1);
+            return true;
+        }
+        else
+        {
+            item = default;
+            return false;
         }
     }
 }

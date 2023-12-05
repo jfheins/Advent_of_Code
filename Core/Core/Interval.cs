@@ -24,6 +24,7 @@ public readonly record struct Interval : IEnumerable<int>
     {
         return Enumerable.Range(Start, Length).GetEnumerator();
     }
+
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public static Interval FromInclusiveBounds(int start, int end) => new(start, end + 1);
@@ -44,13 +45,5 @@ public readonly record struct Interval : IEnumerable<int>
     /// </summary>
     /// <param name="other">Other interval</param>
     /// <returns></returns>
-    public bool OverlapsWith(Interval other)
-    {
-        if (IsEmpty || other.IsEmpty)
-            return false;
-        return Contains(other.Start)
-            || Contains(other.End - 1)
-            || other.Contains(Start)
-            || other.Contains(End - 1);
-    }
+    public bool OverlapsWith(Interval other) => Start < other.End && other.Start < End;
 }
