@@ -75,20 +75,23 @@ public sealed class Day_05 : BaseDay
             {
                 var mappingRange = mapping.Ranges.Find(it => it.Source.OverlapsWith(fragment));
                 if (mappingRange != null)
-                    fragment = MapIntersection(mappingRange, fragment);
-                destRanges.Add(fragment);
+                    MapIntersection(mappingRange, fragment);
+                else
+                    destRanges.Add(fragment);
             }
+
             (sourceRanges, destRanges) = (destRanges, sourceRanges);
 
-            LongInterval MapIntersection(MappingRange m, LongInterval fragment)
+            void MapIntersection(MappingRange m, LongInterval fragment)
             {
                 var (prefix, intersection, suffix) = fragment.Intersect(m.Source);
                 Debug.Assert(intersection is not null);
                 if (prefix != null) sourceRanges.Add(prefix.Value);
                 if (suffix != null) sourceRanges.Add(suffix.Value);
-                return m.Map(intersection.Value);
+                destRanges.Add(m.Map(intersection.Value));
             }
         }
+
         return sourceRanges.Min(r => r.Start);
     }
 }
