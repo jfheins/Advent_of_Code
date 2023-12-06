@@ -30,11 +30,11 @@ public sealed partial class Day_06 : BaseDay
         return WinningHoldTimes(time, dist).Length.ToString();
     }
 
-    private LongInterval WinningHoldTimes(long raceTime, long recordDist)
+    private static LongInterval WinningHoldTimes(long raceTime, long recordDist)
     {
         var d = Math.Sqrt(raceTime * raceTime - 4 * (recordDist + 1));
         var t1 = Math.Ceiling((raceTime - d) / 2);
         var t2 = Math.Floor((raceTime + d) / 2);
-        return new LongInterval((long)t1, (long)t2 + 1L);
+        return LongInterval.FromInclusiveEnd((long)t1, (long)t2);
     }
 }
