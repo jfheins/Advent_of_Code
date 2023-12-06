@@ -6,37 +6,44 @@ using System.Text.RegularExpressions;
 
 namespace Core
 {
-    public static class ParseHelpers
+    public static partial class ParseHelpers
     {
-
         public static int[] ParseInts(this string str, int? count = null)
         {
-            var regex = new Regex(@"([-+]?[0-9]+)");
+            var regex = SignedNumberRegex();
             var matches = regex.Matches(str);
             if (count != null)
                 Debug.Assert(matches.Count == count);
 
-            return matches.Select(match => int.Parse(match.Value)).ToArray();
+            return matches.SelectArray(match => int.Parse(match.Value));
         }
         public static int[] ParseNNInts(this string str, int? count = null)
         {
-            var regex = new Regex(@"([0-9]+)");
+            var regex = NumberRegex();
             var matches = regex.Matches(str);
             if (count != null)
                 Debug.Assert(matches.Count == count);
 
-            return matches.Select(match => int.Parse(match.Value)).ToArray();
+            return matches.SelectArray(match => int.Parse(match.Value));
         }
 
         public static long[] ParseLongs(this string str, int? count = null)
         {
-            var regex = new Regex(@"([-+]?[0-9]+)");
+            var regex = SignedNumberRegex();
             var matches = regex.Matches(str);
             if (count != null)
                 Debug.Assert(matches.Count == count);
 
-            return matches.Select(match => long.Parse(match.Value)).ToArray();
+            return matches.SelectArray(match => long.Parse(match.Value));
         }
+        
+        [GeneratedRegex("([-+]?[0-9]+)")]
+        private static partial Regex SignedNumberRegex();
+        [GeneratedRegex("([0-9]+)")]
+        private static partial Regex NumberRegex();
+
+        public static long ReadOneLong(this string str)
+            => str.Where(char.IsDigit).Aggregate(0L, (current, digit) => current * 10 + (digit - '0'));
 
         public static IEnumerable<T> MatchRegexGroup<T>(
             this IEnumerable<string> source,
@@ -106,7 +113,5 @@ namespace Core
                 yield return resultFactory(matches);
             }
         }
-
-
     }
 }
