@@ -45,9 +45,9 @@ public sealed partial class Day_08 : BaseDay
         var loops = new Dictionary<string, (int start, long len)>();
         var loopCount = 0;
 
-        var currentNodes = new List<string>(nodes.Keys.Where(n => n.EndsWith("A")));
+        var currentNodes = new List<string>(nodes.Keys.Where(n => n.EndsWith('A')));
         var steps = 0;
-        while (currentNodes.Any(it => !it.EndsWith("Z")))
+        while (true)
         {
             var instr = instructions[steps.Modulo(instructions.Length)];
 
@@ -58,19 +58,22 @@ public sealed partial class Day_08 : BaseDay
             }
             steps++;
 
-            foreach (var n in currentNodes.Where(it => it.EndsWith("Z")))
+            foreach (var n in currentNodes)
             {
-                if (loops.TryGetValue(n, out var l))
+                if (n.EndsWith('Z'))
                 {
-                    if (l.len == 0)
+                    if (loops.TryGetValue(n, out var l))
                     {
-                        loops[n] = l with { len = steps - l.start };
-                        loopCount++;
+                        if (l.len == 0)
+                        {
+                            loops[n] = l with { len = steps - l.start };
+                            loopCount++;
+                        }
                     }
-                }
-                else
-                {
-                    loops.Add(n, (steps, 0));
+                    else
+                    {
+                        loops.Add(n, (steps, 0));
+                    }
                 }
             }
             if (loopCount == currentNodes.Count)

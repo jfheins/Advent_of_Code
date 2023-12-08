@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 
 using Core;
@@ -58,7 +59,7 @@ namespace AoC_2020.Days
             for (int i = 0; i < n.Length; i++)
             {
                 p = prod / n[i];
-                sm += a[i] * ModularMultiplicativeInverse(p, n[i]) * p;
+                sm += a[i] * ModInverse(p, n[i]) * p;
             }
             return sm % prod;
         }
@@ -66,6 +67,7 @@ namespace AoC_2020.Days
         private static long ModularMultiplicativeInverse(long a, long mod)
         {
             long b = a % mod;
+
             for (int x = 1; x < mod; x++)
             {
                 if ((b * x) % mod == 1)
@@ -74,6 +76,30 @@ namespace AoC_2020.Days
                 }
             }
             return 1L;
+        }
+        private static long ModInverse(long number, long modulo)
+        {
+            if (number < 1)
+                Throw(nameof(number));
+            if (modulo < 2)
+                Throw(nameof(modulo));
+
+            long n = number;
+            long m = modulo, v = 0, d = 1;
+            while (n > 0)
+            {
+                long t = m / n, x = n;
+                n = m % x;
+                m = x;
+                x = d;
+                d = checked(v - t * x);
+                v = x;
+            }
+            long result = v % modulo;
+            return result < 0 ? result + modulo : result;
+
+            static void Throw(string issue)
+                => throw new ArgumentOutOfRangeException(issue);
         }
     }
 }
