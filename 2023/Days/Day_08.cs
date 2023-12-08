@@ -26,12 +26,12 @@ public sealed partial class Day_08 : BaseDay
 
         var currentNode = "AAA";
         var steps = 0;
-        //while (currentNode != "ZZZ")
-        //{
-        //    var i = instr[steps.Modulo(instr.Length)];
-        //    currentNode = i == 'L' ? nodes[currentNode].Item1 : nodes[currentNode].Item2;
-        //    steps++;
-        //}
+        while (currentNode != "ZZZ")
+        {
+            var i = instr[steps.Modulo(instr.Length)];
+            currentNode = i == 'L' ? nodes[currentNode].Item1 : nodes[currentNode].Item2;
+            steps++;
+        }
 
         return steps.ToString();
     }
@@ -42,58 +42,47 @@ public sealed partial class Day_08 : BaseDay
 
         var nodes = _input[2..].ToDictionary(line => line[0..3], line => (line[7..10], line[12..15]));
 
-        var loopStart = new Dictionary<string, long>();
-        var loopLen = new Dictionary<string, long>();
+        var loops = new Dictionary<string, (int start, long len)>();
+        var loopCount = 0;
 
         var currentNodes = new List<string>(nodes.Keys.Where(n => n.EndsWith("A")));
-        var steps = 0L;
+        var steps = 0;
         while (currentNodes.Any(it => !it.EndsWith("Z")))
         {
-            var instr = instructions[(int)steps.Modulo(instructions.Length)];
+            var instr = instructions[steps.Modulo(instructions.Length)];
 
             for (int i = 0; i < currentNodes.Count; i++)
             {
                 var n = nodes[currentNodes[i]];
                 currentNodes[i] = instr == 'L' ? n.Item1 : n.Item2;
             }
-            steps += 1;
+            steps++;
 
             foreach (var n in currentNodes.Where(it => it.EndsWith("Z")))
             {
-                Console.WriteLine($"Node \t{n}\t reached final at \t{steps}");
-                if (!loopLen.ContainsKey(n))
-                    if (loopStart.TryGetValue(n, out var start))
-                        loopLen[n] = steps - start;
-                    else
-                        loopStart[n] = steps;
-
+                if (loops.TryGetValue(n, out var l))
+                {
+                    if (l.len == 0)
+                    {
+                        loops[n] = l with { len = steps - l.start };
+                        loopCount++;
+                    }
+                }
+                else
+                {
+                    loops.Add(n, (steps, 0));
+                }
             }
-            if (loopLen.Count == 6)
+            if (loopCount == currentNodes.Count)
                 break;
         }
 
+        var maxStart = loops.Values.Max(t => t.start);
+        var tuples = loops.Values.Select(it => (it.len, (int)(it.len - ((maxStart - it.start) % it.len)))).ToList();
+        var coprimes = tuples.Select((x, i) => i == 0 ? x.len : x.len / 271).ToArray();
+        var remain = tuples.SelectArray(x => x.Item2).ToArray();
 
-
-        var maxStart = loopStart.Values.Max();
-        var xxx = loopStart.Keys.Select(k =>
-        {
-            var loops = (maxStart - loopStart[k]) / loopLen[k];
-            var thisloopS = loopStart[k] + loops * loopLen[k];
-            var done = maxStart - thisloopS;
-            return (loopLen[k], loopLen[k] - done, start: loopStart[k]);
-        }).ToList();
-        var primes = xxx.Select((x, i) => i == 0 ? x.Item1 : x.Item1 / 271).ToArray();
-        var remain = xxx.Select(x => (int)x.Item2).ToArray();
-
-        var multi = ChineseRemainderTheorem.Solve(primes, remain);
-        var res = maxStart + multi;
-
-        foreach (var item in xxx)
-        {
-            var loopp = (res - item.start) % item.Item1;
-            Console.WriteLine(item.Item1 + "  " + loopp);
-        }
-
-        return res.ToString(); // 13830919117338 too low
+        var remainder = ChineseRemainderTheorem.Solve(coprimes, remain);
+        return (maxStart + remainder).ToString();
     }
 }
