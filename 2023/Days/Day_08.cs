@@ -56,6 +56,7 @@ public sealed partial class Day_08 : BaseDay
                 var n = nodes[currentNodes[i]];
                 currentNodes[i] = instr == 'L' ? n.Item1 : n.Item2;
             }
+            steps += 1;
 
             foreach (var n in currentNodes.Where(it => it.EndsWith("Z")))
             {
@@ -69,7 +70,6 @@ public sealed partial class Day_08 : BaseDay
             }
             if (loopLen.Count == 6)
                 break;
-            steps += 1;
         }
 
 
