@@ -7,46 +7,43 @@ namespace AoC_2023.Days;
 
 public sealed partial class Day_09 : BaseDay
 {
-    private readonly string[] _input;
+    private readonly int[][] _input;
 
     public Day_09()
     {
-        _input = File.ReadAllLines(InputFilePath);
+        _input = File.ReadAllLines(InputFilePath).SelectArray(line => line.ParseInts());
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        var res = new List<int>();
-        foreach (var line in _input)
-        {
-            var d = line.ParseInts();
-            var lastDigit = new Stack<int>();
-            while (!d.All(x => x == 0))
-            {
-                lastDigit.Push(d.Last());
-                d = d.Diff().ToArray();
-            }
-            var newDigit = lastDigit.Sum();
-            res.Add(newDigit);
-        }
-        return res.Sum().ToString();
+        return _input.Select(ExtrapolateRight).Sum().ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var res = new List<int>();
-        foreach (var line in _input)
+
+        return _input.Select(ExtrapolateLeft).Sum().ToString();
+    }
+
+    private static int ExtrapolateRight(int[] sequence)
+    {
+        var lastDigits = new Stack<int>();
+        while (!sequence.All(x => x == 0))
         {
-            var d = line.ParseInts();
-            var lastDigit = new Stack<int>();
-            while (!d.All(x => x == 0))
-            {
-                lastDigit.Push(d.First());
-                d = d.Diff().ToArray();
-            }
-            var newDigit = lastDigit.Aggregate((a, b) => b-a);
-            res.Add(newDigit);
+            lastDigits.Push(sequence.Last());
+            sequence = sequence.Diff().ToArray();
         }
-        return res.Sum().ToString();
+        return lastDigits.Sum();
+    }
+
+    private static int ExtrapolateLeft(int[] sequence)
+    {
+        var firstDigits = new Stack<int>();
+        while (!sequence.All(x => x == 0))
+        {
+            firstDigits.Push(sequence.First());
+            sequence = sequence.Diff().ToArray();
+        }
+        return firstDigits.Aggregate((acc, next) => next - acc);
     }
 }
