@@ -1,5 +1,7 @@
 ﻿using Core;
 
+using NoAlloq;
+
 using System.Diagnostics;
 using System.Drawing;
 
@@ -16,34 +18,43 @@ public sealed partial class Day_09 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        return _input.Select(ExtrapolateRight).Sum().ToString();
+        return _input.SelectArray(ExtrapolateRight).Sum().ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
 
-        return _input.Select(ExtrapolateLeft).Sum().ToString();
+        return _input.SelectArray(ExtrapolateLeft).Sum().ToString();
     }
 
     private static int ExtrapolateRight(int[] sequence)
     {
-        var lastDigits = new Stack<int>();
-        while (!sequence.All(x => x == 0))
+        Span<int> seq = stackalloc int[sequence.Length];
+        sequence.CopyTo(seq);
+        Span<int> diff = seq;
+        while (diff.ContainsAnyExcept(0))
         {
-            lastDigits.Push(sequence.Last());
-            sequence = sequence.Diff().ToArray();
+            for (var i = 0; i < diff.Length - 1; i++)
+                diff[i] = diff[i + 1] - diff[i];
+            diff = diff[..^1];
         }
-        return lastDigits.Sum();
+        return seq.Sum();
     }
 
     private static int ExtrapolateLeft(int[] sequence)
     {
-        var firstDigits = new Stack<int>();
-        while (!sequence.All(x => x == 0))
+        Span<int> seq = stackalloc int[sequence.Length];
+        sequence.CopyTo(seq);
+        Span<int> diff = seq;
+        while (diff.ContainsAnyExcept(0))
         {
-            firstDigits.Push(sequence.First());
-            sequence = sequence.Diff().ToArray();
+            for (int i = diff.Length - 1; i >= 1; i--)
+                diff[i] = diff[i] - diff[i - 1];
+            diff = diff[1..];
         }
-        return firstDigits.Aggregate((acc, next) => next - acc);
+
+        for (var i = 1; i < seq.Length; i += 2)
+            seq[i] = -seq[i];
+        return seq.Sum();
     }
 }
