@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.Z3" Version="4.12.2" />
     <PackageReference Include="morelinq" Version="4.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NoAlloq" Version="0.2.0" />
   </ItemGroup>
 
   <ItemGroup>

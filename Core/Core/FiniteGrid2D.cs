@@ -260,7 +260,7 @@ namespace Core
         {
             foreach (var item in values.Index())
             {
-                this[item.Key, y] = item.Value;
+                this[item.Key + Bounds.Left, y] = item.Value;
             }
         }
 
@@ -268,6 +268,11 @@ namespace Core
         {
             return Enumerable.Range(Bounds.Left, Bounds.Width)
                 .Select(x => GetValueOrDefault(new Point(x, y), defaultValue));
+        }
+
+        public IEnumerable<(int y, IReadOnlyList<TNode> cells)> AllRows(TNode defaultValue)
+        {
+            return GetRowIndices().Select(y => (y, GetRow(y, defaultValue).ToList() as IReadOnlyList<TNode>));
         }
 
         public IEnumerable<(Point pos, TNode value)> GetRowTuple(int y, TNode defaultValue)
@@ -282,6 +287,27 @@ namespace Core
         public void RemoveAt(Point oldpoint)
         {
             _ = _values.Remove(oldpoint);
+        }
+
+        public IEnumerable<int> GetColIndices() => Enumerable.Range(Bounds.Left, Bounds.Width);
+
+        public IEnumerable<TNode> GetCol(int x, TNode defaultValue)
+        {
+            return Enumerable.Range(Bounds.Top, Bounds.Height)
+                .Select(y => GetValueOrDefault(new Point(x, y), defaultValue));
+        }
+
+        public void SetCol(int x, IEnumerable<TNode> values)
+        {
+            foreach (var item in values.Index())
+            {
+                this[x, item.Key + Bounds.Top] = item.Value;
+            }
+        }
+
+        public IEnumerable<(int x, IReadOnlyList<TNode> cells)> AllCols(TNode defaultValue)
+        {
+            return GetColIndices().Select(x => (x, GetCol(x, defaultValue).ToList() as IReadOnlyList<TNode>));
         }
 
         public IEnumerable<(Point pos, TNode value)> GetColTuple(int x, TNode defaultValue)
@@ -309,6 +335,22 @@ namespace Core
                 next = pos.MoveTo(dir);
             }
             return pos;
+        }
+
+        public void InsertRow(int y, TNode value)
+        {
+            Bounds = Bounds with { Height = Height + 1 };
+            for (var i = Bounds.Bottom - 1; i >= y; i--)
+                SetRow(i, GetRow(i - 1, value));
+            SetRow(y, Enumerable.Repeat(value, Bounds.Width));
+        }
+
+        public void InsertCol(int x, TNode value)
+        {
+            Bounds = Bounds with { Width = Width + 1 };
+            for (var i = Bounds.Right - 1; i >= x; i--)
+                SetCol(i, GetCol(i - 1, value));
+            SetCol(x, Enumerable.Repeat(value, Bounds.Height));
         }
 
         private readonly struct EnumWrapper : IEnumerator<(Point pos, TNode value)>

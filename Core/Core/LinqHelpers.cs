@@ -179,6 +179,11 @@ public static class LinqHelpers
         return (first, last);
     }
 
+    public static bool AllEqual<T>(this IEnumerable<T> source, T value) where T : IEquatable<T>
+    {
+        return source.All(x => x.Equals(value));
+    }
+
     public static bool AreAllEqual<T>(this IEnumerable<T> source) where T : IEquatable<T>
     {
         var first = source.First();
