@@ -282,6 +282,11 @@ namespace Core
                 .Select(p => (p, GetValueOrDefault(p, defaultValue)));
         }
 
+        public IEnumerable<(Point pos, TNode value)> GetRowTuple(int y)
+        {
+            return _values.Where(p => p.Key.Y == y).Select(t => (t.Key, t.Value));
+        }
+
         public IEnumerable<int> GetRowIndices() => Enumerable.Range(Bounds.Top, Bounds.Height);
 
         public void RemoveAt(Point oldpoint)
@@ -295,6 +300,11 @@ namespace Core
         {
             return Enumerable.Range(Bounds.Top, Bounds.Height)
                 .Select(y => GetValueOrDefault(new Point(x, y), defaultValue));
+        }
+
+        public IEnumerable<(Point pos, TNode value)> GetColTuple(int x)
+        {
+            return _values.Where(p => p.Key.X == x).Select(t => (t.Key, t.Value));
         }
 
         public void SetCol(int x, IEnumerable<TNode> values)
@@ -325,6 +335,14 @@ namespace Core
             }
         }
 
+        public void RemoveAll(TNode value)
+        {
+            foreach (var item in _values.Where(kvp => kvp.Value.Equals(value)).ToList())
+            {
+                _values.Remove(item.Key);
+            }
+        }
+
         public Point MoveWhile(Direction dir, Point pos, Func<TNode, bool> predicate)
         {
             Debug.Assert(predicate(this[pos]));
@@ -345,12 +363,36 @@ namespace Core
             SetRow(y, Enumerable.Repeat(value, Bounds.Width));
         }
 
+        public void InsertEmptyRows(int y, int num = 1)
+        {
+            var moveInterval = new Interval(y, Bounds.Bottom);
+            Bounds = Bounds with { Height = Height + num };
+            var points = _values.Where(t => moveInterval.Contains(t.Key.Y)).ToList();
+            foreach (var (pos, value) in points)
+            {
+                RemoveAt(pos);
+                this[pos.X, pos.Y + num] = value;
+            }
+        }
+
         public void InsertCol(int x, TNode value)
         {
             Bounds = Bounds with { Width = Width + 1 };
             for (var i = Bounds.Right - 1; i >= x; i--)
                 SetCol(i, GetCol(i - 1, value));
             SetCol(x, Enumerable.Repeat(value, Bounds.Height));
+        }
+
+        public void InsertEmptyCols(int x, int num = 1)
+        {
+            var moveInterval = new Interval(x, Bounds.Right);
+            Bounds = Bounds with { Width = Width + num };
+            var points = _values.Where(t => moveInterval.Contains(t.Key.X)).ToList();
+            foreach (var (pos, value) in points)
+            {
+                RemoveAt(pos);
+                this[pos.X + num, pos.Y] = value;
+            }
         }
 
         private readonly struct EnumWrapper : IEnumerator<(Point pos, TNode value)>
