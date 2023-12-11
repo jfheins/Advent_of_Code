@@ -8,6 +8,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Diagnostics;
+using System.Xml.Linq;
 
 namespace Core
 {
@@ -275,6 +276,12 @@ namespace Core
             return GetRowIndices().Select(y => (y, GetRow(y, defaultValue).ToList() as IReadOnlyList<TNode>));
         }
 
+        public IEnumerable<(int y, IEnumerable<TNode> cells)> FilledRows()
+        {
+            var byY = _values.ToLookup(it => it.Key.Y, it => it.Value);
+            return GetRowIndices().Select(y => (y, byY[y]));
+        }
+
         public IEnumerable<(Point pos, TNode value)> GetRowTuple(int y, TNode defaultValue)
         {
             return Enumerable.Range(Bounds.Left, Bounds.Width)
@@ -318,6 +325,12 @@ namespace Core
         public IEnumerable<(int x, IReadOnlyList<TNode> cells)> AllCols(TNode defaultValue)
         {
             return GetColIndices().Select(x => (x, GetCol(x, defaultValue).ToList() as IReadOnlyList<TNode>));
+        }
+
+        public IEnumerable<(int x, IEnumerable<TNode> cells)> FilledCols()
+        {
+            var byX = _values.ToLookup(it => it.Key.X, it => it.Value);
+            return GetColIndices().Select(x => (x, byX[x]));
         }
 
         public IEnumerable<(Point pos, TNode value)> GetColTuple(int x, TNode defaultValue)
