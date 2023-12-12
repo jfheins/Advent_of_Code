@@ -3,48 +3,82 @@
 using NoAlloq;
 
 using System.Collections.Immutable;
-using System.ComponentModel.Design;
-using System.Diagnostics;
-using System.Drawing;
-using System.Text.RegularExpressions;
 
 namespace AoC_2023.Days;
 
 public sealed partial class Day_12 : BaseDay
 {
-    private readonly Spring[] _input;
+    private readonly string[] _input;
 
     public Day_12()
     {
-        _input = File.ReadAllLines(InputFilePath).SelectArray(ParseLine);
+        _input = File.ReadAllLines(InputFilePath);
     }
 
-    private Spring ParseLine(string s)
+    private Spring ParseLine1(string s)
     {
         var parts = s.Split(' ');
         var map = parts[0].Prepend('.').Append('.').ToImmutableArray();
         return new Spring(map, parts[1].ParseInts());
     }
 
-    record Spring(ImmutableArray<char> Map, int[] Runs)
+    private Spring ParseLine2(string s)
+    {
+        var parts = s.Split(' ');
+
+        var springs = string.Join('?', Enumerable.Repeat(parts[0], 5));
+        var groups = string.Join(' ', Enumerable.Repeat(parts[1], 5));
+
+        var map = springs.Prepend('.').Append('.').ToImmutableArray();
+        return new Spring(map, groups.ParseInts());
+    }
+
+    record Spring(ImmutableArray<char> Map, int[] Runs) : IEquatable<Spring>
     {
         public override string ToString()
         {
             return new string(Map.AsSpan()) + " | " + string.Join(", ", Runs);
         }
+
+        public override int GetHashCode()
+        {
+            var h = new HashCode();
+            foreach (var item in Map.AsSpan())
+                h.Add(item);
+            return h.ToHashCode();
+        }
+
+        public virtual bool Equals(Spring? o)
+        {
+            return o is Spring s
+                && Map.AsSpan().SequenceEqual(s.Map.AsSpan())
+                && Runs.SequenceEqual(s.Runs);
+        }
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        var xxx = CountArrangements(new Spring(".????#?.?..????.??#.".ToImmutableArray(), [2, 1, 1, 2, 1, 1]));
-        long res = 0L;
-        foreach (var s in _input)
-        {
-            var xx = CountArrangements(s);
-            Console.WriteLine(s.ToString() + "\t\t => " + xx);
-            res += xx;
-        }
-        return res.ToString(); // 8247 too low
+        var springs = _input.SelectArray(ParseLine1);
+        return springs.Sum(CountCached).ToString();
+    }
+
+    public override async ValueTask<string> Solve_2()
+    {
+        var springs = _input.SelectArray(ParseLine2);
+        //   var x = springs.Max(it => it.Runs.Max());
+        return springs.Sum(CountCached).ToString();
+    }
+
+    Dictionary<string, long> _cache = new(100_000);
+
+    long CountCached(Spring s)
+    {
+        var key = new string(s.Map.AsSpan()) + string.Join(',', s.Runs);
+        if (_cache.TryGetValue(key, out var count))
+            return count;
+        count = CountArrangements(s);
+        _cache[key] = count;
+        return count;
     }
 
     long CountArrangements(Spring s)
@@ -52,31 +86,37 @@ public sealed partial class Day_12 : BaseDay
         var qidx = s.Map.IndexOf('?');
         if (qidx > -1)
         {
-            var left = MakeChild(s.Map.SetItem(qidx, '.'), s.Runs);
-            var right = MakeChild(s.Map.SetItem(qidx, '#'), s.Runs);
+            Span<char> map = stackalloc char[s.Map.Length];
+            s.Map.AsSpan().CopyTo(map);
+
+            map[qidx] = '.';
+            var left = MakeChild(map, s.Runs);
+            map[qidx] = '#';
+            var right = MakeChild(map, s.Runs);
+
             var res = 0L;
             if (left != null)
-                res += CountArrangements(left);
+                res += CountCached(left);
             if (right != null)
-                res += CountArrangements(right);
+                res += CountCached(right);
             return res;
         }
         else
         {
-            var a = IsValid(s) ? 1 : 0;
-            return a;
+            return IsValid(s) ? 1 : 0;
         }
 
-        static Spring? MakeChild(ImmutableArray<char> arr, int[] runs)
+        static Spring? MakeChild(ReadOnlySpan<char> arr, int[] runs)
         {
             if (runs.Length == 0)
             {
                 return arr.Contains('#') ? null : new Spring(['.'], runs);
             }
-            if (arr.AsSpan().Count('#') + arr.AsSpan().Count('?') < runs.Length)
+            if (arr.Count('#') + arr.Count('?') < runs.Sum())
                 return null;
+
             // Can it be simplified?
-            var (RunLen, PrefixLen) = StartRun(arr.AsSpan());
+            var (RunLen, PrefixLen) = StartRun(arr);
             if (RunLen > 0)
             {
                 if (RunLen == runs[0])
@@ -84,13 +124,15 @@ public sealed partial class Day_12 : BaseDay
                     // Shorten
                     var newRuns = new int[runs.Length - 1];
                     Array.Copy(runs, 1, newRuns, 0, newRuns.Length);
-                    var newMap = arr.RemoveRange(0, PrefixLen);
-                    return new Spring(newMap, newRuns);
+                    var newMap = arr[PrefixLen..];
+                    return new Spring([.. newMap], newRuns);
                 }
                 else
+                {
                     return null;
+                }
             }
-            (RunLen, var SuffixLen) = EndRun(arr.AsSpan());
+            (RunLen, var SuffixLen) = EndRun(arr);
             if (RunLen > 0)
             {
                 if (RunLen == runs.Last())
@@ -98,14 +140,19 @@ public sealed partial class Day_12 : BaseDay
                     // Shorten
                     var newRuns = new int[runs.Length - 1];
                     Array.Copy(runs, 0, newRuns, 0, newRuns.Length);
-                    var newMap = arr.RemoveRange(arr.Length - SuffixLen, SuffixLen);
-                    return new Spring(newMap, newRuns);
+                    var newMap = arr[..^SuffixLen];
+                    return new Spring([.. newMap], newRuns);
                 }
                 else
+                {
                     return null;
+                }
             }
-            var sp = new Spring(arr, runs);
-            return sp;
+            var dotPrefix = arr.IndexOfAnyExcept('.');
+            if (dotPrefix > 1)
+                arr = arr.Slice(dotPrefix - 1, arr.Length - dotPrefix + 1);
+
+            return new Spring([.. arr], runs);
         }
     }
 
@@ -123,11 +170,6 @@ public sealed partial class Day_12 : BaseDay
             map = map.Slice(prefix);
         }
         return map.All(it => it == '.');
-    }
-
-    public override async ValueTask<string> Solve_2()
-    {
-        return "-";
     }
 
     private static (int RunLen, int PrefixLen) StartRun(ReadOnlySpan<char> s)
