@@ -2,9 +2,6 @@
 
 using static MoreLinq.Extensions.SplitExtension;
 
-using System.Diagnostics;
-using System.Drawing;
-
 namespace AoC_2023.Days;
 
 public sealed partial class Day_13 : BaseDay

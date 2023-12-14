@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -208,6 +209,9 @@ public static class LinqHelpers
         }
         return true;
     }
+
+    public static int Count<T>(this IEnumerable<T> source, T value) where T: notnull
+        => source.Count(it => value.Equals(it));
 
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> source) where T : class
     {
@@ -603,5 +607,18 @@ public static class LinqHelpers
             item = default;
             return false;
         }
+    }
+
+    public static int IndexOf<T>(this ReadOnlySpan<T> source, T value, int start) where T:IEquatable<T>
+    {
+        var idx = source[start..].IndexOf(value);
+        return idx == -1 ? idx : idx + start;
+    }
+
+    public static IEnumerable<TResult> Select2<T1, T2, TResult>(
+        this IEnumerable<ValueTuple<T1, T2>> source, 
+        Func<T1, T2, TResult> selector)
+    {
+        return source.Select(t => selector(t.Item1, t.Item2));
     }
 }
