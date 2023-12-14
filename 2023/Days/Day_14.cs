@@ -17,7 +17,8 @@ public sealed partial class Day_14 : BaseDay
     {
         var grid = new FiniteGrid2D<char>(_input);
         TiltGrid(grid, Direction.Up);
-        return GridWeight(grid).ToString();
+        Console.Write(grid.ToString());
+        return GridWeight(grid).ToString(); // 106454 too high, 106276 wrong
     }
 
     public override async ValueTask<string> Solve_2()
