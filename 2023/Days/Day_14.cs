@@ -17,13 +17,31 @@ public sealed partial class Day_14 : BaseDay
     {
         var grid = new FiniteGrid2D<char>(_input);
         TiltGrid(grid, Direction.Up);
-        Console.Write(grid.ToString());
-        return GridWeight(grid).ToString(); // 106454 too high, 106276 wrong
+        return GridWeight(grid).ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        return "-";
+        var grid = new FiniteGrid2D<char>(_input);
+        var ld = new LoopDetector();
+        for (var i = 1; i <= 10000; i++)
+        {
+            Cycle();
+            ld.Feed(i, GridWeight(grid));
+
+            if (ld.HasLoop)
+                break;
+        }
+
+        return ld.Extrapolate(1000000000).ToString();
+
+        void Cycle()
+        {
+            TiltGrid(grid, Direction.Up);
+            TiltGrid(grid, Direction.Left);
+            TiltGrid(grid, Direction.Down);
+            TiltGrid(grid, Direction.Right);
+        }
     }
 
     private long GridWeight(FiniteGrid2D<char> grid)
@@ -39,7 +57,7 @@ public sealed partial class Day_14 : BaseDay
         var hasChanged = false;
         var reverse = dir == Direction.Down || dir == Direction.Right;
 
-        if(Directions.Vertical.Contains(dir))
+        if (Directions.Vertical.Contains(dir))
         {
             foreach (var x in grid.GetColIndices())
             {
@@ -62,7 +80,7 @@ public sealed partial class Day_14 : BaseDay
         void Move(char[] arr)
         {
             if (reverse)
-               Array.Reverse(arr);
+                Array.Reverse(arr);
             hasChanged |= MoveBallsToFront(arr);
             if (reverse)
                 Array.Reverse(arr);
@@ -76,19 +94,19 @@ public sealed partial class Day_14 : BaseDay
         while (fragmentEnd > -1)
         {
             Sort(remainder[..fragmentEnd]);
-            if(fragmentEnd < remainder.Length)
+            if (fragmentEnd < remainder.Length)
                 remainder = remainder[(fragmentEnd + 1)..];
             else
                 break;
             fragmentEnd = FindBorder(remainder);
         }
-        return hasChanged; 
+        return hasChanged;
 
         int FindBorder(ReadOnlySpan<char> it)
         {
             var res = it.IndexOf('#');
             return res == -1 ? it.Length : res;
-        } 
+        }
 
         void Sort(Span<char> arr)
         {

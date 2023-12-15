@@ -8,7 +8,6 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Diagnostics;
-using System.Xml.Linq;
 
 namespace Core
 {
@@ -426,6 +425,14 @@ namespace Core
             public void Dispose() => _enumerator.Dispose();
             public bool MoveNext() => _enumerator.MoveNext();
             public void Reset() => _enumerator.Reset();
+        }
+
+        public bool Equals(FiniteGrid2D<TNode> other)
+        {
+            if (Bounds != other.Bounds)
+                return false;
+
+            return Keys.All(p => this[p].Equals(other[p]));
         }
     }
 }
