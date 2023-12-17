@@ -22,7 +22,7 @@ namespace Core
         public int Height => Bounds.Height;
         public Size Size => Bounds.Size;
         public Point TopLeft => Bounds.Location;
-        public Point BottomRight => new(Width - 1, Height - 1);
+        public Point BottomRight => new(Bounds.Right - 1, Bounds.Bottom - 1);
 
         protected readonly Dictionary<Point, TNode> _values = new();
         private Rectangle _bounds;

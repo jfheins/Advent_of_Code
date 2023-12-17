@@ -1,6 +1,4 @@
 ﻿using Core;
-using Spectre.Console;
-using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 
 namespace AoC_2023.Days;
@@ -16,57 +14,55 @@ public sealed partial class Day_17 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        var s = new AStarSearch<(Point pos, Direction a, Direction b, Direction c)>(null, Expander);
+        var s = new AStarSearch<(Point pos, Direction d)>(null, Expander1);
         var goal = _grid.BottomRight;
-        var initial = (_grid.TopLeft, (Direction)33, (Direction)11, (Direction)22);
+        var initial = (_grid.TopLeft, (Direction)11);
         var res = s.FindFirst(initial, p => p.pos == goal, node => node.pos.ManhattanDistTo(goal));
-
-        var total = res.Cost;
-        foreach (var item in res.Steps)
-        {
-            _grid[item.pos] = 0;
-        }
-        Console.WriteLine(_grid.ToString());
-        return total.ToString(); // 855 too high, 836 too low
-    }
-
-    //class MyComparer : IEqualityComparer<(Point pos, Direction a, Direction b, Direction c)>
-    //{
-    //    public bool Equals((Point pos, Direction a, Direction b, Direction c) x, (Point pos, Direction a, Direction b, Direction c) y)
-    //    {
-    //        return x.pos.Equals(y.pos) && x.a.Equals(y.a) && x.b.Equals(y.b);
-    //    }
-
-    //    public int GetHashCode([DisallowNull] (Point pos, Direction a, Direction b, Direction c) obj)
-    //    {
-    //        return obj.pos.GetHashCode();
-    //    }
-    //}
-
-    private IEnumerable<((Point pos, Direction a, Direction b, Direction c), float)> Expander((Point pos, Direction a, Direction b, Direction c) node)
-    {
-        Direction? forbidden = null;
-        if (node.a == node.b && node.b == node.c)
-        {
-            forbidden = node.a;
-        }
-
-        foreach (var d in Directions.All4)
-        {
-            if (d == forbidden || d == node.c.Opposite())
-                continue;
-
-            var nextpos = node.pos.MoveTo(d);
-            if (_grid.Contains(nextpos))
-            {
-                var nextnode = (nextpos, node.b, node.c, d);
-                yield return (nextnode, _grid[nextpos]);
-            }
-        }
+        return res!.Cost.ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        return "-";
+        var s = new AStarSearch<(Point pos, Direction d)>(null, Expander2);
+        var goal = _grid.BottomRight;
+        var initial = (_grid.TopLeft, (Direction)11);
+        var res = s.FindFirst(initial, p => p.pos == goal, node => node.pos.ManhattanDistTo(goal));
+        return res!.Cost.ToString();
+    }
+
+    private IEnumerable<((Point pos, Direction d), float)> Expander1((Point pos, Direction d) node)
+    {
+        var possibleDirections = node.pos == _grid.TopLeft
+            ? [Direction.Down, Direction.Right]
+            : node.d.Perpendicular();
+
+        foreach (var d in possibleDirections)
+        {
+            var line = _grid.Line(node.pos, d).Skip(1).Take(3).CumulativeSum().ToList();
+
+            for (int i = 1; i <= 3 && i <= line.Count; i++)
+            {
+                var nextpos = node.pos.MoveTo(d, i);
+                yield return ((nextpos, d), line[i - 1]);
+            }
+        }
+    }
+
+    private IEnumerable<((Point pos, Direction d), float)> Expander2((Point pos, Direction d) node)
+    {
+        var possibleDirections = node.pos == _grid.TopLeft
+            ? [Direction.Down, Direction.Right]
+            : node.d.Perpendicular();
+
+        foreach (var d in possibleDirections)
+        {
+            var line = _grid.Line(node.pos, d).Skip(1).Take(10).CumulativeSum().ToList();
+
+            for (int i = 4; i <= 10 && i <= line.Count; i++)
+            {
+                var nextpos = node.pos.MoveTo(d, i);
+                yield return ((nextpos, d), line[i-1]);
+            }
+        }
     }
 }
