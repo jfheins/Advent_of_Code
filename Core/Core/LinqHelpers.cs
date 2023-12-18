@@ -645,17 +645,21 @@ public static class LinqHelpers
         return area;
     }
 
-    public static (long area, long edge, long inside) PickTheorem(this IReadOnlyList<Point> points)
+    /// <summary>
+    /// This function only works if the polygon is axis aligned!
+    /// </summary>
+    public static (long Area, long Edge, long Inside) PickTheorem(this IReadOnlyList<Point> points)
     {
         // Pick theorem
         // Area = Inside + Edge/2 - 1
-        // inside = Area - Edge/2 +1
+        // Inside = Area - Edge/2 + 1
         Debug.Assert(points[0] == points[^1]);
 
         var area = 0L;
         var edgePointCount = 0;
         foreach (var (l, r) in points.PairwiseWithOverlap())
         {
+            Debug.Assert(l.X == r.X || l.Y == r.Y);
             long dx = l.X - r.X;
             long sumY = (l.Y + r.Y) / 2;
             area += dx * sumY;

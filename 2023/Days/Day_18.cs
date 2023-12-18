@@ -27,8 +27,8 @@ public sealed class Day_18 : BaseDay
         var borderPoints = instructions
             .RunningFold(Point.Empty, (point, step) => point.MoveTo(step.d, step.dist))
             .Prepend(Point.Empty).ToList();
-        var info =  borderPoints.PickTheorem();
-        return (info.edge + info.inside).ToString();
+        var polygon =  borderPoints.PickTheorem();
+        return (polygon.Edge + polygon.Inside).ToString();
     }
 
     private static (Direction d, int dist) ParseLine1(string l)
