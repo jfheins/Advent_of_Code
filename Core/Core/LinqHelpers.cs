@@ -615,10 +615,53 @@ public static class LinqHelpers
         return idx == -1 ? idx : idx + start;
     }
 
-    public static IEnumerable<TResult> Select2<T1, T2, TResult>(
+    public static IEnumerable<TResult> Select<T1, T2, TResult>(
         this IEnumerable<ValueTuple<T1, T2>> source, 
         Func<T1, T2, TResult> selector)
     {
         return source.Select(t => selector(t.Item1, t.Item2));
+    }
+
+    public static IEnumerable<TResult> RunningFold<T, TResult>(
+        this IEnumerable<T> source,
+        TResult seed,
+        Func<TResult, T, TResult> aggregator)
+    {
+        var aggregate = seed;
+        foreach (var elem in source)
+            yield return aggregate = aggregator(aggregate, elem);
+    }
+
+    public static long PolygonArea(this IEnumerable<Point> points)
+    {
+        var area = 0L;
+        foreach (var (l, r) in points.PairwiseWithOverlap())
+        {
+            var dx = l.X - r.X;
+            var sumY = l.Y + r.Y;
+            area += (dx * sumY) / 2;
+        }
+
+        return area;
+    }
+
+    public static (long area, long edge, long inside) PickTheorem(this IReadOnlyList<Point> points)
+    {
+        // Pick theorem
+        // Area = Inside + Edge/2 - 1
+        // inside = Area - Edge/2 +1
+        Debug.Assert(points[0] == points[^1]);
+
+        var area = 0L;
+        var edgePointCount = 0;
+        foreach (var (l, r) in points.PairwiseWithOverlap())
+        {
+            long dx = l.X - r.X;
+            long sumY = (l.Y + r.Y) / 2;
+            area += dx * sumY;
+            edgePointCount += l.ManhattanDistTo(r);
+        }
+
+        return (area, edgePointCount, area - edgePointCount / 2 + 1);
     }
 }
