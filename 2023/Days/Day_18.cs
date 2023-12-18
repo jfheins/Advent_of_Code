@@ -97,11 +97,7 @@ public sealed partial class Day_18 : BaseDay
             }
         }
 
-        return area.ToString(); // 122109642109349 too low
-        //                         122109860712709
-
-        IEnumerable<Point> FloodFill(Point point)
-            => grid.Get4NeighborsOf(point).Where(p => grid.GetValueOrDefault(p, '.') != '#');
+        return area.ToString();
     }
 
     private (Direction d, int dist) ParseLine2(string l)

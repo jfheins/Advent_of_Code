@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace AoC_2023.Days;
 
-public sealed partial class Day_17 : BaseDay
+public sealed class Day_17 : BaseDay
 {
     private readonly FiniteGrid2D<int> _grid;
 
@@ -36,16 +36,7 @@ public sealed partial class Day_17 : BaseDay
             ? [Direction.Down, Direction.Right]
             : node.d.Perpendicular();
 
-        foreach (var d in possibleDirections)
-        {
-            var line = _grid.Line(node.pos, d).Skip(1).Take(3).CumulativeSum().ToList();
-
-            for (int i = 1; i <= 3 && i <= line.Count; i++)
-            {
-                var nextpos = node.pos.MoveTo(d, i);
-                yield return ((nextpos, d), line[i - 1]);
-            }
-        }
+        return possibleDirections.SelectMany(d => SelectNextStates(node.pos, d, 1, 3));
     }
 
     private IEnumerable<((Point pos, Direction d), float)> Expander2((Point pos, Direction d) node)
@@ -54,15 +45,18 @@ public sealed partial class Day_17 : BaseDay
             ? [Direction.Down, Direction.Right]
             : node.d.Perpendicular();
 
-        foreach (var d in possibleDirections)
-        {
-            var line = _grid.Line(node.pos, d).Skip(1).Take(10).CumulativeSum().ToList();
+        return possibleDirections.SelectMany(d => SelectNextStates(node.pos, d, 4, 10));
+    }
 
-            for (int i = 4; i <= 10 && i <= line.Count; i++)
-            {
-                var nextpos = node.pos.MoveTo(d, i);
-                yield return ((nextpos, d), line[i-1]);
-            }
-        }
+    private IEnumerable<((Point pos, Direction d), float)> SelectNextStates(
+        Point pos,
+        Direction walkingDir,
+        int minMove,
+        int maxMove)
+    {
+        var line = _grid.Line(pos, walkingDir).Skip(1).Take(maxMove).CumulativeSum();
+        return line.Select((cost, idx) => (cost, distance: idx + 1))
+            .Skip(minMove - 1)
+            .Select(t => ((pos.MoveTo(walkingDir, t.distance), d: walkingDir), (float)t.cost));
     }
 }
