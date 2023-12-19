@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -19,6 +20,7 @@ public readonly record struct Interval : IEnumerable<int>
 
     public int Length => End - Start;
     public bool IsEmpty => Start == End;
+    public static Interval Whole => new(int.MinValue, int.MaxValue);
 
     public IEnumerator<int> GetEnumerator()
     {
@@ -28,6 +30,8 @@ public readonly record struct Interval : IEnumerable<int>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public static Interval FromInclusiveBounds(int start, int end) => new(start, end + 1);
+    
+    public static Interval? Create(int start, int end) => start < end ? new Interval(start, end) : null;
 
     /// <summary>
     /// Returns true, if the other interval is a subset of this interval.
@@ -46,4 +50,14 @@ public readonly record struct Interval : IEnumerable<int>
     /// <param name="other">Other interval</param>
     /// <returns></returns>
     public bool OverlapsWith(Interval other) => Start < other.End && other.Start < End;
+
+    public (Interval? prefix, Interval? intersection, Interval? suffix) Intersect(Interval other)
+    {
+        var intersection = Create(Math.Max(Start, other.Start), Math.Min(End, other.End));
+        if (intersection is null)
+            return (null, null, null);
+        var prefix = Create(Start, intersection.Value.Start);
+        var suffix = Create(intersection.Value.End, End);
+        return (prefix, intersection, suffix);
+    }
 }
