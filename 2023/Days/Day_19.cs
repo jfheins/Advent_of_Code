@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using Core;
-using System.Drawing;
 using static MoreLinq.Extensions.SplitExtension;
 
 namespace AoC_2023.Days;
@@ -57,7 +56,7 @@ public sealed class Day_19 : BaseDay
         return result;
     }
 
-    record Workflow(string Name)
+    private record Workflow(string Name)
     {
         public List<Rule> Rules { get; } = new();
 
@@ -65,12 +64,12 @@ public sealed class Day_19 : BaseDay
             => Rules.First(r => r.Matches(part)).Dest;
     }
 
-    record Rule(char Prop, Interval Range, string Dest)
+    private record Rule(char Prop, Interval Range, string Dest)
     {
         public bool Matches(Part p) => Range.Contains(p.Props[Prop]);
     }
 
-    record Part(Dictionary<char, int> Props)
+    private record Part(Dictionary<char, int> Props)
     {
         public long Rating => Props['x'] + Props['m'] + Props['a'] + Props['s'];
     }
@@ -85,46 +84,37 @@ public sealed class Day_19 : BaseDay
     {
         var next = "in";
         while (_workflows.TryGetValue(next, out var workflow))
-        {
             next = workflow.Process(part);
-        }
         return next[0];
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var all = new Dictionary<char, Interval>
-        {
-            { 'x', Interval.FromInclusiveBounds(1, 4000) },
-            { 'm', Interval.FromInclusiveBounds(1, 4000) },
-            { 'a', Interval.FromInclusiveBounds(1, 4000) },
-            { 's', Interval.FromInclusiveBounds(1, 4000) },
-        };
-        return CountCombinations(all.ToImmutableDictionary(), "in").ToString();
+        var possibleRatings = Interval.FromInclusiveBounds(1, 4000);
+        var all = ImmutableDictionary<char, Interval>.Empty
+            .Add('x', possibleRatings)
+            .Add('m', possibleRatings)
+            .Add('a', possibleRatings)
+            .Add('s', possibleRatings);
+
+        return CountCombinations(all, "in").ToString();
     }
 
-    public long CountCombinations(ImmutableDictionary<char, Interval> intervals, string name)
+    private long CountCombinations(ImmutableDictionary<char, Interval> intervals, string name)
     {
         if (!_workflows.TryGetValue(name, out var wf))
             return name == "A" ? intervals.Values.Select(it => it.Length).Product() : 0;
-        
-        var rules = wf.Rules;
+
         var combinations = 0L;
-        foreach (var rule in rules)
+        foreach (var rule in wf.Rules)
         {
-            if (rule.Range == Interval.Whole)
-            {
-                combinations += CountCombinations(intervals, rule.Dest);
-            }
-            else
-            {
-                var propInterval = intervals[rule.Prop];
-                var (a, b, c) = propInterval.Intersect(rule.Range);
-                if (b.HasValue)
-                    combinations += CountCombinations(intervals.SetItem(rule.Prop, b.Value), rule.Dest);
-                intervals = intervals.SetItem(rule.Prop, a ?? c ?? propInterval);
-            }
+            var propInterval = intervals[rule.Prop];
+            var (a, b, c) = propInterval.Intersect(rule.Range);
+            if (b.HasValue)
+                combinations += CountCombinations(intervals.SetItem(rule.Prop, b.Value), rule.Dest);
+            intervals = intervals.SetItem(rule.Prop, a ?? c ?? propInterval);
         }
+
         return combinations;
     }
 }
