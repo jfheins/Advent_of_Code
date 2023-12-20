@@ -4,39 +4,70 @@ namespace AoC_2023.Days;
 
 public sealed class Day_20 : BaseDay
 {
-    private readonly Dictionary<string, Module> _modules;
-
+    private readonly string[] _input;
 
     public Day_20()
     {
-        _modules = File.ReadAllLines(InputFilePath).Select(ParseLine).ToDictionary(x => x.Name);
-        _modules.Add("output", new Broadcast("output", Array.Empty<string>()));
-        _modules.Add("rx", new Broadcast("rx", Array.Empty<string>()));
-        foreach (var conj in _modules.Values.OfType<Conjunction>())
-        {
-            conj.InitSources(_modules.Values.Where(it => it.Dest.Contains(conj.Name)));
-        }
+        _input = File.ReadAllLines(InputFilePath);
     }
 
     private long[] _counts = new long[2];
+    private readonly Queue<(Module src, string dest, Pulse pulse)> _pulses = new(20);
 
     public override async ValueTask<string> Solve_1()
     {
-        for (int i = 0; i < 1000; i++)
-            PushTheButton();
+        var modules = BuildModules();
+        for (var i = 0; i < 1000; i++)
+            PushTheButton(modules);
         return _counts.Product().ToString();
     }
 
-    private void PushTheButton()
+    public override async ValueTask<string> Solve_2()
     {
-        var pulses = new Queue<(Module src, string dest, Pulse pulse)>();
-        pulses.Enqueue((_modules["broadcaster"], "broadcaster", Pulse.Low));
+        var modules = BuildModules();
+        var preSink = modules.Values.Single(it => it.Dest.Contains("rx"));
+        var inputs = modules.Values.Where(it => it.Dest.Contains(preSink.Name)).Cast<Conjunction>().ToList();
+        var loops = inputs.SelectList(_ => new LoopDetector(4100) { MinLoopCheckSize = 3000 });
 
-        while (pulses.TryDequeue(out var pulse))
+        var buttonPresses = 0;
+        while (loops.Any(it => !it.HasLoop))
+        {
+            PushTheButton(modules);
+            buttonPresses++;
+            for (var i = 0; i < loops.Count; i++)
+            {
+                if (!loops[i].HasLoop)
+                    loops[i].Feed(buttonPresses, inputs[i].SentHigh ? 1 : 2);
+            }
+        }
+
+        var cycles = loops.SelectList(it => (long)it.LoopSize);
+        return cycles.LowestCommonMulti().ToString();
+    }
+
+    private Dictionary<string, Module> BuildModules()
+    {
+        var modules = _input.Select(ParseLine).ToDictionary(x => x.Name);
+        modules.Add("output", new Broadcast("output", Array.Empty<string>()));
+        modules.Add("rx", new Broadcast("rx", Array.Empty<string>()));
+        foreach (var conj in modules.Values.OfType<Conjunction>())
+        {
+            conj.InitSources(modules.Values.Where(it => it.Dest.Contains(conj.Name)));
+        }
+
+        return modules;
+    }
+
+    private void PushTheButton(IReadOnlyDictionary<string, Module> modules)
+    {
+        foreach (var c in modules.Values.OfType<Conjunction>()) c.Reset();
+        _pulses.Enqueue((modules["broadcaster"], "broadcaster", Pulse.Low));
+
+        while (_pulses.TryDequeue(out var pulse))
         {
             _counts[(int)pulse.pulse]++;
             //Console.WriteLine(ToStr(pulse));
-            var module = _modules[pulse.dest];
+            var module = modules[pulse.dest];
             switch (module)
             {
                 case Broadcast:
@@ -50,14 +81,14 @@ public sealed class Day_20 : BaseDay
                 }
                 case Conjunction c:
                     c.LastIn[pulse.src] = pulse.pulse;
-                    Send(c.LastIn.Values.All(x => x == Pulse.High) ? Pulse.Low : Pulse.High);
+                    Send(c.CalcOut());
                     break;
             }
 
             void Send(Pulse p)
             {
                 foreach (var dest in module.Dest)
-                    pulses.Enqueue((module, dest, p));
+                    _pulses.Enqueue((module, dest, p));
             }
         }
 
@@ -100,6 +131,10 @@ public sealed class Day_20 : BaseDay
     {
         public Dictionary<Module, Pulse> LastIn { get; } = new(new ByNameComparer());
 
+        public bool SentHigh;
+
+        public void Reset() => SentHigh = false;
+
         private class ByNameComparer : IEqualityComparer<Module>
         {
             public bool Equals(Module? x, Module? y)
@@ -118,10 +153,12 @@ public sealed class Day_20 : BaseDay
         {
             foreach (var src in sources) LastIn.Add(src, Pulse.Low);
         }
-    }
 
-    public override async ValueTask<string> Solve_2()
-    {
-        return "-";
+        public Pulse CalcOut()
+        {
+            var result = LastIn.Values.All(x => x == Pulse.High) ? Pulse.Low : Pulse.High;
+            SentHigh |= result == Pulse.High;
+            return result;
+        }
     }
 }

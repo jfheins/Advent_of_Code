@@ -118,6 +118,25 @@ public static class LinqHelpers
     {
         return source.Aggregate(1L, (a, b) => a * b);
     }
+    
+    public static long LowestCommonMulti(this IEnumerable<long> source)
+    {
+        return source.Aggregate(LowestCommonMulti);
+    }
+    public static long LowestCommonMulti(long a, long b)
+    {
+        return Math.Abs(a * b) / GreatestCommonDivisor(a, b);
+    }
+    
+    public static long GreatestCommonDivisor(this IEnumerable<long> source)
+    {
+        return source.Aggregate(GreatestCommonDivisor);
+    }
+    public static long GreatestCommonDivisor(long a, long b)
+    {
+        return b == 0 ? a : GreatestCommonDivisor(b, a % b);
+    }
+    
     public static int Modulo(this int x, int ringSize)
     {
         while (x < 0)
