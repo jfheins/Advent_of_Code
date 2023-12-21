@@ -32,15 +32,16 @@ public sealed partial class Day_21 : BaseDay
     {
         var start = _grid.FindFirst('S');
 
-        var places = new HashSet<Point>() { start };
         var goalIter = 26501365;
+        var gridSize = _grid.Width;
+        var places = new HashSet<Point>() { start };
         var points = new List<Point>();
-        for (var i = 1; i < 10000; i++)
+        for (var i = 1; i <= goalIter; i++)
         {
             places = places.SelectMany(p => p.MoveLURD()).ToHashSet();
             places.RemoveWhere(p => _grid.GetValueWraparound(p) == '#');
 
-            if ((goalIter - i) % _grid.Width == 0)
+            if ((i > gridSize) && (goalIter - i) % gridSize == 0)
             {
                 points.Add(new(i, places.Count));
                 if (points.Count == 3)
@@ -49,6 +50,8 @@ public sealed partial class Day_21 : BaseDay
                 }
             }
         }
+        if (points.Count < 3)
+            return places.Count.ToString();
 
         // Find the parabola
         Matrix<double> matrix = new double[3, 3];
