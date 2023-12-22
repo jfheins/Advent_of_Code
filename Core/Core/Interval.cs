@@ -30,7 +30,9 @@ public readonly record struct Interval : IEnumerable<int>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public static Interval FromInclusiveBounds(int start, int end) => new(start, end + 1);
-    
+    public static Interval FromInclusiveBoundsOrInverse(int start, int end) 
+        => start < end ? new(start, end + 1) : new(end, start + 1);
+
     public static Interval? Create(int start, int end) => start < end ? new Interval(start, end) : null;
 
     /// <summary>
