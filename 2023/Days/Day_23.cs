@@ -25,14 +25,13 @@ public sealed partial class Day_23 : BaseDay
     public override async ValueTask<string> Solve_1()
     {
         var start = new Point(1, 0);
-        var bottom = _grid.BottomRight.Y;
+        var target = _grid.BottomRight.MoveBy(-1, 0);
 
         var res = new List<List<Point>>();
-        Dfs([], start, p => p.Y == bottom, res);
+        Dfs([], start, p => p == target, res);
 
-        var longest = res.MaxBy(it => it.Count);
-
-        return (longest.Count - 1).ToString();
+        var longest = res.Max(it => it.Count);
+        return (longest - 1).ToString();
     }
 
     public override async ValueTask<string> Solve_2()

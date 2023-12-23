@@ -1,20 +1,18 @@
 ﻿
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
 using JetBrains.Annotations;
 
-using MoreLinq;
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
 namespace Core
 {
-    public class DepthFirstSearch<TNode> where TNode: notnull
+    public class DepthFirstSearch<TNode> where TNode : notnull
     {
         public delegate void ProgressReporterCallback(int workingSetCount, int visitedCount);
 
-        private readonly NodeComparer _comparer;
+        private readonly IEqualityComparer<TNode>? _comparer;
         private readonly Func<TNode, IEnumerable<TNode>> _expander;
 
         /// <summary>
@@ -24,7 +22,7 @@ namespace Core
         /// <param name="expander">Callback to get the possible nodes from a source node</param>
         public DepthFirstSearch(IEqualityComparer<TNode>? comparer, Func<TNode, IEnumerable<TNode>> expander)
         {
-            _comparer = new NodeComparer(comparer ?? EqualityComparer<TNode>.Default);
+            _comparer = comparer;
             _expander = expander;
         }
 
@@ -33,66 +31,47 @@ namespace Core
                                       Func<TNode, bool> targetPredicate,
                                       ProgressReporterCallback? progressReporter = null)
         {
-            var result = FindAll(initialNode, targetPredicate, progressReporter, 1);
+            var result = FindAll(initialNode, targetPredicate);
             return result.FirstOrDefault();
         }
 
         [NotNull]
         public IList<IPath<TNode>> FindAll(TNode initialNode,
-                                           Func<TNode, bool> targetPredicate,
-                                           ProgressReporterCallback? progressReporter = null,
-                                           int minResults = int.MaxValue)
+                                           Func<TNode, bool> targetPredicate)
         {
-            return FindAll2(initialNode, dfsnode => targetPredicate(dfsnode.Item), progressReporter, minResults);
+            return FindAll2(initialNode, dfsnode => targetPredicate(dfsnode.Item));
         }
 
         [NotNull]
-        public IList<IPath<TNode>> FindAll2(TNode initialNode,
-                                           Func<NodeWithPredecessor, bool> targetPredicate,
-                                           ProgressReporterCallback? progressReporter = null,
-                                           int minResults = int.MaxValue)
+        public IList<IPath<TNode>> FindAll2(
+            TNode initialNode,
+            Func<NodeWithPredecessor, bool> targetPredicate)
         {
             if (targetPredicate == null)
                 throw new ArgumentNullException(nameof(targetPredicate), "A meaningful targetPredicate must be provided");
 
             var results = new List<IPath<TNode>>();
             var initial = new NodeWithPredecessor(initialNode);
-            var work = new Stack<(NodeWithPredecessor node, HashSet<TNode> past)>();
-            work.Push((initial, []));
+            var work = new Stack<(NodeWithPredecessor node, ImmutableHashSet<TNode> past)>();
+            work.Push((initial, ImmutableHashSet.Create(_comparer)));
 
             while (work.TryPop(out var current))
             {
-                current.past.Add(current.node.Item);
-
                 if (targetPredicate(current.node))
-                {
                     results.Add(new DfsPath(current.node));
-                   // progressReporter?.Invoke(work.Count, results.Count);
-                }
 
+                var newHistory = current.past.Add(current.node.Item);
                 var neighbors = _expander(current.node.Item).ToList();
-                neighbors.RemoveAll(current.past.Contains);
+                neighbors.RemoveAll(newHistory.Contains);
 
-                for (var i = neighbors.Count - 1; i >= 0; i--)
+                foreach (var neighbor in neighbors)
                 {
-                    var next = new NodeWithPredecessor(neighbors[i], current.node);
-                    if (i==0)
-                        work.Push((next, current.past)); // Reuse hashset
-                    else
-                        work.Push((next, [.. current.past]));
-                }                    
+                    var next = new NodeWithPredecessor(neighbor, current.node);
+                    work.Push((next, newHistory));
+                }
             }
 
             return results;
-        }
-
-        private IEnumerable<NodeWithPredecessor> SequentialExpand(IEnumerable<NodeWithPredecessor> nextNodes,
-                                                                  HashSet<NodeWithPredecessor> visitedNodes)
-        {
-            return nextNodes
-                .SelectMany(sourceNode => _expander(sourceNode.Item)
-                    .Select(dest => new NodeWithPredecessor(dest, sourceNode))
-                    .Where(dest => !visitedNodes.Contains(dest)));
         }
 
         private class DfsPath : IPath<TNode>
@@ -114,29 +93,6 @@ namespace Core
             public TNode Target { get; }
             public int Length { get; }
             public TNode[] Steps { get; }
-        }
-
-        private class NodeComparer : EqualityComparer<NodeWithPredecessor>
-        {
-            public readonly IEqualityComparer<TNode> _comparer;
-
-            public NodeComparer(IEqualityComparer<TNode> comparer)
-            {
-                _comparer = comparer;
-            }
-
-            public override bool Equals(NodeWithPredecessor? a, NodeWithPredecessor? b)
-            {
-                if (a is null || b is null)
-                    return ReferenceEquals(a, b);
-
-                return _comparer.Equals(a.Item, b.Item);
-            }
-
-            public override int GetHashCode(NodeWithPredecessor x)
-            {
-                return _comparer.GetHashCode(x.Item);
-            }
         }
 
         public class NodeWithPredecessor
