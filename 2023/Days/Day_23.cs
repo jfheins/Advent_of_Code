@@ -54,20 +54,22 @@ public sealed partial class Day_23 : BaseDay
                 ? Array.Empty<Point>() 
                 : Expand2(point);
         }
+        var nodes = _nodes.Keys.ToList();
+        var neighbors = nodes.SelectList(it => _nodes[it].SelectList(x => (byte)nodes.IndexOf(x.other)));
+        var targetIdx = nodes.IndexOf(target);
 
-        var dfs = new DepthFirstSearch<Point>(null, ExpandCoarse);
-        var res = dfs.FindAll(start, p => p == target);
+        var dfs = new IndexedDepthFirstSearch(nodes.Count, i => neighbors[i]);
+        var res = dfs.FindAll((byte)nodes.IndexOf(start), p => p == targetIdx);
 
         return res.Max(CountSteps).ToString();
 
-        IEnumerable<Point> ExpandCoarse(Point point) => _nodes[point].Select(it => it.other);
-
-        int CountSteps(IPath<Point> p)
+        int CountSteps(IPath<byte> p)
         {
             var steps = 0;
             foreach (var (l, r) in p.Steps.PairwiseWithOverlap())
             {
-                steps += _nodes[l].First(it => it.other == r).distance;
+                var left = nodes[l];
+                steps += _nodes[left].First(it => it.other == nodes[r]).distance;
             }
             return steps;
         }
