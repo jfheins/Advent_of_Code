@@ -45,29 +45,26 @@ namespace Core
         [NotNull]
         public IList<IPath<TNode>> FindAll2(
             TNode initialNode,
-            Func<NodeWithPredecessor, bool> targetPredicate)
+            Func<DfsNode, bool> targetPredicate)
         {
             if (targetPredicate == null)
                 throw new ArgumentNullException(nameof(targetPredicate), "A meaningful targetPredicate must be provided");
 
             var results = new List<IPath<TNode>>();
-            var initial = new NodeWithPredecessor(initialNode);
-            var work = new Stack<(NodeWithPredecessor node, ImmutableHashSet<TNode> past)>();
-            work.Push((initial, ImmutableHashSet.Create(_comparer)));
+            var work = new Stack<DfsNode>(200);
+            work.Push(new DfsNode(initialNode, _comparer));
 
             while (work.TryPop(out var current))
             {
-                if (targetPredicate(current.node))
-                    results.Add(new DfsPath(current.node));
+                if (targetPredicate(current))
+                    results.Add(new DfsPath(current));
 
-                var newHistory = current.past.Add(current.node.Item);
-                var neighbors = _expander(current.node.Item).ToList();
-                neighbors.RemoveAll(newHistory.Contains);
+                var neighbors = _expander(current.Item).ToList();
+                neighbors.RemoveAll(current.Visited.Contains);
 
                 foreach (var neighbor in neighbors)
                 {
-                    var next = new NodeWithPredecessor(neighbor, current.node);
-                    work.Push((next, newHistory));
+                    work.Push(new DfsNode(neighbor, current));
                 }
             }
 
@@ -83,7 +80,7 @@ namespace Core
                 Steps = [singleNode];
             }
 
-            public DfsPath(NodeWithPredecessor target)
+            public DfsPath(DfsNode target)
             {
                 Target = target.Item;
                 Steps = target.GetHistory().Reverse().ToArray();
@@ -95,22 +92,29 @@ namespace Core
             public TNode[] Steps { get; }
         }
 
-        public class NodeWithPredecessor
+        public class DfsNode
         {
-            public NodeWithPredecessor(TNode current, NodeWithPredecessor? predecessor = null)
+            public DfsNode(TNode current, IEqualityComparer<TNode>? cmp)
+            {
+                Predecessor = null;
+                Item = current;
+                Visited = ImmutableHashSet.Create(cmp, current);
+            }
+
+            public DfsNode(TNode current, DfsNode predecessor)
             {
                 Predecessor = predecessor;
                 Item = current;
-                Distance = (predecessor?.Distance + 1) ?? 0;
+                Visited = predecessor.Visited.Add(current);
             }
 
             public TNode Item { get; }
-            public NodeWithPredecessor? Predecessor { get; }
-            public int Distance { get; set; }
+            public DfsNode? Predecessor { get; }
+            public ImmutableHashSet<TNode> Visited { get; }
 
             public IEnumerable<TNode> GetHistory()
             {
-                NodeWithPredecessor? pointer = this;
+                DfsNode? pointer = this;
                 do
                 {
                     yield return pointer.Item;
