@@ -31,6 +31,7 @@ public readonly record struct LongInterval : IEnumerable<long>
     public bool Contains(LongInterval other) => Start <= other.Start && other.End <= End;
 
     public bool Contains(long point) => Start <= point && point < End;
+    public bool Contains(double point) => Start <= point && point < End;
 
 
     /// <summary>
