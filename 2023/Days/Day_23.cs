@@ -1,34 +1,32 @@
 ﻿using Core;
 
-using Microsoft.Z3;
-
 using Spectre.Console;
 
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.Xml.Linq;
 
 namespace AoC_2023.Days;
 
 public sealed partial class Day_23 : BaseDay
 {
-    private readonly string[] _input;
     private readonly FiniteGrid2D<char> _grid;
+    private readonly Point _start;
+    private readonly Point _target;
+    private Dictionary<Point, List<(Point other, int distance)>> _nodes = new();
 
     public Day_23()
     {
-        _input = File.ReadAllLines(InputFilePath);
-        _grid = new FiniteGrid2D<char>(_input);
+        var input = File.ReadAllLines(InputFilePath);
+        _grid = new FiniteGrid2D<char>(input);
+        _start = new Point(1, 0);
+        _target = _grid.BottomRight.MoveBy(-1, 0);
+        _nodes.Add(_start, []);
+        _nodes.Add(_target, []);
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        var start = new Point(1, 0);
-        var target = _grid.BottomRight.MoveBy(-1, 0);
-
         var res = new List<List<Point>>();
-        Dfs([], start, p => p == target, res);
+        Dfs([], _start, p => p == _target, res);
 
         var longest = res.Max(it => it.Count);
         return (longest - 1).ToString();
@@ -36,10 +34,6 @@ public sealed partial class Day_23 : BaseDay
 
     public override async ValueTask<string> Solve_2()
     {
-        var start = new Point(1, 0);
-        var target = _grid.BottomRight.MoveBy(-1, 0);
-        _nodes.Add(start, []);
-        _nodes.Add(target, []);
         foreach (var node in _nodes.Keys)
         {
             var bfs = new DepthFirstSearch<Point>(null, ExpandUntilNode);
@@ -56,10 +50,10 @@ public sealed partial class Day_23 : BaseDay
         }
         var nodes = _nodes.Keys.ToList();
         var neighbors = nodes.SelectList(it => _nodes[it].SelectList(x => (byte)nodes.IndexOf(x.other)));
-        var targetIdx = nodes.IndexOf(target);
+        var targetIdx = nodes.IndexOf(_target);
 
         var dfs = new IndexedDepthFirstSearch(nodes.Count, i => neighbors[i]);
-        var res = dfs.FindAll((byte)nodes.IndexOf(start), p => p == targetIdx);
+        var res = dfs.FindAll((byte)nodes.IndexOf(_start), p => p == targetIdx);
 
         return res.Max(CountSteps).ToString();
 
@@ -102,18 +96,6 @@ public sealed partial class Day_23 : BaseDay
         path.Remove(p);
     }
 
-    int max = 0;
-    private Dictionary<Point, List<(Point other, int distance)>> _nodes = new();
-
-    private void Log(int c)
-    {
-        if (c > max)
-        {
-            Console.WriteLine($"Found path of l={c}");
-            max = c;
-        }
-    }
-
     private void Dfs2(Point start, Func<Point, bool> predicate, List<List<Point>> results)
     {
         var work = new Stack<(Point p, HashSet<Point> path)>();
@@ -125,7 +107,6 @@ public sealed partial class Day_23 : BaseDay
             if (predicate(current.p))
             {
                 results.Add(current.path.ToList());
-                Log(current.path.Count);
                 continue;
             }
 

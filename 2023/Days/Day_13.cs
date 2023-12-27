@@ -26,7 +26,6 @@ public sealed partial class Day_13 : BaseDay
 
     private int TestVert(FiniteGrid2D<char> grid)
     {
-        Console.WriteLine(grid.ToString());
         var c = grid.AllCols('.').PairwiseWithOverlap().Where(t => t.Item1.cells.Count(x => x == '#') == t.Item2.cells.Count(x => x == '#'))
             .Select(t => (t.Item1.x, t.Item2.x)).ToList();
 
@@ -84,7 +83,6 @@ public sealed partial class Day_13 : BaseDay
 
     private int TestVert2(FiniteGrid2D<char> grid)
     {
-        Console.WriteLine(grid.ToString());
         var c = grid.AllCols('.').PairwiseWithOverlap()
             .Where(t => Math.Abs( t.Item1.cells.Count(x => x == '#') - t.Item2.cells.Count(x => x == '#')) < 2)
             .Select(t => (t.Item1.x, t.Item2.x)).ToList();

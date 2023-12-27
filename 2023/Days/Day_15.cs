@@ -1,12 +1,6 @@
 ﻿using Core;
 
-using Microsoft.Z3;
-
 using MoreLinq;
-
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq.Expressions;
 
 namespace AoC_2023.Days;
 

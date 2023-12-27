@@ -1,10 +1,5 @@
 ﻿using Core;
 
-using Newtonsoft.Json.Linq;
-
-using System.Diagnostics;
-using System.Drawing;
-
 namespace AoC_2023.Days;
 
 public sealed partial class Day_07 : BaseDay

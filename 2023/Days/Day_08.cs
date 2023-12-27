@@ -2,11 +2,6 @@
 
 using Core;
 
-using MoreLinq;
-
-using System.Diagnostics;
-using System.Drawing;
-
 namespace AoC_2023.Days;
 
 public sealed partial class Day_08 : BaseDay

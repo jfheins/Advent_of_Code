@@ -1,10 +1,5 @@
 ﻿using Core;
 
-using MatrixDotNet.Extensions.Statistics.TableSetup;
-
-using System.Diagnostics;
-using System.Drawing;
-
 namespace AoC_2023.Days;
 
 public sealed partial class Day_22 : BaseDay

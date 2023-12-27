@@ -1,6 +1,6 @@
 ﻿using Core;
+
 using Spectre.Console;
-using System.Drawing;
 
 namespace AoC_2023.Days;
 
