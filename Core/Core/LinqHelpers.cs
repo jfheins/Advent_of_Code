@@ -539,6 +539,11 @@ public static class LinqHelpers
         return result;
     }
 
+    public static IEnumerable<TRes> Select2<T1, T2, TRes>(
+        this IEnumerable<(T1, T2)> source,
+        Func<T1, T2, TRes> selector) 
+        => source.Select(it => selector(it.Item1, it.Item2));
+
     public static string AsString(this Range r)
     {
         Debug.Assert(!r.Start.IsFromEnd && !r.End.IsFromEnd);
