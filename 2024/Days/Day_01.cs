@@ -13,11 +13,20 @@ public sealed class Day_01 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        return _input[0];
+        var left = _input.Select(x => x.ParseInts(2)[0]).Order().ToList();
+        var right = _input.Select(x => x.ParseInts(2)[1]).Order().ToList();
+        var dist = left.Zip(right).Select(x => Math.Abs(x.First - x.Second)).Sum();
+
+        return dist.ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        return "_2_";
+        var left = _input.Select(x => x.ParseInts(2)[0]).Order().ToList();
+        var right = _input.Select(x => x.ParseInts(2)[1]).Order().ToList();
+
+        var score = left.Select(x => x*right.Count(r => r == x)).ToList();
+
+        return score.Sum().ToString();
     }
 }
