@@ -20,32 +20,17 @@ public sealed partial class Day_02 : BaseDay
         return safeCount.ToString();
     }
 
-    bool IsSafe(int[] s)
+    bool IsSafe(IEnumerable<int> s)
         => (s.Diff().All(x => x > 0)
-        || s.Diff().All(x => x < 0))
-        && s.Diff().All(x => Math.Abs(x) <= 3);
+            || s.Diff().All(x => x < 0))
+            && s.Diff().All(x => Math.Abs(x) <= 3);
+
+    static IEnumerable<int>[] OmitAnyOne(ICollection<int> s)
+        => Enumerable.Range(0, s.Count)
+        .Select(it => s.OmitAt(it)).ToArray();
 
     public override async ValueTask<string> Solve_2()
     {
-        var sc = 0;
-        foreach (var s in _input)
-        {
-            if (IsSafe(s))
-                sc++;
-            else
-            {
-                for (var i = 0; i < s.Length; i++)
-                {
-                    int[] alter = [..s[0..i], ..s[(i+1)..]];
-                    if(IsSafe(alter))
-                    {
-                        sc++;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return sc.ToString();
+        return _input.Count(it => IsSafe(it) || OmitAnyOne(it).Any(IsSafe)).ToString();
     }
 }

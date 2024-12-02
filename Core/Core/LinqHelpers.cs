@@ -54,6 +54,14 @@ public static class LinqHelpers
         return source.Where(x => !exception.Equals(x));
     }
 
+    public static IEnumerable<T> OmitAt<T>(this IEnumerable<T> source, int omitIndex) where T : notnull
+    {
+        var index = 0;
+        foreach (var item in source)
+            if(index++ != omitIndex)
+                yield return item;
+    }
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
     public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, Func<TKey, TValue> factory) where TKey : notnull
     {
