@@ -12,6 +12,9 @@ public sealed partial class Day_03 : BaseDay
         _input = File.ReadAllText(InputFilePath);
     }
 
+    [GeneratedRegex(@"mul\([0-9]{1,3},[0-9]{1,3}\)")]
+    private static partial Regex Part1Regex();
+
     public override ValueTask<string> Solve_1()
     {
         long res = 0;
@@ -23,27 +26,24 @@ public sealed partial class Day_03 : BaseDay
         return ValueTask.FromResult(res.ToString());
     }
 
+    [GeneratedRegex(@"mul\([0-9]{1,3},[0-9]{1,3}\)|do\(\)|don't\(\)")]
+    private static partial Regex Part2Regex();
+
     public override ValueTask<string> Solve_2()
     {
         long res = 0;
-        bool active = true;
+        var active = true;
         foreach (var match in Part2Regex().EnumerateMatches(_input))
         {
-            var matchValue = _input.AsSpan(match);
-            if (matchValue is "do()")
+            var instruction = _input.AsSpan(match);
+            if (instruction is "do()")
                 active = true;
-            else if (matchValue is "don't()")
+            else if (instruction is "don't()")
                 active = false;
             else if (active)
-                res += matchValue.ParseInts(2).Product();
+                res += instruction.ParseInts(2).Product();
         }
 
         return ValueTask.FromResult(res.ToString());
     }
-
-    [GeneratedRegex(@"mul\([0-9]{1,3},[0-9]{1,3}\)")]
-    private static partial Regex Part1Regex();
-
-    [GeneratedRegex(@"mul\([0-9]{1,3},[0-9]{1,3}\)|do\(\)|don't\(\)")]
-    private static partial Regex Part2Regex();
 }
