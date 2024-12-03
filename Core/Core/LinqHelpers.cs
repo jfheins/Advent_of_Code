@@ -11,6 +11,7 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using static System.Text.RegularExpressions.Regex;
 
 namespace Core;
 
@@ -537,13 +538,21 @@ public static class LinqHelpers
         return source.Select(selector).ToList();
     }
 
-    public static TResult[] SelectArray<T, TResult>(this IList<T> source, Func<T, TResult> selector)
+    public static TResult[] SelectArray<T, TResult>(this IReadOnlyList<T> source, Func<T, TResult> selector)
     {
         var result = new TResult[source.Count];
         for (var i = 0; i < source.Count; i++)
         {
             result[i] = selector(source[i]);
         }
+        return result;
+    }
+
+    public static IReadOnlyList<Range> ToRanges(this ValueMatchEnumerator source)
+    {
+        var result = new List<Range>();
+        foreach (var item in source)
+            result.Add(new Range(item.Index, item.Index + item.Length));
         return result;
     }
 

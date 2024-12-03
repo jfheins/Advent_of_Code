@@ -17,6 +17,31 @@ namespace Core
 
             return matches.SelectArray(match => int.Parse(match.Value));
         }
+
+        public static IReadOnlyList<int> ParseInts(this ReadOnlySpan<char> str, int? count = null)
+        {
+            var regex = SignedNumberRegex();
+            var result = new List<int>(count ?? 16);
+            foreach (var item in regex.EnumerateMatches(str))
+            {
+                result.Add(int.Parse(str.Slice(item.Index, item.Length)));
+            }
+            if (count != null)
+                Debug.Assert(result.Count == count);
+
+            return result;
+        }
+
+        public static ReadOnlySpan<char> Slice(this ReadOnlySpan<char> str, ValueMatch source)
+        {
+            return str.Slice(source.Index, source.Length);
+        }
+
+        public static ReadOnlySpan<char> AsSpan(this string str, ValueMatch source)
+        {
+            return str.AsSpan(source.Index, source.Length);
+        }
+
         public static int[] ParseNNInts(this string str, int? count = null)
         {
             var regex = NumberRegex();
