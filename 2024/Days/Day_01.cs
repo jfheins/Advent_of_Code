@@ -20,8 +20,8 @@ public sealed class Day_01 : BaseDay
 
     public override async ValueTask<string> Solve_2()
     {
-        var right = _input.Select2((a, b) => b).CountBy(x => x).ToDictionary();
+        var rightFrequencies = _input.Select2((a, b) => b).CountBy(x => x).ToDictionary();
         var left = _input.Select2((a, b) => a);
-        return left.Sum(x => x * right.GetValueOrDefault(x)).ToString();
+        return left.Sum(x => x * rightFrequencies.GetValueOrDefault(x)).ToString();
     }
 }

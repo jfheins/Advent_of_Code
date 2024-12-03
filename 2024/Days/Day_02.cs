@@ -15,19 +15,20 @@ public sealed partial class Day_02 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        // var grid = new FiniteGrid2D<char>(_input);
         var safeCount = _input.Count(IsSafe);
         return safeCount.ToString();
     }
 
-    bool IsSafe(IEnumerable<int> s)
-        => (s.Diff().All(x => x > 0)
-            || s.Diff().All(x => x < 0))
-            && s.Diff().All(x => Math.Abs(x) <= 3);
+    private static bool IsSafe(IEnumerable<int> it)
+        => IsSafe(it.ToArray());
 
-    static IEnumerable<int>[] OmitAnyOne(ICollection<int> s)
-        => Enumerable.Range(0, s.Count)
-        .Select(it => s.OmitAt(it)).ToArray();
+    private static bool IsSafe(int[] s)
+        => s.Diff().Select(Math.Sign).AreAllEqual()
+           && s.Diff().All(x => Math.Abs(x) is >= 1 and <= 3);
+
+    private static IEnumerable<int>[] OmitAnyOne(int[] s)
+        => Enumerable.Range(0, s.Length)
+            .Select(s.OmitAt).ToArray();
 
     public override async ValueTask<string> Solve_2()
     {

@@ -12,17 +12,18 @@ public sealed partial class Day_03 : BaseDay
         _input = File.ReadAllText(InputFilePath);
     }
 
-    public override async ValueTask<string> Solve_1()
+    public override ValueTask<string> Solve_1()
     {
         long res = 0;
         foreach (var match in Part1Regex().EnumerateMatches(_input))
         {
             res += _input.AsSpan(match).ParseInts(2).Product();
         }
-        return res.ToString();
+
+        return ValueTask.FromResult(res.ToString());
     }
 
-    public override async ValueTask<string> Solve_2()
+    public override ValueTask<string> Solve_2()
     {
         long res = 0;
         bool active = true;
@@ -36,7 +37,8 @@ public sealed partial class Day_03 : BaseDay
             else if (active)
                 res += matchValue.ParseInts(2).Product();
         }
-        return res.ToString();
+
+        return ValueTask.FromResult(res.ToString());
     }
 
     [GeneratedRegex(@"mul\([0-9]{1,3},[0-9]{1,3}\)")]
