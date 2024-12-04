@@ -1,6 +1,8 @@
 ﻿using AoC_2024.Days;
 
 using AoCHelper;
+using Core;
+using Flurl.Http;
 
 namespace AoC_2024;
 
@@ -8,6 +10,19 @@ static class Program
 {
     static async Task Main()
     {
+        if (File.Exists("cookie.secret"))
+        {
+            var missingDays = AllDays()
+                .Select(className => (className.ParseInts(1).Last(), destPath: $"Inputs/{className}.txt"))
+                .ExceptWhere(t => File.Exists(t.destPath)).ToList();
+            if (missingDays.Count > 0)
+            {
+                var cookie = await File.ReadAllTextAsync("cookie.secret");
+                await Task.WhenAll(missingDays.Select(tuple => DownloadDay(tuple, cookie)));
+                Console.WriteLine("Downloaded input for days: " + string.Join(" ", missingDays.Select2((n, _) => n)));
+            }
+        }
+        
         await Solver.SolveLast(c => 
         {
             c.ShowConstructorElapsedTime = true;
@@ -15,5 +30,17 @@ static class Program
             c.ElapsedTimeFormatSpecifier = "0.0";
             c.ClearConsole = false;
         });
+    }
+
+    private static IEnumerable<string> AllDays() => typeof(BaseDay)
+        .Assembly.GetTypes()
+        .Where(t => t.IsClass && t.IsSubclassOf(typeof(BaseDay)) && !t.IsAbstract)
+        .Select(it => it.Name);
+    
+    private static async Task DownloadDay((int day, string destPath) input, string cookie)
+    {
+        var url = $"https://adventofcode.com/2024/day/{input.day}/input";
+        var res = await url.WithCookie("session", cookie).GetStringAsync();
+        await File.WriteAllTextAsync(input.destPath, res);
     }
 }

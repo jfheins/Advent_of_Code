@@ -55,6 +55,11 @@ public static class LinqHelpers
         return source.Where(x => !exception.Equals(x));
     }
 
+    public static IEnumerable<T> ExceptWhere<T>(this IEnumerable<T> source, Func<T, bool> predicate) where T : notnull
+    {
+        return source.Where(x => !predicate(x));
+    }
+
     public static IEnumerable<T> OmitAt<T>(this IEnumerable<T> source, int omitIndex) where T : notnull
     {
         var index = 0;

@@ -4,7 +4,7 @@ namespace AoC_2024;
 
 public abstract class BaseDay : BaseProblem
 {
-    protected override string ClassPrefix { get; } = "Day";
+    protected override string ClassPrefix => "Day";
 
     public override string InputFilePath
     {
