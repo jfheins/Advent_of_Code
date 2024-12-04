@@ -28,7 +28,10 @@ namespace Core
             { Direction8.DownRight , new Size( 1,  1) },
         };
 
+        public static Size ToSize(this Direction8 dir) => _mapDirection8ToSize[dir];
+
         public static Point MoveTo(this Point p, Direction dir, int steps = 1) => p + (steps * _mapDirectionToSize[dir]);
+        public static Point MoveTo(this Point p, Direction8 dir, int steps = 1) => p + (steps * _mapDirection8ToSize[dir]);
         public static Point MoveBy(this Point p, int dx, int dy) => p + new Size(dx, dy);
         public static Point Minus(this Point a, Point b) => new(a.X - b.X, a.Y - b.Y);
 

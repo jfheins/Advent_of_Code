@@ -34,6 +34,10 @@ namespace Core
         public static Direction8[] All8 => new Direction8[] { Direction8.UpLeft, Direction8.Up, Direction8.UpRight,
             Direction8.Left, Direction8.Right, Direction8.DownLeft, Direction8.Down, Direction8.DownRight };
 
+        public static Direction8[] Diagonal => [Direction8.UpLeft, Direction8.UpRight,
+            Direction8.DownLeft, Direction8.DownRight];
+
+
         public static Direction Parse(this char s) => s switch
         {
             '<' => Direction.Left,
@@ -59,8 +63,32 @@ namespace Core
         public static Direction TurnClockwise(this Direction dir, int times = 1) => (Direction)(((int)dir + times) % 4);
         public static Direction TurnCounterClockwise(this Direction dir, int times = 1) => (Direction)(((int)dir + (3 * times)) % 4);
         public static Direction Opposite(this Direction dir) => (Direction)(((int)dir + 2) % 4);
+        public static Direction8 Opposite(this Direction8 dir) => dir switch
+        {
+            Direction8.UpLeft => Direction8.DownRight,
+            Direction8.Up => Direction8.Down,
+            Direction8.UpRight => Direction8.DownLeft,
+            Direction8.Left => Direction8.Right,
+            Direction8.Right => Direction8.Left,
+            Direction8.DownLeft => Direction8.UpRight,
+            Direction8.Down => Direction8.Up,
+            Direction8.DownRight => Direction8.UpLeft,
+        };
 
-        public static IReadOnlyList<Direction> Perpendicular(this Direction dir) 
+        public static Direction8 TurnClockwise(this Direction8 dir) => dir switch
+        {
+            Direction8.UpLeft => Direction8.UpRight,
+            Direction8.Up => Direction8.Right,
+            Direction8.UpRight => Direction8.DownRight,
+            Direction8.Left => Direction8.Up,
+            Direction8.Right => Direction8.Down,
+            Direction8.DownLeft => Direction8.UpLeft,
+            Direction8.Down => Direction8.Left,
+            Direction8.DownRight => Direction8.DownLeft,
+        };
+        public static Direction8 TurnCounterClockwise(this Direction8 dir) => TurnClockwise(dir.Opposite());
+
+        public static IReadOnlyList<Direction> Perpendicular(this Direction dir)
             => [(Direction)(((int)dir + 1) % 4), (Direction)(((int)dir + 3) % 4)];
 
         public static Direction ToDirection(this ConsoleKeyInfo key) => (Direction)(key.Key - 37);
