@@ -1,88 +1,60 @@
 ﻿using Core;
-using Spectre.Console;
-using System.Drawing;
-using System.Runtime.CompilerServices;
-using static MoreLinq.Extensions.SplitExtension;
 
 namespace AoC_2024.Days;
 
-public sealed partial class Day_05 : BaseDay
+public sealed class Day_05 : BaseDay
 {
-    private readonly string[] _input;
+    private readonly Rule[] _rules;
+    private readonly int[][] _updates;
 
     public Day_05()
     {
-        _input = File.ReadAllLines(InputFilePath);
+        var input = File.ReadAllLines(InputFilePath).SplitBy("", 2);
+        _rules = input[0].SelectArray(Rule.Parse);
+        _updates = input[1].SelectArray(it => it.ParseInts());
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        var parts = _input.Split("").ToArray();
-        var rules = parts[0].Select(x => x.ParseInts(2)).ToArray();
-        var updates = parts[1].Select(x => x.ParseInts()).ToArray();
-
-        var sum = 0;
-        foreach(var u in updates)
-        {
-            if (inOrder(u, rules))
-                sum += u.CenterItem();
-        }
-
-        return sum.ToString();
-    }
-
-    private bool inOrder(int[] u, int[][] rules)
-    {
-        return rules.All(r =>
-        {
-            var idx = Array.IndexOf(u, r[0]);
-            if (idx == -1)
-                return true;
-            else
-            {
-                var si = Array.IndexOf(u, r[1]);
-                return si == -1 ? true : idx < si;
-            }
-        });
+        return _updates.Where(SatisfiesAllRules).Sum(u => u.CenterItem()).ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var parts = _input.Split("").ToArray();
-        var rules = parts[0].Select(x => x.ParseInts(2)).ToArray();
-        var updates = parts[1].Select(x => x.ParseInts()).ToArray();
-
-        var sum = 0;
-        foreach (var u in updates.ExceptWhere(u => inOrder(u, rules)))
-        {
-            var corrected = Fix(u, rules);
-                sum += corrected.CenterItem();
-        }
-
-        return sum.ToString();
+        return _updates.ExceptWhere(SatisfiesAllRules).Sum(u => Fix(u).CenterItem()).ToString();
     }
 
-    private int[] Fix(int[] u, int[][] rules)
+    private bool SatisfiesAllRules(int[] update)
+        => _rules.All(r => r.IsCompliant(update));
+
+    private record Rule(int First, int Second)
     {
-
-        do
+        public static Rule Parse(string s)
         {
-            var brokenRule = rules.FirstOrDefault(r =>
-            {
-                var left = Array.IndexOf(u, r[0]);
-                var right = Array.IndexOf(u, r[1]);
-                return left != -1 && right != -1 && left > right;
-            });
-            if (brokenRule != null)
-            {
+            var parts = s.Split('|');
+            return new Rule(int.Parse(parts[0]), int.Parse(parts[1]));
+        }
 
-                var leftIdx = Array.IndexOf(u, brokenRule[0]);
-                var rightIdx = Array.IndexOf(u, brokenRule[1]);
-                (u[leftIdx], u[rightIdx]) = (u[rightIdx], u[leftIdx]);
-            }
-            else break;
+        public bool IsCompliant(int[] pageNumbers)
+        {
+            var firstIdx = Array.IndexOf(pageNumbers, First);
+            var secondIdx = Array.IndexOf(pageNumbers, Second);
+            return firstIdx == -1 || secondIdx == -1 || firstIdx < secondIdx;
+        }
 
-        } while (true);
-        return u;
+        public void FixOrder(int[] pages)
+        {
+            var leftIdx = Array.IndexOf(pages, First);
+            var rightIdx = Array.IndexOf(pages, Second);
+            (pages[leftIdx], pages[rightIdx]) = (pages[rightIdx], pages[leftIdx]);
+        }
+    }
+
+    private int[] Fix(int[] update)
+    {
+        while (_rules.FirstOrDefault(r => !r.IsCompliant(update)) is { } brokenRule) 
+            brokenRule.FixOrder(update);
+
+        return update;
     }
 }

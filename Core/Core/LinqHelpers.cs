@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -68,7 +67,7 @@ public static class LinqHelpers
                 yield return item;
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
+    [SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
     public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, Func<TKey, TValue> factory) where TKey : notnull
     {
         if (dict.TryGetValue(key, out var data))
@@ -77,7 +76,7 @@ public static class LinqHelpers
             return dict[key] = factory(key);
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
+    [SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
     public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue defaultValue) where TKey : notnull
     {
         if (dict.TryGetValue(key, out var data))
@@ -86,7 +85,7 @@ public static class LinqHelpers
             return dict[key] = defaultValue;
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
+    [SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
     public static void AddToList<TKey, TValue>(this IDictionary<TKey, List<TValue>> dict, TKey key, TValue value) where TKey : notnull
     {
         if (dict.TryGetValue(key, out var list))
@@ -95,7 +94,7 @@ public static class LinqHelpers
             dict[key] = new List<TValue> { value };
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
+    [SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AddOrModify<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue initValue, Func<TValue, TValue> modifier) where TKey : notnull
     {
@@ -105,7 +104,7 @@ public static class LinqHelpers
             dict[key] = modifier(initValue);
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
+    [SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
     public static IEnumerable<TValue> GetOrEmpty<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TKey : notnull
     {
         if (dict.TryGetValue(key, out var data))
@@ -582,6 +581,31 @@ public static class LinqHelpers
     {
         var idx = s.IndexOf(c);
         return idx >= 0 ? idx : throw new Exception("Char not found in string");
+    }
+
+    public static IReadOnlyList<ArraySegment<T>> SplitBy<T>(this T[] source, T separator, int? expectedCount = null)
+    {
+        var splitters = new SortedSet<int> { -1 };
+        var idx = Array.IndexOf(source, separator);
+        while (idx > -1)
+        {
+            splitters.Add(idx);
+            idx = Array.IndexOf(source, separator, idx + 1);
+        }
+
+        splitters.Add(source.Length);
+
+        if (expectedCount is not null)
+            Debug.Assert(splitters.Count == expectedCount + 1);
+
+        var segments = new List<ArraySegment<T>>();
+        foreach (var (start, end) in splitters.PairwiseWithOverlap())
+        {
+            if (end - start > 1)
+                segments.Add(new ArraySegment<T>(source, start + 1, end - start - 1));
+        }
+
+        return segments;
     }
 
     public static IEnumerable<T[]> SplitInto<T>(this ICollection<T> source, int chunks)

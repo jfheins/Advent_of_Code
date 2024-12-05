@@ -1,3 +1,4 @@
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 
@@ -39,13 +40,14 @@ namespace Core.Test
         [TestMethod]
         public void RightChunksNonString()
         {
-            var array = new int[] { 1, 1, 1, 2, 2, 3, 6, 9, 9, 9, 8, 7, 7, 7, 5, 5, 4, 4, 4, 8, 8, 8, 8, 3, 3, 3, 3, 3, 9 };
+            var array = new[] { 1, 1, 1, 2, 2, 3, 6, 9, 9, 9, 8, 7, 7, 7, 5, 5, 4, 4, 4, 8, 8, 8, 8, 3, 3, 3, 3, 3, 9 };
             var chunks = array.Chunks();
 
             var expected = new int[][] {
-                new int[] { 1, 1, 1 }, new int[] { 2, 2 }, new int[] { 3 }, new int[] { 6 },
-                new int[] { 9, 9, 9 }, new int[] { 8 }, new int[] { 7, 7, 7 }, new int[] { 5, 5 },
-                new int[] { 4, 4, 4 }, new int[] { 8, 8, 8, 8 }, new int[] { 3, 3, 3, 3, 3 }, new int[] {9 } };
+                [1, 1, 1], [2, 2], [3], [6],
+                [9, 9, 9], [8], [7, 7, 7], [5, 5],
+                [4, 4, 4], [8, 8, 8, 8], [3, 3, 3, 3, 3], [9]
+            };
 
             foreach (var (exp, result) in expected.Zip(chunks))
                 CollectionAssert.AreEqual(exp, result);
@@ -65,16 +67,30 @@ namespace Core.Test
         [TestMethod]
         public void StepBy3()
         {
-            var array = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            var array = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
             var result = array.StepBy(3).ToArray();
-            CollectionAssert.AreEqual(new int[] {1, 4, 7} , result);
+            CollectionAssert.AreEqual(new[] {1, 4, 7} , result);
             result = array.StepBy(3, 1).ToArray();
-            CollectionAssert.AreEqual(new int[] { 2, 5, 8 }, result);
+            CollectionAssert.AreEqual(new[] { 2, 5, 8 }, result);
             result = array.StepBy(4, 3).ToArray();
-            CollectionAssert.AreEqual(new int[] { 4, 8 }, result);
+            CollectionAssert.AreEqual(new[] { 4, 8 }, result);
             result = array.StepBy(1, 7).ToArray();
-            CollectionAssert.AreEqual(new int[] { 8, 9 }, result);
+            CollectionAssert.AreEqual(new[] { 8, 9 }, result);
+        }
+        
+        
+
+        [DataTestMethod]
+        [DataRow("AA_BB_CC", "AA", "BB", "CC")]
+        [DataRow("__A_B__", "A", "B")]
+        [DataRow("A__B__C__D", "A", "B", "C", "D")]
+        public void SplitTest(string data, params string[] expected)
+        {
+            var result1 = data.Split("_", StringSplitOptions.RemoveEmptyEntries);
+            var result2 = data.ToCharArray().SplitBy('_');
+
+            CollectionAssert.AreEqual(result1, result2.SelectList(it => new string(it)));
         }
     }
 }
