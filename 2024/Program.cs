@@ -13,7 +13,8 @@ static class Program
         if (File.Exists("cookie.secret"))
         {
             var missingDays = AllDays()
-                .Select(className => (className.ParseInts(1).Last(), destPath: $"Inputs/{className}.txt"))
+                .Select(className => (dayNumber: className.ParseInts(1).Last(), destPath: $"Inputs/{className}.txt"))
+                .Where(t => t.dayNumber > 0)
                 .ExceptWhere(t => File.Exists(t.destPath)).ToList();
             if (missingDays.Count > 0)
             {
