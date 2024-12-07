@@ -46,12 +46,14 @@ public sealed partial class Day_06 : BaseDay
         grid[guard] = '.';
         var po = new HashSet<Point>();
 
-        foreach (var p in _visited.ExceptFor(guard))
-        {
-            if (MakesLoop(grid, guard, p))
-                po.Add(p);
-
-        }
+        _visited.ExceptFor(guard).AsParallel().Where(p => MakesLoop(grid, guard, p)).ForAll(x => po.Add(x));
+        
+        // foreach (var p in _visited.ExceptFor(guard))
+        // {
+        //     if (MakesLoop(grid, guard, p))
+        //         po.Add(p);
+        //
+        // }
 
         foreach (var p in _visited)
             grid[p] = 'x';
