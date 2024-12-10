@@ -1,10 +1,8 @@
 ﻿using Core;
-using Spectre.Console;
-using System.Drawing;
 
 namespace AoC_2024.Days;
 
-public sealed partial class Day_09 : BaseDay
+public sealed class Day_09 : BaseDay
 {
     private readonly string[] _input;
 
