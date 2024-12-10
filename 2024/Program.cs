@@ -33,6 +33,18 @@ static class Program
         });
     }
 
+    private static async ValueTask WarmUp<T>() where T:BaseDay, new()
+    {
+        var instance = new T();
+        for (var i = 0; i < 100; i++)
+        {
+            await instance.Solve_1();
+            await instance.Solve_2();
+        }
+
+        await Task.Delay(50);
+    }
+
     private static IEnumerable<string> AllDays() => typeof(BaseDay)
         .Assembly.GetTypes()
         .Where(t => t.IsClass && t.IsSubclassOf(typeof(BaseDay)) && !t.IsAbstract)
