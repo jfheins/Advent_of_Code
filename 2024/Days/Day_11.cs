@@ -6,7 +6,7 @@ public sealed class Day_11 : BaseDay
 {
     private readonly Dictionary<(long stone, int times), long> _cache = new();
     private readonly int[] _stones;
-    
+
     public Day_11()
     {
         var input = File.ReadAllText(InputFilePath);
@@ -26,48 +26,38 @@ public sealed class Day_11 : BaseDay
     }
 
     private long Solve(int blinks)
-        => _stones.Sum(it => Evolve(it, blinks));
+        => _stones.Sum(it => EvolveRecursive(it, blinks));
 
 
-    private long Evolve(long stone, int times)
+    private long EvolveRecursive(long stone, int times)
     {
         if (times == 0)
             return 1;
         if (_cache.TryGetValue((stone, times), out var value))
             return value;
 
-        var evolved = new TinyList<long>(stackalloc long[2]);
-        Evolve(stone, ref evolved);
-        var result = 0L;
-        foreach (var x in evolved.AsSpan())
-        {
-            result += Evolve(x, times - 1);
-        }
+        var evolved = Evolve(stone);
+        var result = evolved.Item2 == null
+            ? EvolveRecursive(evolved.Item1, times - 1) 
+            : EvolveRecursive(evolved.Item1, times - 1) + EvolveRecursive(evolved.Item2.Value, times - 1);
         
         _cache[(stone, times)] = result;
         return result;
     }
 
-    private static void Evolve(long x, ref TinyList<long> evolved)
+    private static (long, long?) Evolve(long stone)
     {
-        if (x == 0)
-        {
-            evolved.Add(1);
-            return;
-        }
-
-        var digits = GetDigits(x);
-        if (digits % 2 == 0)
-        {
-            var factor = (long)Math.Pow(10, (int)(digits / 2));
-            evolved.Add((int)(x / factor));
-            evolved.Add((int)(x % factor));
-        }
-        else
-        {
-            evolved.Add(x * 2024);
-        }
+        if (stone == 0)
+            return (1, null);
         
-        static int GetDigits(long x) =>  (int)Math.Floor(Math.Log10(x) + 1);
+        var s = stone.ToString();
+        if (s.Length % 2 == 0)
+        {
+            var left = s.AsSpan()[..(s.Length / 2)];
+            var right = s.AsSpan()[(s.Length / 2)..];
+                
+            return (long.Parse(left), long.Parse(right));
+        }
+        return (stone * 2024, null);
     }
 }

@@ -16,4 +16,6 @@ public ref struct TinyList<T>(Span<T> buffer)
     public readonly Span<T> AsSpan() => _buffer[..Count];
 
     public readonly T this[int i] => _buffer[i];
+
+    public void Clear() => Count = 0;
 }
