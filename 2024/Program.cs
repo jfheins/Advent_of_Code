@@ -23,6 +23,8 @@ static class Program
                 Console.WriteLine("Downloaded input for days: " + string.Join(" ", missingDays.Select2((n, _) => n)));
             }
         }
+
+        await WarmUp<Day_11>();
         
         await Solver.SolveLast(c => 
         {
@@ -36,8 +38,9 @@ static class Program
     private static async ValueTask WarmUp<T>() where T:BaseDay, new()
     {
         var instance = new T();
-        for (var i = 0; i < 100; i++)
+        for (var i = 0; i < 20; i++)
         {
+            instance.Clear();
             await instance.Solve_1();
             await instance.Solve_2();
         }

@@ -1,74 +1,73 @@
-﻿using System.Numerics;
-using Core;
+﻿using Core;
 
 namespace AoC_2024.Days;
 
 public sealed class Day_11 : BaseDay
 {
-    private readonly string _input;
-
+    private readonly Dictionary<(long stone, int times), long> _cache = new();
+    private readonly int[] _stones;
+    
     public Day_11()
     {
-        _input = File.ReadAllText(InputFilePath);
+        var input = File.ReadAllText(InputFilePath);
+        _stones = input.ParseInts();
     }
+
+    public override void Clear() => _cache.Clear();
 
     public override async ValueTask<string> Solve_1()
     {
-        var stones = _input.ParseLongs();
-        var total = stones.Sum(it => Evolve2(it, 25));
-        return total.ToString();
+        return Solve(25).ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var stones = _input.ParseLongs();
-        var total = stones.Sum(it => Evolve2(it, 75));
-        return total.ToString();
+        return Solve(75).ToString();
     }
 
-    private Dictionary<(long, int), long> _cache = new();
-    
-    private long Evolve2(long stone, int times)
+    private long Solve(int blinks)
+        => _stones.Sum(it => Evolve(it, blinks));
+
+
+    private long Evolve(long stone, int times)
     {
         if (times == 0)
             return 1;
         if (_cache.TryGetValue((stone, times), out var value))
-        {
             return value;
+
+        var evolved = new TinyList<long>(stackalloc long[2]);
+        Evolve(stone, ref evolved);
+        var result = 0L;
+        foreach (var x in evolved.AsSpan())
+        {
+            result += Evolve(x, times - 1);
         }
-        var evolved = Evolve(stone);
-        var result = evolved.Sum(it => Evolve2(it, times - 1));
+        
         _cache[(stone, times)] = result;
         return result;
     }
 
-    private IEnumerable<long> Evolve(long x)
+    private static void Evolve(long x, ref TinyList<long> evolved)
     {
-        int digits = (int)Math.Floor(Math.Log10(x) + 1);
-
         if (x == 0)
-            return [1L];
-        if (digits % 2 ==0)
         {
-            var a = x / Math.Pow(10, digits / 2);
-            var b = x % Math.Pow(10, digits / 2);
-            return [(long)a, (long)b];
+            evolved.Add(1);
+            return;
         }
-        return [x * 2024];
-    }
 
-    private IEnumerable<BigInteger> Evolve(BigInteger x)
-    {
-        int digits = (int)Math.Floor(BigInteger.Log10(x) + 1);
-
-        if (x == BigInteger.Zero)
-            return [BigInteger.One];
-        if (digits % 2 ==0)
+        var digits = GetDigits(x);
+        if (digits % 2 == 0)
         {
-            var a = x / BigInteger.Pow(10, digits / 2);
-            var b = x % BigInteger.Pow(10, digits / 2);
-            return [a, b];
+            var factor = (long)Math.Pow(10, (int)(digits / 2));
+            evolved.Add((int)(x / factor));
+            evolved.Add((int)(x % factor));
         }
-        return [x * 2024];
+        else
+        {
+            evolved.Add(x * 2024);
+        }
+        
+        static int GetDigits(long x) =>  (int)Math.Floor(Math.Log10(x) + 1);
     }
 }

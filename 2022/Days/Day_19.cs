@@ -143,23 +143,3 @@ namespace AoC_2022.Days
         }
     }
 }
-
-ref struct TinyList<T> where T : struct
-{
-    private readonly Span<T> _buffer;
-    public int Count { get; private set; }
-
-    public TinyList(Span<T> buffer)
-    {
-        _buffer = buffer;
-        Count = 0;
-    }
-
-    public void Add(T value) => _buffer[Count++] = value;
-
-    public readonly T Get(int index) => _buffer[index];
-
-    public readonly Span<T> AsSpan() => _buffer[..Count];
-
-    public readonly T this[int i] => _buffer[i];
-}

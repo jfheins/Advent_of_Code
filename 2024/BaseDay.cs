@@ -14,4 +14,6 @@ public abstract class BaseDay : BaseProblem
             return Path.Combine(InputFileDirPath, $"Day_{index}.{InputFileExtension.TrimStart('.')}");
         }
     }
+
+    public virtual void Clear() {}
 }
