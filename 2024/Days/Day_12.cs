@@ -1,108 +1,82 @@
-﻿using Core;
-using Spectre.Console;
-using System.Drawing;
-using Core.Combinatorics;
+﻿using System.Drawing;
+using Core;
 using Size = System.Drawing.Size;
 
 namespace AoC_2024.Days;
 
-public sealed partial class Day_12 : BaseDay
+public sealed class Day_12 : BaseDay
 {
-    private readonly string[] _input;
-    private FiniteGrid2D<char> _grid;
+    private readonly FiniteGrid2D<char> _grid;
+    private IReadOnlyCollection<IReadOnlyList<Point>> _regions = [];
 
     public Day_12()
     {
-        _input = File.ReadAllLines(InputFilePath);
+        var input = File.ReadAllLines(InputFilePath);
+        _grid = new FiniteGrid2D<char>(input);
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        var grid = new FiniteGrid2D<char>(_input);
-
-        var visited = new HashSet<Point>();
-        var price = 0L;
-        foreach (var (pos, letter) in grid)
-        {
-            if (visited.Contains(pos))
-                continue;
-            var bfs = new BreadthFirstSearch<Point>(null, it => grid.Get4NeighborsOf(it).Where(x => grid[x] == letter));
-            var region = bfs.FindReachable(pos);
-            visited.UnionWith(region);
-            price += GetPrice(region);
-        }
-
-        return price.ToString();
+        _regions = FindRegions().ToList();
+        return _regions.Sum(GetRegularPrice).ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        _grid = new FiniteGrid2D<char>(_input);
+        return _regions.Sum(GetDiscountedPrice).ToString();
+    }
 
+    private IEnumerable<IReadOnlyList<Point>> FindRegions()
+    {
         var visited = new HashSet<Point>();
-        var price = 0L;
+        var currentLetter = '.';
+        // ReSharper disable once AccessToModifiedClosure
+        var bfs = new BreadthFirstSearch<Point>(null,
+            it => _grid.Get4NeighborsOf(it).Where(x => _grid[x] == currentLetter));
         foreach (var (pos, letter) in _grid)
         {
             if (visited.Contains(pos))
                 continue;
-            var bfs = new BreadthFirstSearch<Point>(null,
-                it => _grid.Get4NeighborsOf(it).Where(x => _grid[x] == letter));
+            currentLetter = letter;
             var region = bfs.FindReachable(pos);
             visited.UnionWith(region);
-            price += GetPrice2(letter, region);
+            yield return region;
         }
-
-        return price.ToString();
     }
 
-    private long GetPrice2(char letter, IReadOnlyList<Point> region)
+    private static long GetRegularPrice(IReadOnlyList<Point> region)
     {
+        var perimeter = GetAllEdgesOfRegion(region).Count;
         var area = region.Count;
+        return area * perimeter;
+    }
 
+    private static long GetDiscountedPrice(IReadOnlyList<Point> region)
+    {
         if (region.Count == 1)
-        {
-            return area * (region.Count * 4L);
-        }
+            return region.Count * 4L * region.Count;
 
-        var allEdges = new List<Edge>();
+        var edges = GetAllEdgesOfRegion(region).ToList();
+        CombineCoLinearEdges(edges);
+
+        return region.Count * edges.Count;
+    }
+
+    private static HashSet<Edge> GetAllEdgesOfRegion(IReadOnlyList<Point> region)
+    {
+        var allEdges = new HashSet<Edge>();
         foreach (var p in region)
         {
             var newEdges = MakeEdges(p);
             foreach (var e in newEdges)
             {
+                // Opposite edges cancel each other => add only if no opposite is present
                 if (!allEdges.Remove(e.Opposite()))
-                {
                     allEdges.Add(e);
-                }
             }
         }
-        
-        var combined = false;
-        do
-        {
-            combined = false;
-            for (var i = 0; i < allEdges.Count; i++)
-            {
-                for (var j = 0; j < allEdges.Count; j++)
-                {
-                    if (i != j && allEdges[i].CanBeCombined(allEdges[j]))
-                    {
-                        var n = allEdges[i].Combine(allEdges[j]);
-                        allEdges[i] = n;
-                        allEdges.RemoveAt(j);
-                        combined = true;
-                        break;
-                    }
-                }
 
-                if (combined)
-                    break;
-            }
-        } while (combined);
-
-        ;
-
-        return area * allEdges.Count;
+        return allEdges;
 
         Edge[] MakeEdges(Point p)
         {
@@ -113,46 +87,45 @@ public sealed partial class Day_12 : BaseDay
             return [upper, right, lower, left];
         }
     }
+    
+    private static void CombineCoLinearEdges(List<Edge> edges)
+    {
+        bool combined;
+        do
+        {
+            combined = false;
+            for (var i = 0; i < edges.Count; i++)
+            {
+                for (var j = i + 1; j < edges.Count;)
+                {
+                    if (edges[i].CanBeCombined(edges[j]))
+                    {
+                        edges[i] = edges[i].Combine(edges[j]);
+                        edges.RemoveAt(j);
+                        combined = true;
+                    }
+                    else
+                        j++;
+                }
+            }
+        } while (combined);
+    }
 
     private record Edge(Point Src, Point Dest)
     {
         public Edge Opposite() => new(Dest, Src);
 
+        public Size Direction => new(Dest.Minus(Src));
+
         public bool CanBeCombined(Edge other)
         {
-            var d = new Size(Dest.Minus(Src));
-            var b = new Size(other.Dest.Minus(other.Src));
-            var cl = CoLinear(d, b);
-            // Console.Write((other.Src == Dest && cl) + "  ");
-            // Console.Write(this + "   ");
-            // Console.WriteLine(other);
-            
-            return Dest == other.Src && cl;
-            
-            bool CoLinear(Size a, Size b)
+            return IsCoLinear(Direction, other.Direction) && (Dest == other.Src || Src == other.Dest);
+
+            bool IsCoLinear(Size a, Size b)
                 => Math.Sign(a.Height) == Math.Sign(b.Height) && Math.Sign(a.Width) == Math.Sign(b.Width);
         }
 
         public Edge Combine(Edge other)
-        {
-            return new Edge(Src, other.Dest);
-        }
-    }
-
-    private static long GetPrice(IReadOnlyList<Point> region)
-    {
-        var perimeter = region.Count * 4L;
-        var area = region.Count;
-
-        if (region.Count > 1)
-        {
-            foreach (var (a, b) in new TupleCombinations2<Point>(region))
-            {
-                if (a.ManhattanDistTo(b) == 1)
-                    perimeter -= 2;
-            }
-        }
-
-        return area * perimeter;
+            => Dest == other.Src ? new Edge(Src, other.Dest) : new Edge(other.Src, Dest);
     }
 }
