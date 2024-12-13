@@ -1,179 +1,131 @@
-﻿using Core;
-using Spectre.Console;
-using System.Drawing;
-using Microsoft.Z3;
+﻿using System.Diagnostics;
+using System.Numerics;
+using Core;
 
 namespace AoC_2024.Days;
 
-public sealed partial class Day_13 : BaseDay
+public sealed class Day_13 : BaseDay
 {
-    private readonly string[] _input;
+    private readonly Machine[] _input;
 
     public Day_13()
     {
-        _input = File.ReadAllLines(InputFilePath);
+        _input = File.ReadAllLines(InputFilePath).SplitBy("").SelectArray(ParseBlock);
+    }
+
+    public record Machine(long[] BtnA, long[] BtnB, long[] Prize);
+
+    private static Machine ParseBlock(ArraySegment<string> block)
+    {
+        var a = block[0].ParseLongs(2);
+        var b = block[1].ParseLongs(2);
+        var prize = block[2].ParseLongs(2);
+        return new Machine(a, b, prize);
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        return "*";
-        // var blocks = _input.SplitBy("");
-        // long cost = 0;
-        // foreach (var block in blocks)
-        // {
-        //     var a = block[0].ParseInts(2);
-        //     var b = block[1].ParseInts(2);
-        //     var target = block[2].ParseInts(2);
-        //     Console.WriteLine(block[2]);
-        //
-        //     var matrix = DenseMatrix.OfArray(new double[,]
-        //     {
-        //         { a[0], b[0] },
-        //         { a[1], b[1] }
-        //     });
-        //     try
-        //     {
-        //         if (Math.Abs(matrix.Determinant()) < 0.001)
-        //         {
-        //             ;
-        //         }
-        //         
-        //         var inv = matrix.Inverse();
-        //         var res = inv * DenseVector.OfArray([..target]);
-        //         if (IsValid(res[0], out var x) && IsValid(res[1], out var y))
-        //         {
-        //             var test0 = a[0] * x + b[0] * y;
-        //             var test1 = a[1] * x + b[1] * y;
-        //             if (test0 != target[0] || test1 != target[1])
-        //             {
-        //                 Console.WriteLine($"[red]Error: {test0}, {test1} != {target}[/]");
-        //             }
-        //             else
-        //             {
-        //                 Console.WriteLine($"Push A {x} times and B {y} times: ");
-        //                 Console.WriteLine($"{x} * {a[0]} + {y} * {b[0]} = {test0} == {target[0]}");
-        //                 Console.WriteLine($"{x} * {a[1]} + {y} * {b[1]} = {test1} == {target[1]}");
-        //                 cost += x * 3 + y;
-        //             }
-        //         }
-        //         else
-        //         {
-        //             Console.WriteLine($"Rejected {res[0]} A presses with {res[1]} B presses");
-        //         }
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         Console.WriteLine(e);
-        //     }
-        // }
-        //
-        // return cost.ToString(); // not 17361
-        //
-        // bool IsValid(double x, out long rounded)
-        // {
-        //     if (x is > -0.1 and < 100.1 && Math.Abs(x - Math.Round(x)) < 0.01)
-        //     {
-        //         rounded = (long)Math.Round(x);
-        //         return true;
-        //     }
-        //
-        //     rounded = 0;
-        //     return false;
-        // }
+        long cost = 0;
+        foreach (var block in _input)
+        {
+            var decimalPrize = Array.ConvertAll(block.Prize, it => (decimal)it);
+            var res = SolveEquations(block, decimalPrize);
+
+            if (!IsValid(res[0], out var btnAPresses) || !IsValid(res[1], out var btnBPresses)) 
+                continue;
+            
+            var testX = btnAPresses * block.BtnA[0] + btnBPresses * block.BtnB[0];
+            var testY = btnAPresses * block.BtnA[1] + btnBPresses * block.BtnB[1];
+
+            if (testX == block.Prize[0] && testY == block.Prize[1])
+                cost += btnAPresses * 3 + btnBPresses;
+        }
+
+        return cost.ToString();
+
+        bool IsValid(decimal x, out long rounded)
+        {
+            if (x is >= 0 and <= 100 && Math.Abs(x - Math.Round(x)) < 0.001m)
+            {
+                rounded = (long)Math.Round(x);
+                return true;
+            }
+
+            rounded = 0;
+            return false;
+        }
     }
+
 
     public override async ValueTask<string> Solve_2()
     {
-        var blocks = _input.SplitBy("");
-        decimal cost = 0;
-        foreach (var block in blocks)
+        long cost = 0;
+        foreach (var machine in _input)
         {
-            var a = block[0].ParseLongs(2);
-            var b = block[1].ParseLongs(2);
-            var target = block[2].ParseLongs(2);
-            target[0] += 10000000000000L;
-            target[1] += 10000000000000L;
-            Console.WriteLine(block[2]);
+            var actualPrize = new[] {
+                machine.Prize[0] + 10000000000000m,
+                machine.Prize[1] + 10000000000000m
+            };
+            var res = SolveEquations(machine, actualPrize);
 
-
-            using var ctx = new Context();
+            if (!IsValid(res[0], out var btnAPresses) || !IsValid(res[1], out var btnBPresses)) 
+                continue;
             
-            var x = ctx.MkConst("x", ctx.IntSort);
-            var y = ctx.MkConst("y", ctx.IntSort);
-            //var a0 = ctx.MkConst("a0", ctx.IntSort);
-            //var a1 = ctx.MkConst("a1", ctx.IntSort);
-            //var b0 = ctx.MkConst("b0", ctx.IntSort);
-            //var b1 = ctx.MkConst("b1", ctx.IntSort);
-            
-            var solver = ctx.MkSolver();
-            solver.Assert(
-                MkEq(x, a[0], y, b[0], target[0]),
-                MkEq(x, a[1], y, b[1], target[1])
-            );
-            
-            var solved = solver.Check(
-                ctx.MkGt((ArithExpr)x, ctx.MkInt(0)),
-                ctx.MkGt((ArithExpr)y, ctx.MkInt(0))
-            );
+            var testX = btnAPresses * machine.BtnA[0] + btnBPresses * machine.BtnB[0];
+            var testY = btnAPresses * machine.BtnA[1] + btnBPresses * machine.BtnB[1];
 
-            if (solved == Microsoft.Z3.Status.SATISFIABLE)
-            {
-
-                Model m = solver.Model;
-
-                foreach (var d in m.Decls.OrderBy(it => it.Name.ToString()))
-                    Console.WriteLine(d.Name + " = " + m.ConstInterp(d));
-
-                var result = m.Decls.ToDictionary(x => x.Name.ToString());
-
-                cost += decimal.Parse(m.ConstInterp(result["x"]).ToString()) * 3 + decimal.Parse(m.ConstInterp(result["y"]).ToString());
-            }
-            else
-                Console.WriteLine(solved);
-
-
-
-                BoolExpr MkEq(Expr xx, long vv, Expr yy, long ww, long rightSide)
-                    => ctx.MkEq(
-                        ctx.MkAdd(
-                            ctx.MkMul((ArithExpr)xx, ctx.MkInt(vv)),
-                            ctx.MkMul((ArithExpr)yy, ctx.MkInt(ww))
-                        ),
-                        ctx.MkInt(rightSide)
-                        );
-            ;
-            // try
-            // {
-            //     z3
-            //     var inv = matrix.Inverse();
-            //     var res = inv * DenseVector.OfArray([..target]);
-            //     if (IsValid(res[0], out var x) && IsValid(res[1], out var y))
-            //     {
-            //         var test0 = a[0] * x + b[0] * y;
-            //         var test1 = a[1] * x + b[1] * y;
-            //         if (test0 != target[0] || test1 != target[1])
-            //         {
-            //             Console.WriteLine($"Error: {test0}, {test1} != {target[0]}, {target[1]}");
-            //         }
-            //         else
-            //         {
-            //             Console.WriteLine($"Push A {x} times and B {y} times: ");
-            //             Console.WriteLine($"{x} * {a[0]} + {y} * {b[0]} = {test0} == {target[0]}");
-            //             Console.WriteLine($"{x} * {a[1]} + {y} * {b[1]} = {test1} == {target[1]}");
-            //             cost += x * 3 + y;
-            //         }
-            //     }
-            //     else
-            //     {
-            //         Console.WriteLine($"Rejected {res[0]} A presses with {res[1]} B presses");
-            //     }
-            // }
-            // catch (Exception e)
-            // {
-            //     Console.WriteLine(e);
-            // }
+            if (testX == actualPrize[0] && testY == actualPrize[1])
+                cost += btnAPresses * 3 + btnBPresses;
         }
 
-        return cost.ToString(); 
+        return cost.ToString();
+
+        bool IsValid(decimal x, out long rounded)
+        {
+            if (x >= 0 && Math.Abs(x - Math.Round(x)) < 0.001m)
+            {
+                rounded = (long)Math.Round(x);
+                return true;
+            }
+
+            rounded = 0;
+            return false;
+        }
+    }
+
+    private static decimal[] SolveEquations(Machine m, decimal[] rightSide)
+    {
+        var matrix = new decimal[,]
+        {
+            { m.BtnA[0], m.BtnB[0] },
+            { m.BtnA[1], m.BtnB[1] }
+        };
+        var inv = MatrixInverse(matrix);
+        return MatrixMultiply(inv, rightSide);
+    }
+
+    public static T[,] MatrixInverse<T>(T[,] matrix) where T : INumber<T>
+    {
+        Debug.Assert(matrix.GetLength(0) == 2 && matrix.GetLength(1) == 2);
+
+        var det = matrix[0, 0] * matrix[1, 1] - matrix[0, 1] * matrix[1, 0];
+        if (det == T.Zero)
+            throw new InvalidOperationException("Matrix is singular");
+        var invDet = T.One / det;
+        return new[,]
+        {
+            { matrix[1, 1] * invDet, -matrix[0, 1] * invDet },
+            { -matrix[1, 0] * invDet, matrix[0, 0] * invDet }
+        };
+    }
+
+    public static T[] MatrixMultiply<T>(T[,] matrix, T[] vec) where T : INumber<T>
+    {
+        Debug.Assert(matrix.GetLength(1) == vec.Length);
+        return
+        [
+            matrix[0, 0] * vec[0] + matrix[0, 1] * vec[1],
+            matrix[1, 0] * vec[0] + matrix[1, 1] * vec[1]
+        ];
     }
 }
