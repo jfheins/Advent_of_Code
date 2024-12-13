@@ -85,13 +85,13 @@ public sealed partial class Day_13 : BaseDay
     public override async ValueTask<string> Solve_2()
     {
         var blocks = _input.SplitBy("");
-        long cost = 0;
+        decimal cost = 0;
         foreach (var block in blocks)
         {
             var a = block[0].ParseLongs(2);
             var b = block[1].ParseLongs(2);
             var target = block[2].ParseLongs(2);
-            target[0] *= 10000000000000L;
+            target[0] += 10000000000000L;
             target[1] += 10000000000000L;
             Console.WriteLine(block[2]);
 
@@ -100,36 +100,48 @@ public sealed partial class Day_13 : BaseDay
             
             var x = ctx.MkConst("x", ctx.IntSort);
             var y = ctx.MkConst("y", ctx.IntSort);
-            var a0 = ctx.MkConst("a0", ctx.IntSort);
-            var a1 = ctx.MkConst("a1", ctx.IntSort);
-            var b0 = ctx.MkConst("b0", ctx.IntSort);
-            var b1 = ctx.MkConst("b1", ctx.IntSort);
+            //var a0 = ctx.MkConst("a0", ctx.IntSort);
+            //var a1 = ctx.MkConst("a1", ctx.IntSort);
+            //var b0 = ctx.MkConst("b0", ctx.IntSort);
+            //var b1 = ctx.MkConst("b1", ctx.IntSort);
             
             var solver = ctx.MkSolver();
             solver.Assert(
-                MkEq(x, a0, y, b0, target[0]),
-                MkEq(x, a1, y, b1, target[1])
+                MkEq(x, a[0], y, b[0], target[0]),
+                MkEq(x, a[1], y, b[1], target[1])
             );
             
-            Console.WriteLine(solver.Check(
+            var solved = solver.Check(
                 ctx.MkGt((ArithExpr)x, ctx.MkInt(0)),
                 ctx.MkGt((ArithExpr)y, ctx.MkInt(0))
-            ));
-            
-            Model m = solver.Model;
-            
-            foreach (var d in m.Decls.OrderBy(it => it.Name.ToString()))
-                Console.WriteLine(d.Name + " = " + m.ConstInterp(d));
-            
-            
-            BoolExpr MkEq(Expr xx, Expr vv, Expr yy, Expr ww, long rightSide)
-                => ctx.MkEq(
-                    ctx.MkAdd(
-                        ctx.MkMul((ArithExpr)xx, (ArithExpr)vv), 
-                        ctx.MkMul((ArithExpr)yy, (ArithExpr)ww)
-                    ), 
-                    ctx.MkInt(rightSide)
-                    );
+            );
+
+            if (solved == Microsoft.Z3.Status.SATISFIABLE)
+            {
+
+                Model m = solver.Model;
+
+                foreach (var d in m.Decls.OrderBy(it => it.Name.ToString()))
+                    Console.WriteLine(d.Name + " = " + m.ConstInterp(d));
+
+                var result = m.Decls.ToDictionary(x => x.Name.ToString());
+
+                cost += decimal.Parse(m.ConstInterp(result["x"]).ToString()) * 3 + decimal.Parse(m.ConstInterp(result["y"]).ToString());
+            }
+            else
+                Console.WriteLine(solved);
+
+
+
+                BoolExpr MkEq(Expr xx, long vv, Expr yy, long ww, long rightSide)
+                    => ctx.MkEq(
+                        ctx.MkAdd(
+                            ctx.MkMul((ArithExpr)xx, ctx.MkInt(vv)),
+                            ctx.MkMul((ArithExpr)yy, ctx.MkInt(ww))
+                        ),
+                        ctx.MkInt(rightSide)
+                        );
+            ;
             // try
             // {
             //     z3
