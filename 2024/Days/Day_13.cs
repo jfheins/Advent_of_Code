@@ -10,17 +10,18 @@ public sealed class Day_13 : BaseDay
 
     public Day_13()
     {
-        _input = File.ReadAllLines(InputFilePath).SplitBy("").SelectArray(ParseBlock);
+        _input = File.ReadAllLines(InputFilePath).SplitBy("").SelectArray(Machine.Parse);
     }
 
-    public record Machine(long[] BtnA, long[] BtnB, long[] Prize);
-
-    private static Machine ParseBlock(ArraySegment<string> block)
+    public record Machine(long[] BtnA, long[] BtnB, long[] Prize)
     {
-        var a = block[0].ParseLongs(2);
-        var b = block[1].ParseLongs(2);
-        var prize = block[2].ParseLongs(2);
-        return new Machine(a, b, prize);
+        public static Machine Parse(ArraySegment<string> block)
+        {
+            var a = block[0].ParseLongs(2);
+            var b = block[1].ParseLongs(2);
+            var prize = block[2].ParseLongs(2);
+            return new Machine(a, b, prize);
+        }
     }
 
     public override async ValueTask<string> Solve_1()
@@ -28,12 +29,11 @@ public sealed class Day_13 : BaseDay
         long cost = 0;
         foreach (var block in _input)
         {
-            var decimalPrize = Array.ConvertAll(block.Prize, it => (decimal)it);
-            var res = SolveEquations(block, decimalPrize);
+            var res = SolveEquations(block, block.Prize);
 
-            if (!IsValid(res[0], out var btnAPresses) || !IsValid(res[1], out var btnBPresses)) 
+            if (!IsValid(res[0], out var btnAPresses) || !IsValid(res[1], out var btnBPresses))
                 continue;
-            
+
             var testX = btnAPresses * block.BtnA[0] + btnBPresses * block.BtnB[0];
             var testY = btnAPresses * block.BtnA[1] + btnBPresses * block.BtnB[1];
 
@@ -43,9 +43,9 @@ public sealed class Day_13 : BaseDay
 
         return cost.ToString();
 
-        bool IsValid(decimal x, out long rounded)
+        bool IsValid(double x, out long rounded)
         {
-            if (x is >= 0 and <= 100 && Math.Abs(x - Math.Round(x)) < 0.001m)
+            if (x is >= 0 and <= 100 && Math.Abs(x - Math.Round(x)) < 0.001d)
             {
                 rounded = (long)Math.Round(x);
                 return true;
@@ -62,15 +62,16 @@ public sealed class Day_13 : BaseDay
         long cost = 0;
         foreach (var machine in _input)
         {
-            var actualPrize = new[] {
-                machine.Prize[0] + 10000000000000m,
-                machine.Prize[1] + 10000000000000m
+            var actualPrize = new[]
+            {
+                machine.Prize[0] + 10000000000000L,
+                machine.Prize[1] + 10000000000000L
             };
             var res = SolveEquations(machine, actualPrize);
 
-            if (!IsValid(res[0], out var btnAPresses) || !IsValid(res[1], out var btnBPresses)) 
+            if (!IsValid(res[0], out var btnAPresses) || !IsValid(res[1], out var btnBPresses))
                 continue;
-            
+
             var testX = btnAPresses * machine.BtnA[0] + btnBPresses * machine.BtnB[0];
             var testY = btnAPresses * machine.BtnA[1] + btnBPresses * machine.BtnB[1];
 
@@ -80,9 +81,9 @@ public sealed class Day_13 : BaseDay
 
         return cost.ToString();
 
-        bool IsValid(decimal x, out long rounded)
+        bool IsValid(double x, out long rounded)
         {
-            if (x >= 0 && Math.Abs(x - Math.Round(x)) < 0.001m)
+            if (x >= 0 && Math.Abs(x - Math.Round(x)) < 0.001d)
             {
                 rounded = (long)Math.Round(x);
                 return true;
@@ -93,15 +94,15 @@ public sealed class Day_13 : BaseDay
         }
     }
 
-    private static decimal[] SolveEquations(Machine m, decimal[] rightSide)
+    private static double[] SolveEquations(Machine m, long[] rightSide)
     {
-        var matrix = new decimal[,]
+        var matrix = new double[,]
         {
             { m.BtnA[0], m.BtnB[0] },
             { m.BtnA[1], m.BtnB[1] }
         };
         var inv = MatrixInverse(matrix);
-        return MatrixMultiply(inv, rightSide);
+        return MatrixMultiply(inv, Array.ConvertAll(rightSide, it => (double)it));
     }
 
     public static T[,] MatrixInverse<T>(T[,] matrix) where T : INumber<T>
