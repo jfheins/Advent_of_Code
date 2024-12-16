@@ -87,8 +87,13 @@ namespace Core
                 {
                     // The queue could contain visited nodes because deduping on insert is slow
                     nextNode = nodeQueue.DeleteMin();
-                } while (visitedNodes.Contains(nextNode.Item));
+                } while (visitedNodes.Contains(nextNode.Item) && nodeQueue.Count > 0);
 
+                if (visitedNodes.Contains(nextNode.Item))
+                {
+                    break;
+                }
+                
                 _ = visitedNodes.Add(nextNode.Item);
 
                 if (targetPredicate(nextNode.Item))
