@@ -1,10 +1,9 @@
-﻿using Core;
-using Spectre.Console;
-using System.Drawing;
+﻿using System.Drawing;
+using Core;
 
 namespace AoC_2024.Days;
 
-public sealed partial class Day_06 : BaseDay
+public sealed class Day_06 : BaseDay
 {
     private readonly string[] _input;
     private HashSet<Point> _visited;
@@ -67,10 +66,8 @@ public sealed partial class Day_06 : BaseDay
         return po.Count.ToString(); // not 703
     }
 
-    private bool MakesLoop(FiniteGrid2D<char> grid, Point guard, Point po)
+    private static bool MakesLoop(FiniteGrid2D<char> grid, Point guard, Point po)
     {
-        if (guard.Y == 6)
-            ;
         var visited = new HashSet<(Point, Direction)>();
         var heading = Direction.Up;
 
@@ -86,14 +83,7 @@ public sealed partial class Day_06 : BaseDay
             if (next == '.')
                 guard = nextPos;
             else if (next == '~')
-            {
-                //var clone = new FiniteGrid2D<char>(grid);
-                //clone[po] = 'M';
-                //foreach (var p in visited)
-                //    clone[p.Item1] = 'x';
-                //Console.WriteLine(clone.ToString());
                 return false;
-            }
             else
                 heading = heading.TurnClockwise();
         }

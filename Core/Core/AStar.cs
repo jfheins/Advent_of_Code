@@ -29,16 +29,17 @@ namespace Core
         {
             _comparer = comparer ?? EqualityComparer<TNode>.Default;
             _expander = expander;
-            _progressCallback = //(_, _) => { };
-            (set, visited) => Console.WriteLine($"A* visited {visited} nodes, working on {set}.");
+            _progressCallback = (_, _) => { };
+            //(set, visited) => Console.WriteLine($"A* visited {visited} nodes, working on {set}.");
         }
 
         public AStarPath? FindFirst(TNode initialNode,
                                       Func<TNode, bool> targetPredicate,
                                       Func<TNode, float> heuristic,
-                                      ProgressReporterCallback? progressReporter = null)
+                                      ProgressReporterCallback? progressReporter = null,
+                                      float maxCost = float.PositiveInfinity)
         {
-            var result = FindAll(initialNode, targetPredicate, heuristic, progressReporter, 1);
+            var result = FindAll(initialNode, targetPredicate, heuristic, progressReporter, 1, maxCost);
             return result.FirstOrDefault();
         }
 
@@ -50,13 +51,13 @@ namespace Core
         /// <param name="heuristic">Must return an estimate of the remaining cost. May underestimate but not overestimate.</param>
         /// <param name="progressReporter">Called periodically for status updates</param>
         /// <param name="minResults">Search will be terminated if at least this number of targets has been found.</param>
+        /// <param name="maxCost"></param>
         /// <returns></returns>
         public SCG.IList<AStarPath> FindAll(TNode initialNode,
-                                               Func<TNode, bool> targetPredicate,
-                                               Func<TNode, float> heuristic,
-                                               ProgressReporterCallback? progressReporter =
-                                                   null,
-                                               int minResults = int.MaxValue)
+            Func<TNode, bool> targetPredicate,
+            Func<TNode, float> heuristic,
+            ProgressReporterCallback? progressReporter = null,
+            int minResults = int.MaxValue, float maxCost = float.PositiveInfinity)
         {
             if (heuristic == null)
             {
@@ -123,11 +124,11 @@ namespace Core
                     }
                 }
 
-                var expanded = _expander(currentNode.Item)
-                    .Where(step => !visitedNodes.Contains(step.node));
-
-                foreach (var edge in expanded)
+                foreach (var edge in _expander(currentNode.Item))
                 {
+                    if (visitedNodes.Contains(edge.node) 
+                        || currentNode.Cost + edge.cost > maxCost)
+                        continue;
                     QueueOrUpdateNode(currentNode, edge);
                 }
             }
