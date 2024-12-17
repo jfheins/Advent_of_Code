@@ -1,5 +1,4 @@
 ﻿using AoC_2024.Days;
-
 using AoCHelper;
 using Core;
 using Flurl.Http;
@@ -24,9 +23,9 @@ static class Program
             }
         }
 
-        // await WarmUp<Day_12>();
-        
-        await Solver.SolveLast(c => 
+        //await WarmUp<Day_17>();
+
+        await Solver.SolveLast(c =>
         {
             c.ShowConstructorElapsedTime = true;
             c.ShowTotalElapsedTimePerDay = true;
@@ -35,7 +34,7 @@ static class Program
         });
     }
 
-    private static async ValueTask WarmUp<T>() where T:BaseDay, new()
+    private static async ValueTask WarmUp<T>() where T : BaseDay, new()
     {
         var instance = new T();
         for (var i = 0; i < 20; i++)
@@ -52,7 +51,7 @@ static class Program
         .Assembly.GetTypes()
         .Where(t => t.IsClass && t.IsSubclassOf(typeof(BaseDay)) && !t.IsAbstract)
         .Select(it => it.Name);
-    
+
     private static async Task DownloadDay((int day, string destPath) input, string cookie)
     {
         var url = $"https://adventofcode.com/2024/day/{input.day}/input";
