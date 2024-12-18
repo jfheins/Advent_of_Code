@@ -1,5 +1,5 @@
 ﻿using Core;
-using Spectre.Console;
+using System.Linq;
 using System.Drawing;
 
 namespace AoC_2024.Days;
