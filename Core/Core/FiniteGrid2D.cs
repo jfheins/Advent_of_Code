@@ -30,6 +30,11 @@ namespace Core
         public FiniteGrid2D(int width, int height, TNode value)
             : this(width, height, p => value) { }
 
+        public FiniteGrid2D(int width, int height)
+        {
+            Bounds = new Rectangle(0, 0, width, height);
+        }
+
         public FiniteGrid2D(int width, int height, Func<int, int, TNode> dataCallback)
             : this(width, height, p => dataCallback(p.X, p.Y)) { }
 
