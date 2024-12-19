@@ -1,4 +1,5 @@
-﻿using Core;
+﻿using System.Buffers;
+using Core;
 using System.Linq;
 using System.Drawing;
 using System.Text.RegularExpressions;
@@ -25,6 +26,7 @@ public sealed partial class Day_19 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
+        return "";
         // // Remove common prefixes
         // for (int i = 0; i < 10; i++)
         // {
@@ -44,16 +46,17 @@ public sealed partial class Day_19 : BaseDay
         // }
         
         
-        var c = _designs.Count(design => CanMatch2(design));
+        var c = _designs.Count(design => RegexMatch(design));
         return c.ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        return "-";
+        var c = _designs.Sum(design => CountMatches(design));
+        return c.ToString();
     }
 
-    private static bool CanMatch2(ReadOnlySpan<char> design)
+    private static bool RegexMatch(ReadOnlySpan<char> design)
     {
         Console.Write($"Matching {design} ...");
         try
@@ -69,25 +72,32 @@ public sealed partial class Day_19 : BaseDay
         }
     }
 
-    private bool CanMatch(ReadOnlySpan<char> design)
+    private Dictionary<string, long> _cache = new();
+    
+    private long CountMatches(ReadOnlySpan<char> design)
     {
         if (design.IsEmpty)
+            return 1;
+
+        var l = _cache.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        if (l.ContainsKey(design))
         {
-            return true;
+            return l[design];
         }
 
+        var matches = 0L;
         foreach (var t in _towels)
         {
             if (design.StartsWith(t))
             {
-                if (CanMatch(design[t.Length..]))
-                {
-                    return true;
-                }
+              //  Console.WriteLine($"Recurse into {t} / {design}");
+                matches += CountMatches(design[t.Length..]);
             }
         }
-
-        return false;
+        
+        l[design] = matches;
+        return matches;
     }
 
     [GeneratedRegex("^(r|wr|b|g|bwu|rb|gb|br)+$")]
