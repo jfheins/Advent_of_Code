@@ -6,23 +6,19 @@ public sealed class Day_19 : BaseDay
 {
     private readonly string[] _towels;
     private readonly string[] _designs;
+    private Dictionary<string, bool> _matchCache = new();
 
     public Day_19()
     {
         var input = File.ReadAllLines(InputFilePath).SplitBy("");
         _towels = input[0].Single().Split(",", StringSplitOptions.TrimEntries);
         _designs = input[1].ToArray();
-        
-        
-        AppDomain domain = AppDomain.CurrentDomain;
-        // Set a timeout interval of 2 seconds.
-        domain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromSeconds(2));
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        var matchCache = new Dictionary<string, bool> { { "", true } };
-        var cache = matchCache.GetAlternateLookup<ReadOnlySpan<char>>();
+        _matchCache = new Dictionary<string, bool> { { "", true } };
+        var cache =_matchCache.GetAlternateLookup<ReadOnlySpan<char>>();
         return _designs.Count(design => IsMatch(design, cache)).ToString();
     }
 
@@ -30,7 +26,9 @@ public sealed class Day_19 : BaseDay
     {
         var countCache = new Dictionary<string, long> { { "", 1 } };
         var cache = countCache.GetAlternateLookup<ReadOnlySpan<char>>();
-        return _designs.Sum(design => CountMatches(design, cache)).ToString();
+        return _designs
+            .Where(it => _matchCache[it])
+            .Sum(design => CountMatches(design, cache)).ToString();
     }
     
     private bool IsMatch(ReadOnlySpan<char> design, Dictionary<string, bool>.AlternateLookup<ReadOnlySpan<char>> cache)
