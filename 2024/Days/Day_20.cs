@@ -31,7 +31,8 @@ public sealed class Day_20 : BaseDay
         var noCheat = new DijkstraSearch<Point>(null, ExpanderNoCheat).FindFirst(start, it => it == dest)!;
         var noCheatEfforts = noCheat.Steps.Index().ToDictionary(it => it.Item, it => it.Index);
 
-        var allCheats = CountAllCheats(noCheatEfforts, maxCheatDistance);
+        var tiled = new GridTiler(noCheat.Steps, _grid.Bounds);
+        var allCheats = CountAllCheats(noCheatEfforts, tiled, maxCheatDistance);
         return allCheats.Where(it => it.Key >= cheatViability).Sum(it => it.Value);
     }
 
@@ -42,24 +43,17 @@ public sealed class Day_20 : BaseDay
             select (neighbor, 1f);
     }
 
-    private static IReadOnlyDictionary<int, int> CountAllCheats(IReadOnlyDictionary<Point, int> noCheatEfforts, int maxCheatDistance)
+    private static IEnumerable<KeyValuePair<int, int>> CountAllCheats(
+        IReadOnlyDictionary<Point, int> noCheatEfforts,
+        GridTiler tiled,
+        int maxCheatDistance)
     {
-        var allCheats = new Dictionary<int, int>();
-        foreach (var point in noCheatEfforts.Keys)
-        {
-            var allReachable = noCheatEfforts.Keys
-                .Where(it => it.ManhattanDistTo(point) <= maxCheatDistance)
+        return noCheatEfforts.Keys
+            .AsParallel()
+            .SelectMany(point => tiled.GetNeighborhood(point, maxCheatDistance)
                 .Select(it => (point, it, advantage: CheatAdvantage(point, it)))
-                .Where(it => it.advantage > 0)
+                .Where(it => it.advantage > 0))
                 .CountBy(it => it.advantage);
-
-            foreach (var possibleCheat in allReachable)
-            {
-                allCheats.AddOrModify(possibleCheat.Key, 0, old => old + possibleCheat.Value);
-            }
-        }
-
-        return allCheats;
 
         int CheatAdvantage(Point s, Point d)
             => noCheatEfforts[d] - noCheatEfforts[s] - s.ManhattanDistTo(d);
