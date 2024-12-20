@@ -1,46 +1,38 @@
-﻿using Core;
-using System.Linq;
-using System.Drawing;
+﻿using System.Drawing;
+using Core;
 
 namespace AoC_2024.Days;
 
-public sealed partial class Day_20 : BaseDay
+public sealed class Day_20 : BaseDay
 {
-    private readonly string[] _input;
-    private FiniteGrid2D<char> _grid;
+    private readonly FiniteGrid2D<char> _grid;
 
     public Day_20()
     {
-        _input = File.ReadAllLines(InputFilePath);
-        _grid = new FiniteGrid2D<char>(_input);
+        var input = File.ReadAllLines(InputFilePath);
+        _grid = new FiniteGrid2D<char>(input);
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        return "-";
+        return SumAllCheatsBetterThan(2, 100).ToString();
+    }
+
+    public override async ValueTask<string> Solve_2()
+    {
+        return SumAllCheatsBetterThan(20, 100).ToString();
+    }
+
+    private int SumAllCheatsBetterThan(int maxCheatDistance, int cheatViability)
+    {
         var start = _grid.FindFirst('S');
         var dest = _grid.FindFirst('E');
 
-        var noCheat = new DijkstraSearch<Point>(null, ExpanderNoCheat)
-            .FindFirst(start, it => it == dest)!;
-        Console.WriteLine("No cheat length: " + noCheat.Length);
+        var noCheat = new DijkstraSearch<Point>(null, ExpanderNoCheat).FindFirst(start, it => it == dest)!;
+        var noCheatEfforts = noCheat.Steps.Index().ToDictionary(it => it.Item, it => it.Index);
 
-        var allCheats = new DijkstraSearch<(Point pos, Point? cheatLocation)>(null, ExpanderCheatOnce)
-            .FindAll((start, null), it => noCheat.Steps.Contains(it.Item1));
-
-        var bestCheatLocations = allCheats.Where(it => it.Target.cheatLocation.HasValue)
-            .Where(it => CheatAdvantage(it) >= 100)
-            .DistinctBy(it => it.Target.cheatLocation)
-            .Count();
-        
-        return bestCheatLocations.ToString();
-        
-        
-        int CheatAdvantage(IPath<(Point pos, Point? cheatLocation)> p)
-        {
-            var normalEffort = Array.IndexOf(noCheat.Steps, p.Target.pos);
-            return normalEffort - p.Length;
-        }
+        var allCheats = CountAllCheats(noCheatEfforts, maxCheatDistance);
+        return allCheats.Where(it => it.Key >= cheatViability).Sum(it => it.Value);
     }
 
     private IEnumerable<(Point node, float cost)> ExpanderNoCheat(Point arg)
@@ -49,59 +41,27 @@ public sealed partial class Day_20 : BaseDay
             where _grid[neighbor] != '#' 
             select (neighbor, 1f);
     }
-    private IEnumerable<((Point, Point?) node, float cost)> ExpanderCheatOnce(
-        (Point p, Point? cheat) arg)
+
+    private static IReadOnlyDictionary<int, int> CountAllCheats(IReadOnlyDictionary<Point, int> noCheatEfforts, int maxCheatDistance)
     {
-        if (arg.cheat.HasValue && arg.cheat.Value != arg.p)
-        {
-            // Second expansion after cheating => no more need
-            yield break;
-        }
-        foreach (var neighbor in _grid.Get4NeighborsOf(arg.Item1))
-        {
-            var isWall = _grid[neighbor] == '#';
-            if (!isWall)
-            {
-                yield return ((neighbor, arg.cheat), 1f);
-            }
-            else if (arg.cheat is null) // cheat only once
-            {
-                yield return ((neighbor, neighbor), 1f);
-            }
-        }
-    }
-
-    public override async ValueTask<string> Solve_2()
-    {
-        var start = _grid.FindFirst('S');
-        var dest = _grid.FindFirst('E');
-
-        var noCheat = new DijkstraSearch<Point>(null, ExpanderNoCheat)
-            .FindFirst(start, it => it == dest)!;
-        Console.WriteLine("No cheat length: " + noCheat.Length);
-        var noCheatEfforts = noCheat.Steps.Index()
-            .ToDictionary(it => it.Item, it => it.Index);
-
-        var allCheats = new List<(Point start, Point end, int advantage)>(100_000);
-        foreach (var point in noCheat.Steps)
+        var allCheats = new Dictionary<int, int>();
+        foreach (var point in noCheatEfforts.Keys)
         {
             var allReachable = noCheatEfforts.Keys
-                .Where(it => it.ManhattanDistTo(point) <= 20)
-                .Where(it => noCheatEfforts[it] > noCheatEfforts[point]).ToList();
-            allCheats.AddRange(allReachable
-                .Select(it => (point, it, CheatAdvantage(point, it)))
-                .Where(it => it.Item3 > 0));
+                .Where(it => it.ManhattanDistTo(point) <= maxCheatDistance)
+                .Select(it => (point, it, advantage: CheatAdvantage(point, it)))
+                .Where(it => it.advantage > 0)
+                .CountBy(it => it.advantage);
+
+            foreach (var possibleCheat in allReachable)
+            {
+                allCheats.AddOrModify(possibleCheat.Key, 0, old => old + possibleCheat.Value);
+            }
         }
-        
-        var bestCheatLocations = allCheats
-            .Count(it => it.advantage >= 100);
-        
-        return bestCheatLocations.ToString();
-        
+
+        return allCheats;
+
         int CheatAdvantage(Point s, Point d)
-        {
-            var cheatLength = s.ManhattanDistTo(d);
-            return noCheatEfforts[d] - noCheatEfforts[s] - cheatLength;
-        }
+            => noCheatEfforts[d] - noCheatEfforts[s] - s.ManhattanDistTo(d);
     }
 }
