@@ -23,7 +23,7 @@ static class Program
             }
         }
 
-        //await WarmUp<Day_17>();
+        //await WarmUp<Day_21>();
 
         await Solver.SolveLast(c =>
         {
