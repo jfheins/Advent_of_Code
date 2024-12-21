@@ -18,12 +18,7 @@ public sealed partial class Day_21 : BaseDay
         var res = new List<string>();
         foreach (var code in _input)
         {
-            var x = Num2Dir(code);
-            var xx = Dir2Dir(x);
-            Console.WriteLine("--_ " + xx);
-            var xxx = Dir2Dir(xx);
-            Console.WriteLine("-__ " + xxx);
-            res.Add(xxx);
+            res.Add(SolveFirstRobot(code, 2));
         }
 
         var cx = res.Zip(_input).Select2(Complexity).ToList();
@@ -37,48 +32,136 @@ public sealed partial class Day_21 : BaseDay
         return code.Length * numericPart;
     }
 
-    // Translate numeric keystrokes to directional
-    private static string Num2Dir(string code)
+    private string SolveFirstRobot(string code, int depth)
     {
         var finger = DigitLocationNumeric('A');
-        var commands = new List<string>();
-        foreach (var goal in code.Select(DigitLocationNumeric))
+        var result = new List<string>();
+        foreach (var x in code)
         {
-            if (goal.Y < finger.Y) 
-                commands.Add(new string('^', finger.Y - goal.Y));
-            if (goal.X < finger.X) 
-                commands.Add(new string('<', finger.X - goal.X));
-            if (goal.X > finger.X) 
-                commands.Add(new string('>', goal.X - finger.X));
-            if (goal.Y > finger.Y) 
-                commands.Add(new string('v', goal.Y - finger.Y));
+            var goal = DigitLocationNumeric(x);
+            var possibleMovements = FindAllPathsNumeric(finger, goal);
+            var shortestMovement = possibleMovements.Select(m => SolveRobotBefore(m, depth)).MinBy(it => it.Length);
+            
+            Console.WriteLine($"Move {x} expanded to {shortestMovement}");
+            result.Add(shortestMovement!);
             finger = goal;
-            commands.Add("A");
         }
 
-        return string.Concat(commands);
+        return string.Concat(result);
     }
 
-    // Translate direction keystrokes to directional
-    private static string Dir2Dir(string code)
+    private string SolveRobotBefore(string moves, int depth)
     {
+        if (depth == 0)
+            return moves;
+        Console.WriteLine($"depth: {depth}, solving {moves}");
         var finger = DigitLocationDir('A');
-        var commands = new List<string>();
-        foreach (var goal in code.Select(DigitLocationDir))
+        var result = new List<string>();
+        foreach (var goal in moves.Select(DigitLocationDir))
         {
-            if (goal.Y > finger.Y) 
-                commands.Add(new string('v', goal.Y - finger.Y));
-            if (goal.X > finger.X) 
-                commands.Add(new string('>', goal.X - finger.X));
-            if (goal.X < finger.X) 
-                commands.Add(new string('<', finger.X - goal.X));
-            if (goal.Y < finger.Y) 
-                commands.Add(new string('^', finger.Y - goal.Y));
+            var possibleMovements = FindAllPathsDirectional(finger, goal);
+            var shortestMovement = possibleMovements.Select(m => SolveRobotBefore(m, depth-1)).MinBy(it => it.Length);
+            result.Add(shortestMovement);
             finger = goal;
-            commands.Add("A");
+        }
+        Console.WriteLine($"depth: {depth}, solved to {string.Concat(result)}");
+        return string.Concat(result);
+    }
+
+    private List<string> FindAllPathsNumeric(Point src, Point dest)
+    {
+        var results = new List<string>();
+        FindAllPathsNumeric(src, dest, new List<char>(6), results);
+        return results;
+    }
+    
+
+    private void FindAllPathsNumeric(Point src, Point dest, List<char> path, List<string> result)
+    {
+        if (src == dest)
+        {
+            result.Add(string.Concat(path.Append('A')));
+            return;
+        }
+        if (src == new Point(0, 3)) // gap
+        {
+            return;
+        }
+        
+        if (dest.Y < src.Y) // move up
+        {
+            path.Add('^');
+            FindAllPathsNumeric(src.MoveTo(Direction.Up), dest, path, result);
+            path.RemoveAt(path.Count - 1);
+        }
+        if (dest.X < src.X)
+        {
+            path.Add('<');
+            FindAllPathsNumeric(src.MoveTo(Direction.Left), dest, path, result);
+            path.RemoveAt(path.Count - 1);
         }
 
-        return string.Concat(commands);
+        if (dest.X > src.X)
+        {
+            path.Add('>');
+            FindAllPathsNumeric(src.MoveTo(Direction.Right), dest, path, result);
+            path.RemoveAt(path.Count - 1);
+        }
+
+        if (dest.Y > src.Y)
+        {
+            path.Add('v');
+            FindAllPathsNumeric(src.MoveTo(Direction.Down), dest, path, result);
+            path.RemoveAt(path.Count - 1);
+        }
+    }
+    
+    
+
+    private List<string> FindAllPathsDirectional(Point src, Point dest)
+    {
+        var results = new List<string>();
+        FindAllPathsDirectional(src, dest, new List<char>(5), results);
+        return results;
+    }
+    private void FindAllPathsDirectional(Point src, Point dest, List<char> path, List<string> result)
+    {
+        if (src == dest)
+        {
+            result.Add(string.Concat(path.Append('A')));
+            return;
+        }
+        if (src == new Point(0, 0)) // gap
+        {
+            return;
+        }
+        
+        if (dest.Y < src.Y) // move up
+        {
+            path.Add('^');
+            FindAllPathsDirectional(src.MoveTo(Direction.Up), dest, path, result);
+            path.RemoveAt(path.Count - 1);
+        }
+        if (dest.X < src.X)
+        {
+            path.Add('<');
+            FindAllPathsDirectional(src.MoveTo(Direction.Left), dest, path, result);
+            path.RemoveAt(path.Count - 1);
+        }
+
+        if (dest.X > src.X)
+        {
+            path.Add('>');
+            FindAllPathsDirectional(src.MoveTo(Direction.Right), dest, path, result);
+            path.RemoveAt(path.Count - 1);
+        }
+
+        if (dest.Y > src.Y)
+        {
+            path.Add('v');
+            FindAllPathsDirectional(src.MoveTo(Direction.Down), dest, path, result);
+            path.RemoveAt(path.Count - 1);
+        }
     }
 
     private static Point DigitLocationNumeric(char digit)
@@ -108,7 +191,7 @@ public sealed partial class Day_21 : BaseDay
             '>' => new Point(2, 1),
             _ => throw new InvalidOperationException()
         };
-    
+
 
     public override async ValueTask<string> Solve_2()
     {
