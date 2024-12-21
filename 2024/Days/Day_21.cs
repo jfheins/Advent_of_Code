@@ -18,21 +18,44 @@ public sealed partial class Day_21 : BaseDay
         var res = new List<string>();
         foreach (var code in _input)
         {
-            res.Add(SolveFirstRobot(code, 2));
+            var a = SolveFirstRobot(code, 2);
+            var b = SolveFirstRobotStr(code, 2);
+            Console.WriteLine($"a: {a}, b: {b.Length}");
+            res.Add(b);
         }
 
         var cx = res.Zip(_input).Select2(Complexity).ToList();
         return cx.Sum().ToString();
     }
 
-    private int Complexity(string code, string orig)
+    public override async ValueTask<string> Solve_2()
+    {
+        var res = new List<long>();
+        foreach (var code in _input)
+        {
+            res.Add(SolveFirstRobot(code, 25));
+        }
+        
+        var cx = res.Zip(_input).Select2(Complexity).ToList();
+        return cx.Sum().ToString();
+    }
+
+    private long Complexity(long codeLength, string orig)
+    {
+        var numericPart = int.Parse(string.Concat(orig.Where(char.IsAsciiDigit)));
+        Console.WriteLine($"len: {codeLength} * {numericPart} = {codeLength * numericPart}");
+        return codeLength * numericPart;
+    }
+
+    private long Complexity(string code, string orig)
     {
         var numericPart = int.Parse(string.Concat(orig.Where(char.IsAsciiDigit)));
         Console.WriteLine($"len: {code.Length} * {numericPart} = {code.Length * numericPart}");
         return code.Length * numericPart;
     }
 
-    private string SolveFirstRobot(string code, int depth)
+
+    private string SolveFirstRobotStr(string code, int depth)
     {
         var finger = DigitLocationNumeric('A');
         var result = new List<string>();
@@ -40,33 +63,90 @@ public sealed partial class Day_21 : BaseDay
         {
             var goal = DigitLocationNumeric(x);
             var possibleMovements = FindAllPathsNumeric(finger, goal);
-            var shortestMovement = possibleMovements.Select(m => SolveRobotBefore(m, depth)).MinBy(it => it.Length);
-            
-            Console.WriteLine($"Move {x} expanded to {shortestMovement}");
-            result.Add(shortestMovement!);
-            finger = goal;
-        }
+            var shortestMovement = possibleMovements.Select(m => SolveRobotBeforeStr(m, depth)).MinBy(it => it.Length);
 
-        return string.Concat(result);
-    }
-
-    private string SolveRobotBefore(string moves, int depth)
-    {
-        if (depth == 0)
-            return moves;
-        Console.WriteLine($"depth: {depth}, solving {moves}");
-        var finger = DigitLocationDir('A');
-        var result = new List<string>();
-        foreach (var goal in moves.Select(DigitLocationDir))
-        {
-            var possibleMovements = FindAllPathsDirectional(finger, goal);
-            var shortestMovement = possibleMovements.Select(m => SolveRobotBefore(m, depth-1)).MinBy(it => it.Length);
             result.Add(shortestMovement);
             finger = goal;
         }
-        Console.WriteLine($"depth: {depth}, solved to {string.Concat(result)}");
+
         return string.Concat(result);
     }
+
+    private readonly Dictionary<(string, int), string> _cacheStr = new();
+
+    private string SolveRobotBeforeStr(string moves, int depth)
+    {
+        if (depth == 0)
+            return moves;
+
+        if (_cacheStr.TryGetValue((moves, depth), out var cached))
+            return cached;
+
+        var finger = DigitLocationDir('A');
+        var result = new List<string>();
+        foreach (var x in moves)
+        {
+            var goal = DigitLocationDir(x);
+            var possibleMovements = FindAllPathsDirectional(finger, goal);
+            var shortestMovement =
+                possibleMovements.Select(m => SolveRobotBeforeStr(m, depth - 1)).MinBy(it => it.Length);
+            result.Add(shortestMovement);
+
+            finger = goal;
+        }
+
+        //  Console.WriteLine($"depth: {depth}, solved to {string.Concat(result)}");
+        
+        _cacheStr[(moves, depth)] = string.Concat(result);
+        return string.Concat(result);
+    }
+
+
+    private long SolveFirstRobot(string code, int depth)
+    {
+        var finger = DigitLocationNumeric('A');
+        var result = new List<long>();
+        foreach (var x in code)
+        {
+            var goal = DigitLocationNumeric(x);
+            var possibleMovements = FindAllPathsNumeric(finger, goal);
+            var shortestMovement = possibleMovements.Select(m => SolveRobotBefore(m, depth)).Min();
+
+            result.Add(shortestMovement);
+            finger = goal;
+        }
+
+        return result.Sum();
+    }
+
+    private readonly Dictionary<(string moves, int depth), long> _cacheLong = new();
+
+    private long SolveRobotBefore(string moves, int depth)
+    {
+        if (depth == 0)
+        {
+            //  Console.WriteLine($"long -depth 0, {moves} len: {moves.Length}");
+            return moves.Length;
+        }
+
+        if (_cacheLong.TryGetValue((moves, depth), out var cached))
+            return cached;
+
+        var finger = DigitLocationDir('A');
+        var result = new List<long>();
+        foreach (var x in moves)
+        {
+            var goal = DigitLocationDir(x);
+            var possibleMovements = FindAllPathsDirectional(finger, goal);
+            var shortestMovement = possibleMovements.Select(m => SolveRobotBefore(m, depth - 1)).Min();
+            result.Add(shortestMovement);
+            finger = goal;
+        }
+
+        _cacheLong[(moves, depth)] = result.Sum();
+        return result.Sum();
+    }
+
 
     private List<string> FindAllPathsNumeric(Point src, Point dest)
     {
@@ -74,7 +154,7 @@ public sealed partial class Day_21 : BaseDay
         FindAllPathsNumeric(src, dest, new List<char>(6), results);
         return results;
     }
-    
+
 
     private void FindAllPathsNumeric(Point src, Point dest, List<char> path, List<string> result)
     {
@@ -83,17 +163,19 @@ public sealed partial class Day_21 : BaseDay
             result.Add(string.Concat(path.Append('A')));
             return;
         }
+
         if (src == new Point(0, 3)) // gap
         {
             return;
         }
-        
+
         if (dest.Y < src.Y) // move up
         {
             path.Add('^');
             FindAllPathsNumeric(src.MoveTo(Direction.Up), dest, path, result);
             path.RemoveAt(path.Count - 1);
         }
+
         if (dest.X < src.X)
         {
             path.Add('<');
@@ -115,15 +197,21 @@ public sealed partial class Day_21 : BaseDay
             path.RemoveAt(path.Count - 1);
         }
     }
-    
-    
+
+    private Dictionary<(Point, Point), List<string>> _cache2 = new();
 
     private List<string> FindAllPathsDirectional(Point src, Point dest)
     {
+        if (_cache2.TryGetValue((src, dest), out var c))
+        {
+            return c;
+        }
+
         var results = new List<string>();
         FindAllPathsDirectional(src, dest, new List<char>(5), results);
-        return results;
+        return _cache2[(src, dest)] = results;
     }
+
     private void FindAllPathsDirectional(Point src, Point dest, List<char> path, List<string> result)
     {
         if (src == dest)
@@ -131,17 +219,19 @@ public sealed partial class Day_21 : BaseDay
             result.Add(string.Concat(path.Append('A')));
             return;
         }
+
         if (src == new Point(0, 0)) // gap
         {
             return;
         }
-        
+
         if (dest.Y < src.Y) // move up
         {
             path.Add('^');
             FindAllPathsDirectional(src.MoveTo(Direction.Up), dest, path, result);
             path.RemoveAt(path.Count - 1);
         }
+
         if (dest.X < src.X)
         {
             path.Add('<');
@@ -191,10 +281,4 @@ public sealed partial class Day_21 : BaseDay
             '>' => new Point(2, 1),
             _ => throw new InvalidOperationException()
         };
-
-
-    public override async ValueTask<string> Solve_2()
-    {
-        return "-";
-    }
 }
