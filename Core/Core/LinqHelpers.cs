@@ -105,6 +105,20 @@ public static class LinqHelpers
     }
 
     [SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void AddOrModifyAction<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, Func<TValue> initValueFactory, Action<TValue> modifier) where TKey : notnull
+    {
+        if (dict.TryGetValue(key, out var data))
+            modifier(data);
+        else
+        {
+            var newValue = initValueFactory();
+            modifier(newValue);
+            dict[key] = newValue;
+        }
+    }
+
+    [SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
     public static IEnumerable<TValue> GetOrEmpty<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TKey : notnull
     {
         if (dict.TryGetValue(key, out var data))

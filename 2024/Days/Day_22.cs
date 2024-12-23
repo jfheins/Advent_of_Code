@@ -1,6 +1,7 @@
 ﻿using Core;
 using System.Linq;
 using System.Drawing;
+using System.Runtime.CompilerServices;
 
 namespace AoC_2024.Days;
 
@@ -21,21 +22,13 @@ public sealed partial class Day_22 : BaseDay
             long secret = line;
             for (int i = 0; i < 2000; i++)
             {
-                secret = Prune(Mix(secret * 64, secret));
-                secret = Prune(Mix(secret / 32, secret));
-                secret = Prune(Mix(secret * 2048, secret));
+                secret = GetNextSecret(secret);
             }
 
             results.Add(secret);
         }
         return results.Sum().ToString();
     }
-
-    private long Prune(long mix)
-        => mix.Modulo(16777216);
-
-    private long Mix(long a, long b)
-        => a ^ b;
 
     public override async ValueTask<string> Solve_2()
     {
@@ -46,9 +39,7 @@ public sealed partial class Day_22 : BaseDay
             var secretList = new List<long> { secret };
             for (int i = 0; i < 2000; i++)
             {
-                secret = Prune(Mix(secret * 64, secret));
-                secret = Prune(Mix(secret / 32, secret));
-                secret = Prune(Mix(secret * 2048, secret));
+                secret = GetNextSecret(secret);
                 secretList.Add(secret);
             }
 
@@ -69,5 +60,13 @@ public sealed partial class Day_22 : BaseDay
         }
         var maxBanana = results.Max(kvp => kvp.Value);
         return maxBanana.ToString();
+    }
+
+    private static long GetNextSecret(long secret)
+    {
+        secret = (secret * 64 ^ secret) % (16777216);
+        secret = (secret / 32 ^ secret) % (16777216);
+        secret = (secret * 2048 ^ secret) % (16777216);
+        return secret;
     }
 }
