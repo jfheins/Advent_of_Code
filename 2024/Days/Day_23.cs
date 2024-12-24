@@ -1,10 +1,8 @@
 ﻿using Core;
-using System.Linq;
-using System.Drawing;
 
 namespace AoC_2024.Days;
 
-public sealed partial class Day_23 : BaseDay
+public sealed class Day_23 : BaseDay
 {
     private readonly string[] _input;
 
