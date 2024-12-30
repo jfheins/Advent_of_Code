@@ -36,12 +36,7 @@ public sealed class Day_25 : BaseDay
             }
         }
 
-        int fit = 0;
-        foreach (var l in locks)
-        {
-            fit += keys.Count(k => KindaFits(k, l));
-        }
-        
+        var fit = locks.Sum(l => keys.Count(k => KindaFits(k, l)));
         return fit.ToString();
         
         bool KindaFits(int[] key, int[] l)
