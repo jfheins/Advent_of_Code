@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Drawing;
 
-namespace AoC_2024.Days;
+namespace AoC_2025.Days;
 
 public sealed partial class Day_00 : BaseDay
 {

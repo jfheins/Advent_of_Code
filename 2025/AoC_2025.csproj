@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>default</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AoCHelper" Version="4.0.0" />
+        <PackageReference Include="Flurl.Http" Version="4.0.2" />
+        <PackageReference Include="morelinq" Version="4.3.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="NoAlloq" Version="0.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Core\Core\Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Days\" />
+    </ItemGroup>
+</Project>
