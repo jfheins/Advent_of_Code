@@ -25,12 +25,10 @@ public sealed class Day_01 : BaseDay
         return _changes
             .Aggregate((dial: 50, zeroCrossings: 0), (state, change) =>
             {
-                var sign = change < 0 ? -1 : 1;
-                var absChange = Math.Abs(change);
-                
+                var sign = Math.Sign(change);
                 // Mirror dial if turning left
                 var tempDial = (state.dial * sign).Modulo(100);
-                var fullTurns = Math.DivRem(tempDial + absChange, 100, out var newDial);
+                var fullTurns = Math.DivRem(tempDial + Math.Abs(change), 100, out var newDial);
                 newDial = (newDial * sign).Modulo(100);
                 
                 return (dial: newDial, zeroCrossings: state.zeroCrossings + fullTurns);
