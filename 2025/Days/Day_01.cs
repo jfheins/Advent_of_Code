@@ -18,12 +18,10 @@ public sealed class Day_01 : BaseDay
         foreach (var line in _input)
         {
             var change = line.ParseInts(1)[0];
-            change *= line.StartsWith('L') ? 1 : -1;
+            change *= line.StartsWith('L') ? -1 : 1;
             dial = (dial + change).Modulo(100);
-            if (dial == 0)
-            {
+            if (dial == 0) 
                 solution++;
-            }
         }
 
         return solution.ToString();
@@ -36,38 +34,16 @@ public sealed class Day_01 : BaseDay
         foreach (var line in _input)
         {
             var change = line.ParseInts(1)[0];
-            var sign = line.StartsWith('L') ? 1 : -1;
-            
-            var result = DivMod(dial + change * sign, 100);
-            var delta = Math.Abs(result.block);
-            
-            // When moving left, we need to count new blocks already when landing on 0
-            if (sign < 0)
-            {
-                var endedOnZero = result.remainder == 0 ? 1 : 0;
-                var startedOnZero = dial == 0 ? 1 : 0;
-                delta += endedOnZero - startedOnZero;
-            }
+            var sign = line.StartsWith('L') ? -1 : 1;
 
-            solution += delta;
-            dial = result.remainder;
+            // Mirror dial if turning left
+            var tempDial = (dial * sign).Modulo(100); 
+            var fullTurns = Math.DivRem(tempDial + change, 100, out var newDial);
+            
+            solution += fullTurns;
+            dial = (newDial*sign).Modulo(100); // Mirror back
         }
 
         return solution.ToString();
-    }
-
-    private static (int block, int remainder) DivMod(int num, int denom)
-    {
-        // calculates integer division and remainder, handling negative numbers correctly
-        // so that -1 / 100 returns (-1, 99) instead of (0, -1)
-        var block = num / denom;
-        var remainder = num % denom;
-        if (remainder < 0)
-        {
-            block--;
-            remainder += denom;
-        }
-
-        return (block, remainder);
     }
 }
