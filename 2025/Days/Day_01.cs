@@ -1,6 +1,4 @@
 ﻿using Core;
-using System.Linq;
-using System.Drawing;
 
 namespace AoC_2025.Days;
 
@@ -43,13 +41,13 @@ public sealed class Day_01 : BaseDay
             var result = DivMod(dial + change * sign, 100);
             var delta = Math.Abs(result.block);
             
-            // Edge case: when moving left from 0, we already counted the 0 when we landed
-            if (dial == 0 && sign < 0 && delta > 0)
-                delta -= 1;
-            
-            // Edge case: when moving left and landing exactly on 0, we need to count that 0
-            if (sign < 0 && result.remainder == 0 && dial != 0)
-                delta += 1;
+            // When moving left, we need to count new blocks already when landing on 0
+            if (sign < 0)
+            {
+                var endedOnZero = result.remainder == 0 ? 1 : 0;
+                var startedOnZero = dial == 0 ? 1 : 0;
+                delta += endedOnZero - startedOnZero;
+            }
 
             solution += delta;
             dial = result.remainder;
