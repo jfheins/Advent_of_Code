@@ -54,7 +54,7 @@ static class Program
 
     private static async Task DownloadDay((int day, string destPath) input, string cookie)
     {
-        var url = $"https://adventofcode.com/2024/day/{input.day}/input";
+        var url = $"https://adventofcode.com/2025/day/{input.day}/input";
         var res = await url.WithCookie("session", cookie).GetStringAsync();
         await File.WriteAllTextAsync(input.destPath, res);
     }
