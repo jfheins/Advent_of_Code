@@ -13,18 +13,17 @@ public sealed class Day_01 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        var dial = 50;
-        var solution = 0;
-        foreach (var line in _input)
+        return _input
+            .Select(ParseChange)
+            .RunningFold(50, (dial, change) => (dial + change).Modulo(100))
+            .Count(dial => dial == 0)
+            .ToString();
+
+        int ParseChange(string line)
         {
             var change = line.ParseInts(1)[0];
-            change *= line.StartsWith('L') ? -1 : 1;
-            dial = (dial + change).Modulo(100);
-            if (dial == 0) 
-                solution++;
+            return change * (line.StartsWith('L') ? -1 : 1);
         }
-
-        return solution.ToString();
     }
 
     public override async ValueTask<string> Solve_2()
@@ -37,11 +36,11 @@ public sealed class Day_01 : BaseDay
             var sign = line.StartsWith('L') ? -1 : 1;
 
             // Mirror dial if turning left
-            var tempDial = (dial * sign).Modulo(100); 
+            var tempDial = (dial * sign).Modulo(100);
             var fullTurns = Math.DivRem(tempDial + change, 100, out var newDial);
-            
+
             solution += fullTurns;
-            dial = (newDial*sign).Modulo(100); // Mirror back
+            dial = (newDial * sign).Modulo(100); // Mirror back
         }
 
         return solution.ToString();
