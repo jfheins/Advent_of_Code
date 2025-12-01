@@ -4,7 +4,7 @@ using System.Drawing;
 
 namespace AoC_2025.Days;
 
-public sealed partial class Day_01 : BaseDay
+public sealed class Day_01 : BaseDay
 {
     private readonly string[] _input;
 
@@ -39,17 +39,37 @@ public sealed partial class Day_01 : BaseDay
         {
             var change = line.ParseInts(1)[0];
             var sign = line.StartsWith('L') ? 1 : -1;
+            
+            var result = DivMod(dial + change * sign, 100);
+            var delta = Math.Abs(result.block);
+            
+            // Edge case: when moving left from 0, we already counted the 0 when we landed
+            if (dial == 0 && sign < 0 && delta > 0)
+                delta -= 1;
+            
+            // Edge case: when moving left and landing exactly on 0, we need to count that 0
+            if (sign < 0 && result.remainder == 0 && dial != 0)
+                delta += 1;
 
-            for (int i = 0; i < change; i++)
-            {
-                dial = (dial + sign).Modulo(100);
-                if (dial == 0)
-                {
-                    solution++;
-                }
-            }
+            solution += delta;
+            dial = result.remainder;
         }
 
         return solution.ToString();
+    }
+
+    private static (int block, int remainder) DivMod(int num, int denom)
+    {
+        // calculates integer division and remainder, handling negative numbers correctly
+        // so that -1 / 100 returns (-1, 99) instead of (0, -1)
+        var block = num / denom;
+        var remainder = num % denom;
+        if (remainder < 0)
+        {
+            block--;
+            remainder += denom;
+        }
+
+        return (block, remainder);
     }
 }
