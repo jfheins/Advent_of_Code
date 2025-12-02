@@ -6,7 +6,7 @@ using Flurl.Util;
 
 namespace AoC_2025.Days;
 
-public sealed partial class Day_02 : BaseDay
+public sealed class Day_02 : BaseDay
 {
     private readonly LongInterval[] _input;
 
@@ -23,13 +23,13 @@ public sealed partial class Day_02 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        var invalid = _input.SelectMany(it => it).Where(id => IsInvalid1(id.ToString())).Sum();
+        var invalid = _input.SelectMany(it => it).Where(IsInvalid1).Sum();
         return invalid.ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var invalid = _input.SelectMany(it => it).Where(id => IsInvalid2(id.ToString())).Sum();
+        var invalid = _input.SelectMany(it => it).Where(IsInvalid2).Sum();
         return invalid.ToString();
     }
 
@@ -40,6 +40,41 @@ public sealed partial class Day_02 : BaseDay
             return false;
         var halfLen = strId.Length / 2;
         return strId[..halfLen].SequenceEqual(strId[halfLen..]);
+    }
+
+    private static bool IsInvalid1(long id)
+    {
+        // A number that has 2 halves will be of the form xx * 101 or xxx * 1001 or xxxx * 10001 etc.
+        // With xx being the prefix and 1001 is called magic number.
+        // So the prefix needs to be half the number and the magic number has to divide id cleanly.
+        var prefixLength = id.DigitCount() / 2;
+        var magicNumber = (long)Math.Pow(10, prefixLength) + 1;
+        return id % magicNumber == 0 && (id / magicNumber).DigitCount() == prefixLength;
+    }
+
+    private static readonly long[] MagicNumbers1 = [11, 111, 1111, 11111, 111111, 1111111, 11111111, 111111111, 1111111111];
+    private static readonly long[] MagicNumbers2 = [101, 10101, 1010101, 101010101];
+    private static readonly long[] MagicNumbers3 = [1001, 1001001];
+    private static readonly long[] MagicNumbers4 = [10001];
+    private static readonly long[] MagicNumbers5 = [100001];
+
+    private static bool IsInvalid2(long id)
+    {
+        if (MagicNumbers1.Any(l => Divides(l, 1)))
+            return true;
+        if (MagicNumbers2.Any(l => Divides(l, 2)))
+            return true;
+        if (MagicNumbers3.Any(l => Divides(l, 3)))
+            return true;
+        if (MagicNumbers4.Any(l => Divides(l, 4)))
+            return true;
+        if (MagicNumbers5.Any(l => Divides(l, 5)))
+            return true;
+
+        return false;
+
+        bool Divides(long magicNumber, int prefixLength)
+            => id % magicNumber == 0 && (id / magicNumber).DigitCount() == prefixLength;
     }
 
     private static bool IsInvalid2(ReadOnlySpan<char> strId)
