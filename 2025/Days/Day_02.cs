@@ -100,10 +100,10 @@ public sealed class Day_02 : BaseDay
     /// Generates IDs with repeating patterns within the given interval.
     /// For each pattern length, creates numbers by repeating the pattern across all digits.
     /// </summary>
-    private static HashSet<long> EnumerateInvalidIds(LongInterval interval, int[] patternLengths)
+    private static HashSet<long> EnumerateInvalidIds(LongInterval interval, IReadOnlyCollection<int> patternLengths)
     {
         var startStr = interval.Start.ToString();
-        var endStr = (interval.End - 1).ToString(); // inclusive end
+        var endStr = interval.Last().ToString(); // inclusive end
         var digitCount = startStr.Length;
         var invalidIds = new HashSet<long>();
 

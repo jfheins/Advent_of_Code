@@ -32,6 +32,7 @@ public readonly record struct LongInterval : IEnumerable<long>
 
     public bool Contains(long point) => Start <= point && point < End;
     public bool Contains(double point) => Start <= point && point < End;
+    public long Last() => Length > 0 ? End - 1 : throw new InvalidOperationException("Interval is empty");
 
 
     /// <summary>
