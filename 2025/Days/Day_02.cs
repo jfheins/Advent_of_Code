@@ -8,70 +8,51 @@ namespace AoC_2025.Days;
 
 public sealed partial class Day_02 : BaseDay
 {
-    private readonly string _input;
+    private readonly LongInterval[] _input;
 
     public Day_02()
     {
-        _input = File.ReadAllText(InputFilePath);
+        _input = File.ReadAllText(InputFilePath).Split(",").SelectArray(ParseRange);
+
+        LongInterval ParseRange(string range)
+        {
+            var ends = range.Split("-").SelectArray(long.Parse);
+            return LongInterval.FromInclusiveEnd(ends[0], ends[1]);
+        }
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        var ranges = _input.Split(",").SelectArray(it => it.Split("-"));
-
-        var invalid = new List<long>();
-        foreach (var range in ranges)
-        {
-            var lower = long.Parse(range[0]);
-            var upper = long.Parse(range[1]);
-            for (var id = lower; id <= upper; id++)
-            {
-                var strId = id.ToString();
-                if (strId.Length % 2 == 1)
-                    continue;
-                var halfLen =  strId.Length / 2;
-                if (strId[0..halfLen] == strId[halfLen..])
-                {
-                    invalid.Add(id);
-                }
-            }
-        }
-        
-        return invalid.Sum().ToString();
+        var invalid = _input.SelectMany(it => it).Where(id => IsInvalid1(id.ToString())).Sum();
+        return invalid.ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var ranges = _input.Split(",").SelectArray(it => it.Split("-"));
-
-        var invalid = new List<long>();
-        foreach (var range in ranges)
-        {
-            var lower = long.Parse(range[0]);
-            var upper = long.Parse(range[1]);
-            for (var id = lower; id <= upper; id++)
-            {
-                if (IsInvalid2(id.ToString()))
-                {
-                    invalid.Add(id);
-                }
-            }
-        }
-        
-        return invalid.Sum().ToString();
+        var invalid = _input.SelectMany(it => it).Where(id => IsInvalid2(id.ToString())).Sum();
+        return invalid.ToString();
     }
 
-    private static bool IsInvalid2(ReadOnlySpan<char> id)
+
+    private static bool IsInvalid1(ReadOnlySpan<char> strId)
     {
-        for (var prefixLen = 1; prefixLen <= id.Length/2; prefixLen++)
+        if (strId.Length % 2 == 1)
+            return false;
+        var halfLen = strId.Length / 2;
+        return strId[..halfLen].SequenceEqual(strId[halfLen..]);
+    }
+
+    private static bool IsInvalid2(ReadOnlySpan<char> strId)
+    {
+        for (var prefixLen = 1; prefixLen <= strId.Length / 2; prefixLen++)
         {
-            if (id.Length % prefixLen > 0)
+            if (strId.Length % prefixLen > 0)
                 continue;
-            var prefix = id[..prefixLen];
+            var prefix = strId[..prefixLen];
             var allMatch = true;
-            for (var i = 1; i < id.Length/prefixLen; i++)
+            for (var i = 1; i < strId.Length / prefixLen; i++)
             {
-                var part = id[(prefixLen * i)..(prefixLen * (i + 1))];
+                var part = strId[(prefixLen * i)..(prefixLen * (i + 1))];
                 if (!prefix.SequenceEqual(part))
                 {
                     allMatch = false;
