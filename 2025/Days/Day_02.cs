@@ -1,4 +1,5 @@
-﻿using Core;
+﻿using System.Collections;
+using Core;
 using System.Linq;
 using System.Drawing;
 using System.Xml;
@@ -21,84 +22,98 @@ public sealed class Day_02 : BaseDay
         }
     }
 
+    private static IEnumerable<LongInterval> YieldConstantLengthIntervals(LongInterval interval)
+    {
+        // Any interval that crosses a power of 10 needs to be split. So 998..1005 becomes 998..999 and 1000..1005
+        var startDigits = interval.Start.DigitCount();
+        var endDigits = (interval.End - 1).DigitCount();
+        var lower = interval.Start;
+        for (var length = startDigits; length < endDigits; length++)
+        {
+            var split = (long)Math.Pow(10, length);
+            yield return new LongInterval(lower, split);
+            lower = split;
+        }
+
+        yield return new LongInterval(lower, interval.End);
+    }
+
     public override async ValueTask<string> Solve_1()
     {
-        var invalid = _input.SelectMany(it => it).Where(IsInvalid1).Sum();
-        return invalid.ToString();
+        return _input
+            .SelectMany(YieldConstantLengthIntervals)
+            .SelectMany(EnumerateInvalidIds1)
+            .Sum()
+            .ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var invalid = _input.SelectMany(it => it).Where(IsInvalid2).Sum();
-        return invalid.ToString();
+        return _input
+            .SelectMany(YieldConstantLengthIntervals)
+            .SelectMany(EnumerateInvalidIds2)
+            .Sum()
+            .ToString();
     }
 
-
-    private static bool IsInvalid1(ReadOnlySpan<char> strId)
+    private static readonly Dictionary<int, int[]> PatternLengths = new()
     {
-        if (strId.Length % 2 == 1)
-            return false;
-        var halfLen = strId.Length / 2;
-        return strId[..halfLen].SequenceEqual(strId[halfLen..]);
+        { 1, [] },
+        { 2, [1] },
+        { 3, [1] },
+        { 4, [1, 2] },
+        { 5, [1] },
+        { 6, [1, 2, 3] },
+        { 7, [1] },
+        { 8, [1, 2, 4] },
+        { 9, [1, 3] },
+        { 10, [1, 2, 5] },
+    };
+
+
+    private static IEnumerable<long> EnumerateInvalidIds1(LongInterval interval)
+    {
+        var length = interval.Start.DigitCount();
+        return length % 2 > 0 ? [] : EnumerateInvalidIds(interval, [length / 2]);
+    }
+    
+    private static IEnumerable<long> EnumerateInvalidIds2(LongInterval interval)
+    {
+        var length = interval.Start.DigitCount();
+        return EnumerateInvalidIds(interval, PatternLengths[length]);
     }
 
-    private static bool IsInvalid1(long id)
+    private static HashSet<long> EnumerateInvalidIds(LongInterval interval, int[] patternLengths)
     {
-        // A number that has 2 halves will be of the form xx * 101 or xxx * 1001 or xxxx * 10001 etc.
-        // With xx being the prefix and 1001 is called magic number.
-        // So the prefix needs to be half the number and the magic number has to divide id cleanly.
-        var patternLength = id.DigitCount() / 2;
-        var magicNumber = (long)Math.Pow(10, patternLength) + 1;
-        return id % magicNumber == 0 && (id / magicNumber).DigitCount() == patternLength;
-    }
+        var startStr = interval.Start.ToString();
+        var endStr = (interval.End - 1).ToString(); // inclusive end
+        var invalidIds = new HashSet<long>();
 
-    private static readonly long[] MagicNumbers1 = [11, 111, 1111, 11111, 111111, 1111111, 11111111, 111111111, 1111111111];
-    private static readonly long[] MagicNumbers2 = [101, 10101, 1010101, 101010101];
-    private static readonly long[] MagicNumbers3 = [1001, 1001001];
-    private static readonly long[] MagicNumbers4 = [10001];
-    private static readonly long[] MagicNumbers5 = [100001];
-
-    private static bool IsInvalid2(long id)
-    {
-        if (MagicNumbers1.Any(l => Divides(l, 1)))
-            return true;
-        if (MagicNumbers2.Any(l => Divides(l, 2)))
-            return true;
-        if (MagicNumbers3.Any(l => Divides(l, 3)))
-            return true;
-        if (MagicNumbers4.Any(l => Divides(l, 4)))
-            return true;
-        if (MagicNumbers5.Any(l => Divides(l, 5)))
-            return true;
-
-        return false;
-
-        bool Divides(long magicNumber, int patternLength)
-            => id % magicNumber == 0 && (id / magicNumber).DigitCount() == patternLength;
-    }
-
-    private static bool IsInvalid2(ReadOnlySpan<char> strId)
-    {
-        for (var patternLen = 1; patternLen <= strId.Length / 2; patternLen++)
+        foreach (var patternLength in patternLengths)
         {
-            if (strId.Length % patternLen > 0)
+            if (patternLength == 0 || startStr.Length % patternLength > 0)
                 continue;
-            var pattern = strId[..patternLen];
-            var allMatch = true;
-            for (var i = 1; i < strId.Length / patternLen; i++)
+
+            var start = int.Parse(startStr[..patternLength]);
+            var end = int.Parse(endStr[..patternLength]);
+            for (var i = start; i <= end; i++)
             {
-                var part = strId[(patternLen * i)..(patternLen * (i + 1))];
-                if (!pattern.SequenceEqual(part))
-                {
-                    allMatch = false;
-                    break;
-                }
+                var id = MakeId(i);
+                if (interval.Contains(id))
+                    invalidIds.Add(id);
             }
 
-            if (allMatch)
-                return true;
+            long MakeId(int pattern)
+            {
+                long id = pattern;
+                var multiplier = (long)Math.Pow(10, patternLength);
+                for (var i = 1; i < startStr.Length / patternLength; i++)
+                    id = id * multiplier + pattern;
+
+                return id;
+            }
         }
 
-        return false;
+        return invalidIds;
     }
 }
