@@ -11,32 +11,46 @@ public sealed class Day_03 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        var total = _input.Sum(bank => long.Parse(MaxJoltage(bank, 2)));
+        var total = _input.Sum(bank => long.Parse(MaxJoltage(bank, batteryCount: 2)));
         return total.ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var total = _input.Sum(bank => long.Parse(MaxJoltage(bank, 12)));
+        var total = _input.Sum(bank => long.Parse(MaxJoltage(bank, batteryCount: 12)));
         return total.ToString();
     }
 
+    /// <summary>
+    /// Finds the maximum number that can be formed by selecting 'batteryCount' digits
+    /// from the bank in order (greedy approach: always pick the largest available digit).
+    /// </summary>
     private static string MaxJoltage(ReadOnlySpan<char> bank, int batteryCount)
     {
         if (batteryCount == 0)
-            return "";
+            return string.Empty;
         
-        for (var d = '9'; d >= '0'; d--)
+        // Greedy algorithm: try to pick the largest digit ('9' to '0')
+        // that still leaves enough characters to select all remaining digits
+        for (var digit = '9'; digit >= '0'; digit--)
         {
-            var digitIdx = bank.IndexOf(d);
-            var remainingLength = bank.Length - digitIdx;
-            if (digitIdx < 0 || remainingLength < batteryCount) 
+            var digitIndex = bank.IndexOf(digit);
+            if (digitIndex < 0)
                 continue;
             
-            var remainder = bank.Slice(digitIdx + 1);
-            return d + MaxJoltage(remainder, batteryCount - 1);
+            // Check if we have enough characters from this position onwards (including this digit)
+            // We need at least 'batteryCount' characters total
+            var remainingLength = bank.Length - digitIndex;
+            if (remainingLength < batteryCount)
+                continue;
+            
+            // Found a valid digit, recurse for the rest
+            var remainingBank = bank.Slice(digitIndex + 1);
+            return digit + MaxJoltage(remainingBank, batteryCount - 1);
         }
 
-        return "xxx";
+        // This should only be reached if the bank contains invalid characters
+        throw new InvalidOperationException(
+            $"Unable to find {batteryCount} valid digits in the remaining bank '{bank.ToString()}'");
     }
 }
