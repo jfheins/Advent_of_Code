@@ -53,6 +53,17 @@ public readonly record struct LongInterval : IEnumerable<long>
         return (prefix, intersection, suffix);
     }
 
+    /// <summary>
+    /// Returns the union of this interval with the other interval.
+    /// Throws an exception if the intervals do not overlap.
+    /// </summary>
+    public LongInterval Union(LongInterval other)
+    {
+        if (!OverlapsWith(other))
+            throw new InvalidOperationException("Intervals do not overlap");
+        return new LongInterval(Math.Min(Start, other.Start), Math.Max(End, other.End));
+    }
+    
     public static explicit operator LongInterval(Interval it) => new(it.Start, it.End);
 
     public IEnumerator<long> GetEnumerator()
