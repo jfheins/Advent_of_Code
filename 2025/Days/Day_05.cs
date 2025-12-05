@@ -1,52 +1,40 @@
 ﻿using Core;
-using System.Linq;
-using System.Drawing;
 
 namespace AoC_2025.Days;
 
-public sealed partial class Day_05 : BaseDay
+public sealed class Day_05 : BaseDay
 {
-    private readonly string[] _input;
+    private readonly IReadOnlyCollection<LongInterval> _freshIdRanges;
+    private readonly IReadOnlyCollection<long> _availableIngredientIds;
 
     public Day_05()
     {
-        _input = File.ReadAllLines(InputFilePath);
+        var input = File.ReadAllLines(InputFilePath).SplitBy("");
+        _freshIdRanges = input[0].SelectArray(it => LongInterval.ParseInclusive(it));
+        _availableIngredientIds = input[1].SelectArray(long.Parse);
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        var (ranges, ingred) = _input.SplitBy("").ToTuple2();
+        return _availableIngredientIds.Count(IsFresh).ToString();
 
-        var r2 = ranges.Select(it => it.Split("-").ToTuple2())
-            .Select2((start, end) => LongInterval.FromInclusiveEnd(long.Parse(start), long.Parse(end))).ToList();
-        var i = ingred.Select(it => long.Parse(it)).ToList();
-
-        var freshCount = i.Count(it => r2.Any(r => r.Contains(it)));
-        return freshCount.ToString();
+        bool IsFresh(long id) => _freshIdRanges.Any(it => it.Contains(id));
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var (ranges, _) = _input.SplitBy("").ToTuple2();
-
-        var r2 = ranges.Select(it => it.Split("-").ToTuple2())
-            .Select2((start, end) => LongInterval.FromInclusiveEnd(long.Parse(start), long.Parse(end))).ToList();
-
-        var r3 = new List<LongInterval>();
-        while (r2.Count > 0)
-        {
-            var cand = r2[0];
-            r2.Remove(cand);
-            LongInterval other;
-            while ((other = r2.FirstOrDefault(o => o.OverlapsWith(cand))) != default)
+        var nonOverlapping = _freshIdRanges.OrderBy(it => it.Start).Aggregate(
+            new List<LongInterval>(),
+            (acc, elem) =>
             {
-                cand = cand.Union(other);
-                r2.Remove(other);
+                if (acc.LastOrDefault().OverlapsWith(elem)) 
+                    acc[^1] = acc[^1].Union(elem);
+                else
+                    acc.Add(elem);
+                return acc;
             }
-
-            r3.Add(cand);
-        }
-
-        return r3.Select(it => it.Length).Sum().ToString();
+        );
+        
+        return nonOverlapping.Sum(it => it.Length).ToString();
     }
 }

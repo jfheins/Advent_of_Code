@@ -20,6 +20,14 @@ public readonly record struct LongInterval : IEnumerable<long>
     public static LongInterval FromStartAndLength(long start, long length) => new(start, start + length);
     public static LongInterval FromInclusiveEnd(long start, long end) => new(start, end + 1);
     public static LongInterval? Create(long start, long end) => start < end ? new LongInterval(start, end) : null;
+    
+    public static LongInterval ParseInclusive(ReadOnlySpan<char> str)
+    {
+        var indexOfDash = str.IndexOf('-');
+        var start = str.Slice(0, indexOfDash);
+        var end = str.Slice(indexOfDash + 1);
+        return FromInclusiveEnd(long.Parse(start), long.Parse(end));
+    }
 
     public long Length => End - Start;
     public bool IsEmpty => Start == End;
