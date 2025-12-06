@@ -716,6 +716,14 @@ public static class LinqHelpers
             yield return aggregate = aggregator(aggregate, elem);
     }
     
+    public static IEnumerable<TResult> ZipMany<T, TResult>(this IEnumerable<T>[] sequences, Func<T[], TResult> resultSelector)
+    {
+        var enumerators = sequences.Select(s => s.GetEnumerator()).ToArray();
+        var items = new T[enumerators.Length];
+        while(enumerators.All(e => e.MoveNext()))
+            yield return resultSelector(enumerators.Select(e => e.Current).ToArray());
+    }
+    
     public static int DigitCount(this long n) 
         => n switch
         {

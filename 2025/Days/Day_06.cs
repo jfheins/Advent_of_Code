@@ -1,10 +1,9 @@
 ﻿using Core;
-using System.Linq;
-using System.Drawing;
+using static MoreLinq.Extensions.SplitExtension;
 
 namespace AoC_2025.Days;
 
-public sealed partial class Day_06 : BaseDay
+public sealed class Day_06 : BaseDay
 {
     private readonly string[] _input;
 
@@ -15,81 +14,40 @@ public sealed partial class Day_06 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        var input = _input.SelectArray(line => line.Split(" ", StringSplitOptions.RemoveEmptyEntries));
-        var total = 0L;
-        for (int i = 0; i < input[0].Length; i++)
-        {
-            var x = input.SelectArray(l => l[i]);
-            var op = x.Last();
-            var num = x.SkipLast(1).Select(long.Parse).ToArray();
-            if (op == "+")
-                total += num.Sum();
-            else if (op == "*")
-            {
-                total += num.Product();
-            }
-            else
-            {
-                throw new Exception();
-            }
-        }
-
-        return total.ToString();
+        var problems = _input.SelectArray(line => line.Split(" ", StringSplitOptions.RemoveEmptyEntries))
+            .ZipMany(Problem.FromRowNumbers);
+        return problems.Sum(it => it.Calculate()).ToString();
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var total = 0L;
-        var op = 'x';
-        List<long> problem = new();
-        for (int colIdx = 0; colIdx < _input[0].Length; colIdx++)
+        var problems = _input.ZipMany(col => new string(col)).Split(it => it.IsWhiteSpace())
+            .SelectList(Problem.FromColumnNumbers);
+        return problems.Sum(it => it.Calculate()).ToString();
+    }
+
+    public record Problem(char Operator, IReadOnlyCollection<long> Operands)
+    {
+        public long Calculate() => Operator switch
         {
-            var col = _input.SelectArray(l => l[colIdx]);
-            if (col.Last() != ' ')
-                op = col.Last();
+            '+' => Operands.Sum(),
+            '*' => Operands.Product(),
+            _ => throw new InvalidOperationException("Unknown operation")
+        };
 
-            var operand = new string(col.SkipLast(1).ToArray());
-
-            if (string.IsNullOrWhiteSpace(operand))
-            {
-                // perform op
-                if (op == '+')
-                    total += problem.Sum();
-                else if (op == '*')
-                {
-                    total += problem.Product();
-                }
-                else
-                {
-                    throw new Exception();
-                }
-
-                problem.Clear();
-            }
-            else
-            {
-                // add operand
-                var num = long.Parse(operand);
-                problem.Add(num);
-            }
+        public static Problem FromRowNumbers(IReadOnlyCollection<string> cells)
+        {
+            var op = cells.Last()[0];
+            var operands = cells.SkipLast(1).SelectList(long.Parse);
+            return new Problem(op, operands);
         }
 
-        if (problem.Count > 0)
+        public static Problem FromColumnNumbers(IEnumerable<string> columns)
         {
-            if (op == '+')
-                total += problem.Sum();
-            else if (op == '*')
-            {
-                total += problem.Product();
-            }
-            else
-            {
-                throw new Exception();
-            }
-
-            problem.Clear();
+            var cols = columns.ToArray();
+            var op = cols[0].Last();
+            var operands = cols.SelectArray(it => long.Parse(it.AsSpan()[..^1]));
+            return new Problem(op, operands);
         }
-
-        return total.ToString();
     }
 }
