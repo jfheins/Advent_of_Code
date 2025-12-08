@@ -44,6 +44,7 @@ namespace Core
 
         public static ValueTuple<T, T> ToTuple2<T>(this IList<T> source) => (source[0], source[1]);
         public static Point ToPoint(this IList<int> source) => new(source[0], source[1]);
+        public static Point3 ToPoint3(this IList<int> source) => new(source[0], source[1], source[2]);
         public static ValueTuple<T, T, T> ToTuple3<T>(this IList<T> source) => (source[0], source[1], source[2]);
         public static ValueTuple<T, T, T, T> ToTuple4<T>(this IList<T> source) => (source[0], source[1], source[2], source[3]);
 

@@ -46,10 +46,10 @@ namespace Core
         public static int ManhattanDistTo(this Point3 p, Point3 other)
             => Math.Abs(p.X - other.X) + Math.Abs(p.Y - other.Y) + Math.Abs(p.Z - other.Z);
 
-        public static float EuklidDistTo(this Point3 p, Point3 other)
+        public static double EuklidDistTo(this Point3 p, Point3 other)
         {
-            return MathF.Sqrt(Sqr(p.X, other.X) + Sqr(p.Y, other.Y) + Sqr(p.Z, other.Z));
-            static int Sqr(int a, int b) => (a - b) * (a - b);
+            return Math.Sqrt(Sqr(p.X, other.X) + Sqr(p.Y, other.Y) + Sqr(p.Z, other.Z));
+            static double Sqr(double a, double b) => Math.Pow(a - b, 2);
         }
 
         public static Point TurnClockwise(this Point p, int degrees)
