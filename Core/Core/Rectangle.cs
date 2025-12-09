@@ -16,6 +16,8 @@ public class Rectangle2D(Point topLeft, int width, int height)
         
     public int Width { get; } = width;
     public int Height { get; } = height;
+    
+    public long Area => Width * (long)Height;
 
     public Rectangle2D(int x, int y, int width, int height)
         : this(new Point(x, y), width, height)

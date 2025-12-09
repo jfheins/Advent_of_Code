@@ -1,4 +1,5 @@
-﻿using Core;
+﻿using System.Collections.Concurrent;
+using Core;
 using System.Drawing;
 using Core.Combinatorics;
 
@@ -6,71 +7,60 @@ namespace AoC_2025.Days;
 
 public sealed partial class Day_09 : BaseDay
 {
-    private readonly (long, long)[] _input;
+    private readonly Point[] _input;
 
     public Day_09()
     {
-        _input = File.ReadAllLines(InputFilePath).SelectArray(l => l.ParseLongs().ToTuple2());
+        _input = File.ReadAllLines(InputFilePath).SelectArray(l => l.ParseInts().ToPoint());
     }
 
     public override async ValueTask<string> Solve_1()
     {
-        var rects = new TupleCombinations2<(long, long)>(_input).Select2(RectArea);
+        var rects = new TupleCombinations2<Point>(_input).Select(RectArea);
         return rects.Max().ToString();
-    }
-
-    private static long RectArea((long, long) p1, (long, long) p2)
-    {
-        var width = Math.Abs(p1.Item1 - p2.Item1 + 1);
-        var height = Math.Abs(p1.Item2 - p2.Item2 + 1);
-        return width * height;
-    }
-
-    private static long RectArea(Rectangle2D rect)
-    {
-        return rect.Width * (long)rect.Height;
+        
+        static long RectArea(Point p1, Point p2)
+        {
+            var width = Math.Abs(p1.X - p2.X + 1);
+            var height = Math.Abs(p1.Y - p2.Y + 1);
+            return width * (long)height;
+        }
     }
 
     public override async ValueTask<string> Solve_2()
     {
-        var points = _input.Select2((x, y) => new Point((int)x, (int)y)).ToList();
+        var closedPolygon = _input.Append(_input[0]).ToList();
+        var pointCache = new ConcurrentDictionary<Point, bool>();
+        var notInPolygon = new ConcurrentBag<Point>();
 
-        var closedPolygon = points.Append(points[0]).ToList();
-        var pointCache = new Dictionary<Point, bool>();
+        var possibleRectangles = new TupleCombinations2<Point>(closedPolygon)
+            .SelectList(it => MakeRect(it.Item1, it.Item2));
+        possibleRectangles.Sort((a, b) => b.Area.CompareTo(a.Area)); // descending order
 
-        var rects = new List<Rectangle2D>();
-
-        var allCornerCombis = new TupleCombinations2<Point>(closedPolygon).ToList();
-        var i = 0;
-        foreach (var (tl, br) in allCornerCombis)
-        {
-            i++;
-            var rect = new Rectangle2D(
-                Math.Min(tl.X, br.X),
-                Math.Min(tl.Y, br.Y),
-                Math.Abs(tl.X - br.X) + 1,
-                Math.Abs(tl.Y - br.Y) + 1
-            );
-
-            if (!rect.Corners.All(InPolygon))
-                continue;
-            
-            var p = i / (float)allCornerCombis.Count;
-            Console.WriteLine($"Checking {p:P2} {i}/{allCornerCombis.Count}");
-            // check that all points on all edges are also in polygon
-            var allEdgePointsInPolygon = rect.GetEdges()
+        var maxAllowed = possibleRectangles.AsParallel().First(rect =>
+            rect.Corners.All(InPolygon)
+            && !notInPolygon.Any(rect.Contains)
+            && rect.GetEdges()
                 .SelectMany(edge => edge)
-                .All(InPolygon);
+                .All(InPolygon));
 
-            if (allEdgePointsInPolygon) 
-                rects.Add(rect);
-        }
-
-        return rects.Max(RectArea).ToString();
+        return maxAllowed.Area.ToString();
 
         bool InPolygon(Point p)
-            => pointCache.GetOrAdd(p, it => IsInPolygon(it, closedPolygon));
+        {
+            var res = pointCache.GetOrAdd(p, it => IsInPolygon(it, closedPolygon));
+            if (!res) notInPolygon.Add(p);
+            return res;
+        }
     }
+
+    private static Rectangle2D MakeRect(Point cornerA, Point cornerB)
+        => new(
+            Math.Min(cornerA.X, cornerB.X),
+            Math.Min(cornerA.Y, cornerB.Y),
+            Math.Abs(cornerA.X - cornerB.X) + 1,
+            Math.Abs(cornerA.Y - cornerB.Y) + 1
+        );
 
 
     public static bool IsInPolygon(Point point, IReadOnlyCollection<Point> polygon)
