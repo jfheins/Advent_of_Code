@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using Core;
+﻿using Core;
 using System.Drawing;
 using Core.Combinatorics;
 
@@ -18,7 +17,7 @@ public sealed partial class Day_09 : BaseDay
     {
         var rects = new TupleCombinations2<Point>(_input).Select(RectArea);
         return rects.Max().ToString();
-        
+
         static long RectArea(Point p1, Point p2)
         {
             var width = Math.Abs(p1.X - p2.X + 1);
@@ -30,27 +29,24 @@ public sealed partial class Day_09 : BaseDay
     public override async ValueTask<string> Solve_2()
     {
         var closedPolygon = _input.Append(_input[0]).ToList();
-        var pointCache = new ConcurrentDictionary<Point, bool>();
-        var notInPolygon = new ConcurrentBag<Point>();
+        var polygonEdges = closedPolygon.PairwiseWithOverlap().ToList();
 
         var possibleRectangles = new TupleCombinations2<Point>(closedPolygon)
             .SelectList(it => MakeRect(it.Item1, it.Item2));
         possibleRectangles.Sort((a, b) => b.Area.CompareTo(a.Area)); // descending order
 
         var maxAllowed = possibleRectangles.AsParallel().First(rect =>
-            rect.Corners.All(InPolygon)
-            && !notInPolygon.Any(rect.Contains)
-            && rect.GetEdges()
-                .SelectMany(edge => edge)
-                .All(InPolygon));
+            rect.Corners.All(c => IsInPolygon(c, closedPolygon))
+            && NoEdgeIntersectsPolygon(rect));
 
         return maxAllowed.Area.ToString();
 
-        bool InPolygon(Point p)
+        bool NoEdgeIntersectsPolygon(Rectangle2D r)
         {
-            var res = pointCache.GetOrAdd(p, it => IsInPolygon(it, closedPolygon));
-            if (!res) notInPolygon.Add(p);
-            return res;
+            var intersections = from rectEdge in r.GetEdges()
+                from polyEdge in polygonEdges
+                select rectEdge.IntersectsLine(polyEdge.Item1, polyEdge.Item2);
+            return intersections.AllEqual(false);
         }
     }
 
