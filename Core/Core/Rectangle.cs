@@ -67,11 +67,17 @@ public class Rectangle2D(Point topLeft, int width, int height)
 
 public interface ILineSegment2D : IEnumerable<Point>
 {
+    public Point First { get; }
+    public Point Last { get; }
     public Point ClosestPointTo(Point p);
+    public bool IntersectsLine(Point a, Point b);
 }
 
 public readonly record struct LineSegment2Dx(int MinX, int MaxX, int Y) : ILineSegment2D
 {
+    public Point First => new(MinX, Y);
+    public Point Last => new(MaxX, Y);
+
     public Point ClosestPointTo(Point p)
     {
         if (p.X <= MinX)
@@ -80,6 +86,9 @@ public readonly record struct LineSegment2Dx(int MinX, int MaxX, int Y) : ILineS
             return new Point(MaxX, Y);
         return p with { Y = Y };
     }
+
+    public bool IntersectsLine(Point a, Point b)
+        => AlgebraHelpers.ProperIntersection(First, Last, a, b);
 
     public IEnumerator<Point> GetEnumerator()
     {
@@ -94,6 +103,8 @@ public readonly record struct LineSegment2Dx(int MinX, int MaxX, int Y) : ILineS
 
 public readonly record struct LineSegment2Dy(int X, int MinY, int MaxY) : ILineSegment2D
 {
+    public Point First => new(X, MinY);
+    public Point Last => new(X, MaxY);
 
     public Point ClosestPointTo(Point p)
     {
@@ -103,6 +114,9 @@ public readonly record struct LineSegment2Dy(int X, int MinY, int MaxY) : ILineS
             return new Point(X, MaxY);
         return p with { X = X };
     }
+
+    public bool IntersectsLine(Point a, Point b)
+        => AlgebraHelpers.ProperIntersection(First, Last, a, b);
 
     public IEnumerator<Point> GetEnumerator()
     {

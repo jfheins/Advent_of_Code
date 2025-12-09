@@ -66,5 +66,11 @@ namespace Core
             var rem = new Size(p.X.Modulo(x), p.Y.Modulo(y));
             return (p - rem, rem);
         }
+
+        /// <summary>
+        /// Cross product of two vectors (Point treated as vector)
+        /// </summary>
+        public static long Cross(this Point a, Point b)
+            => (long)a.X * b.Y - (long)a.Y * b.X;
     }
 }
