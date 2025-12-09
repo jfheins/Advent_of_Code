@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 namespace Core;
 
@@ -10,7 +12,7 @@ public static class AlgebraHelpers
 {
     /// <summary>
     /// Calculate orientation: cross product of vectors (b-a) and (c-a)
-    /// Returns positive if c is left of line ab, negative if right, zero if collinear
+    /// Returns +1 if c is left of line ab, -1 if right, 0 if collinear
     /// </summary>
     public static int Orient(Point a, Point b, Point c)
     {
@@ -32,6 +34,39 @@ public static class AlgebraHelpers
         
         // Proper intersection exists iff opposite signs
         return oa * ob < 0 && oc * od < 0;
+    }
+    
+    /// <summary>
+    /// Check if a point is inside a polygon using the winding number algorithm
+    /// The polygon should be closed (first point == last point)
+    /// </summary>
+    public static bool IsPointInPolygon(Point point, IReadOnlyCollection<Point> polygon)
+    {
+        var windingNumber = 0;
+        var a = polygon.Last();
+        
+        foreach (var b in polygon)
+        {
+            if (a.Y <= point.Y)
+            {
+                if (b.Y > point.Y) // Upward crossing
+                {
+                    if (Orient(a, b, point) > 0) // Point is left of edge
+                        windingNumber++;
+                }
+            }
+            else
+            {
+                if (b.Y <= point.Y) // Downward crossing
+                {
+                    if (Orient(a, b, point) < 0) // Point is right of edge
+                        windingNumber--;
+                }
+            }
+            a = b;
+        }
+        
+        return windingNumber != 0;
     }
 }
 

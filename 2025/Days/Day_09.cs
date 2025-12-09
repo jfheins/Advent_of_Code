@@ -4,7 +4,7 @@ using Core.Combinatorics;
 
 namespace AoC_2025.Days;
 
-public sealed partial class Day_09 : BaseDay
+public sealed class Day_09 : BaseDay
 {
     private readonly Point[] _input;
 
@@ -36,15 +36,15 @@ public sealed partial class Day_09 : BaseDay
         possibleRectangles.Sort((a, b) => b.Area.CompareTo(a.Area)); // descending order
 
         var maxAllowed = possibleRectangles.AsParallel().First(rect =>
-            rect.Corners.All(c => IsInPolygon(c, closedPolygon))
+            rect.Corners.All(c => AlgebraHelpers.IsPointInPolygon(c, _input))
             && NoEdgeIntersectsPolygon(rect));
 
         return maxAllowed.Area.ToString();
 
         bool NoEdgeIntersectsPolygon(Rectangle2D r)
         {
-            var intersections = from rectEdge in r.GetEdges()
-                from polyEdge in polygonEdges
+            var intersections = from polyEdge in polygonEdges
+                from rectEdge in r.GetEdges()
                 select rectEdge.IntersectsLine(polyEdge.Item1, polyEdge.Item2);
             return intersections.AllEqual(false);
         }
@@ -57,35 +57,4 @@ public sealed partial class Day_09 : BaseDay
             Math.Abs(cornerA.X - cornerB.X) + 1,
             Math.Abs(cornerA.Y - cornerB.Y) + 1
         );
-
-
-    public static bool IsInPolygon(Point point, IReadOnlyCollection<Point> polygon)
-    {
-        bool result = false;
-        var a = polygon.Last();
-        foreach (var b in polygon)
-        {
-            if ((b.X == point.X) && (b.Y == point.Y))
-                return true;
-
-            if ((b.Y == a.Y) && (point.Y == a.Y))
-            {
-                if ((a.X <= point.X) && (point.X <= b.X))
-                    return true;
-
-                if ((b.X <= point.X) && (point.X <= a.X))
-                    return true;
-            }
-
-            if ((b.Y < point.Y) && (a.Y >= point.Y) || (a.Y < point.Y) && (b.Y >= point.Y))
-            {
-                if (b.X + (point.Y - b.Y) / (a.Y - b.Y) * (a.X - b.X) <= point.X)
-                    result = !result;
-            }
-
-            a = b;
-        }
-
-        return result;
-    }
 }
