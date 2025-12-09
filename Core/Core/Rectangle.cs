@@ -42,18 +42,20 @@ public class Rectangle2D(Point topLeft, int width, int height)
     public IEnumerable<ILineSegment2D> GetEdges()
     {
         // Inclusive bound that is still part of the rectangle
-        var inclBound = new Point(BottomRight.X - 1, BottomRight.Y - 1);
-
+        var inclEnd = new Point(BottomRight.X - 1, BottomRight.Y - 1);
         // Top edge
-        yield return new LineSegment2Dx(TopLeft.X, inclBound.X, TopLeft.Y);
+        yield return new LineSegment2Dx(TopLeft.X, inclEnd.X, TopLeft.Y);
         // Bottom edge
-        yield return new LineSegment2Dx(TopLeft.X, inclBound.X, inclBound.Y);
+        yield return new LineSegment2Dx(TopLeft.X, inclEnd.X, inclEnd.Y);
         // Left edge
-        yield return new LineSegment2Dy(TopLeft.X, TopLeft.Y, inclBound.Y);
+        yield return new LineSegment2Dy(TopLeft.X, TopLeft.Y, inclEnd.Y);
         // Right edge
-        yield return new LineSegment2Dy(inclBound.X, TopLeft.Y, inclBound.Y);
+        yield return new LineSegment2Dy(inclEnd.X, TopLeft.Y, inclEnd.Y);
     }
 
+    /// <summary>
+    /// Checks if a point is inside the rectangle
+    /// </summary>
     public bool Contains(Point p)
     {
         return (p.X >= TopLeft.X && p.X < BottomRight.X)
