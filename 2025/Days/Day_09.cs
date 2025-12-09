@@ -52,24 +52,21 @@ public sealed partial class Day_09 : BaseDay
                 Math.Abs(tl.Y - br.Y) + 1
             );
 
-            if (rect.Corners.All(InPolygon))
-            {
-                var p = i / (float)allCornerCombis.Count;
-                Console.WriteLine($"Checking {p:P2} {i}/{allCornerCombis.Count}");
-                // check that all points on all edges are also in polygon
-                var allEdgePointsInPolygon = rect.GetEdges()
-                    .SelectMany(edge => edge)
-                    .All(InPolygon);
+            if (!rect.Corners.All(InPolygon))
+                continue;
+            
+            var p = i / (float)allCornerCombis.Count;
+            Console.WriteLine($"Checking {p:P2} {i}/{allCornerCombis.Count}");
+            // check that all points on all edges are also in polygon
+            var allEdgePointsInPolygon = rect.GetEdges()
+                .SelectMany(edge => edge)
+                .All(InPolygon);
 
-                if (allEdgePointsInPolygon)
-                {
-                    rects.Add(rect);
-                }
-            }
+            if (allEdgePointsInPolygon) 
+                rects.Add(rect);
         }
 
-        return rects.Max(RectArea).ToString(); // not 4521627081
-        // 4602673662 too high
+        return rects.Max(RectArea).ToString();
 
         bool InPolygon(Point p)
             => pointCache.GetOrAdd(p, it => IsInPolygon(it, closedPolygon));
