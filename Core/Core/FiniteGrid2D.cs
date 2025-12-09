@@ -44,9 +44,12 @@ namespace Core
         public FiniteGrid2D(int width, int height, Func<Point, TNode> dataCallback)
             : this(new Rectangle(0, 0, width, height), dataCallback) { }
 
-        public FiniteGrid2D(Rectangle bounds, Func<Point, TNode> dataCallback)
+        public FiniteGrid2D(Rectangle bounds)
         {
             Bounds = bounds;
+        }
+        public FiniteGrid2D(Rectangle bounds, Func<Point, TNode> dataCallback) : this(bounds)
+        {
             Fill(dataCallback);
         }
 
