@@ -15,7 +15,7 @@
     <ItemGroup>
         <PackageReference Include="AoCHelper" Version="4.0.0" />
         <PackageReference Include="Flurl.Http" Version="4.0.2" />
-        <PackageReference Include="Microsoft.Z3" Version="4.12.2" />
+        <PackageReference Include="Google.OrTools" Version="9.14.6206" />
         <PackageReference Include="morelinq" Version="4.3.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="NoAlloq" Version="0.2.0" />

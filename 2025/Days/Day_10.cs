@@ -1,5 +1,5 @@
 ﻿using Core;
-using Microsoft.Z3;
+using Google.OrTools.Sat;
 using System.Text.RegularExpressions;
 
 namespace AoC_2025.Days;
@@ -13,7 +13,7 @@ public sealed class Day_10 : BaseDay
         _input = File.ReadAllLines(InputFilePath).SelectArray(ParseMachine);
     }
 
-    record Machine(int Goal, int[] Buttons, int[] JoltageReq)
+    private record Machine(int Goal, int[] Buttons, int[] JoltageReq)
     {
         public override string ToString()
             => $"{Convert.ToString(Goal, 2)} " +
@@ -66,72 +66,50 @@ public sealed class Day_10 : BaseDay
 
     private static int CalculatePresses(Machine machine)
     {
-        using var ctx = new Context();
-        var optimize = ctx.MkOptimize();
+        var model = new CpModel();
+        var maxPresses = machine.JoltageReq.Max();
         
         // Create integer variables for each button type (how many times each button is pressed)
-        var buttonVars = new IntExpr[machine.Buttons.Length];
-        for (var i = 0; i < machine.Buttons.Length; i++)
-        {
-            buttonVars[i] = ctx.MkIntConst($"button_{i}");
-            // Ensure non-negative integer solutions
-            optimize.Assert(ctx.MkGe(buttonVars[i], ctx.MkInt(0)));
-        }
+        var buttonVars = Enumerable.Range(0, machine.Buttons.Length)
+                .Select(i => model.NewIntVar(0, maxPresses, $"button_{i}"))
+                .ToArray();
         
         // For each counter/joltage requirement, add constraint that sum of button presses equals target
-        for (var counterIdx = 0; counterIdx < machine.JoltageReq.Length; counterIdx++)
+        foreach (var (counterIdx, targetValue) in machine.JoltageReq.Index())
         {
-            var terms = new List<ArithExpr>();
-            
-            for (var buttonIdx = 0; buttonIdx < machine.Buttons.Length; buttonIdx++)
-            {
-                var button = machine.Buttons[buttonIdx];
-                // Check if this button affects this counter
-                if ((button & (1 << counterIdx)) != 0)
-                {
-                    terms.Add(buttonVars[buttonIdx]);
-                }
-            }
+            // Find all buttons that affect this counter
+            var affectingButtons = machine.Buttons
+                .Index()
+                .Where(b => (b.Item & (1 << counterIdx)) != 0)
+                .Select(b => buttonVars[b.Index])
+                .ToList();
             
             // Sum of all button presses that affect this counter must equal the target
-            if (terms.Count > 0)
+            if (affectingButtons.Count > 0)
             {
-                var sum = terms.Count == 1 ? terms[0] : ctx.MkAdd(terms.ToArray());
-                optimize.Assert(ctx.MkEq(sum, ctx.MkInt(machine.JoltageReq[counterIdx])));
+                model.Add(LinearExpr.Sum(affectingButtons) == targetValue);
             }
-            else
+            else if (targetValue != 0)
             {
                 // No button affects this counter, so target must be 0
-                if (machine.JoltageReq[counterIdx] != 0)
-                {
-                    Console.WriteLine($"Error: Counter {counterIdx} requires {machine.JoltageReq[counterIdx]} but no button affects it");
-                    return 0;
-                }
+                Console.WriteLine($"Error: Counter {counterIdx} requires {targetValue} but no button affects it");
+                return 0;
             }
         }
         
         // Minimize the total number of button presses
-        var totalPresses = ctx.MkAdd(buttonVars.Cast<ArithExpr>().ToArray());
-        optimize.MkMinimize(totalPresses);
+        model.Minimize(LinearExpr.Sum(buttonVars));
         
         // Solve
-        var status = optimize.Check();
-        if (status == Status.SATISFIABLE)
+        var solver = new CpSolver();
+        var status = solver.Solve(model);
+        
+        if (status is CpSolverStatus.Optimal or CpSolverStatus.Feasible)
         {
-            var model = optimize.Model;
-            var result = 0;
-            for (var i = 0; i < buttonVars.Length; i++)
-            {
-                var value = ((IntNum)model.Evaluate(buttonVars[i])).Int;
-                result += value;
-            }
-            Console.WriteLine($"Done in {result} presses");
-            return result;
+            return buttonVars.Sum(buttonVar => (int)solver.Value(buttonVar));
         }
-        else
-        {
-            Console.WriteLine($"No solution found: {status}");
-            return 0;
-        }
+
+        Console.WriteLine($"No solution found: {status}");
+        return 0;
     }
 }
