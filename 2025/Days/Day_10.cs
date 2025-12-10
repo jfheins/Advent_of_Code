@@ -13,11 +13,11 @@ public sealed class Day_10 : BaseDay
         _input = File.ReadAllLines(InputFilePath).SelectArray(ParseMachine);
     }
 
-    private record Machine(int Goal, int[] Buttons, int[] JoltageReq)
+    private record Machine(int Goal, BitArray32[] Buttons, int[] JoltageReq)
     {
         public override string ToString()
             => $"{Convert.ToString(Goal, 2)} " +
-               $"Buttons: [{string.Join(", ", Buttons.Select(b => Convert.ToString(b, 2)))}] " +
+               $"Buttons: [{string.Join(", ", Buttons.Select(b => b.ToString()))}] " +
                $"JoltageReq: {{{string.Join(", ", JoltageReq)}}}";
     }
 
@@ -32,8 +32,8 @@ public sealed class Day_10 : BaseDay
             .ToArray();
         var goalBits = Convert.ToInt32(new string(goal), 2);
         var buttonMatches = Regex.Matches(line, @"\(([\d,]+)\)");
-        var buttons = buttonMatches.SelectArray(match
-            => match.Value.ParseInts().Aggregate(0, (current, idx) => current | 1 << idx));
+        var buttons = buttonMatches.SelectArray(match =>
+            new BitArray32(match.Value.ParseInts()));
         var joltages = Regex.Match(line, @"\{.+\}");
         return new Machine(goalBits, buttons, joltages.Value.ParseInts());
     }
@@ -52,7 +52,7 @@ public sealed class Day_10 : BaseDay
                 Console.WriteLine("Error");
 
             IEnumerable<int> Expand(int arg)
-                => machine.Buttons.SelectArray(b => arg ^ b);
+                => machine.Buttons.Select(button => arg ^ button.Data);
         }
 
         return totalPresses.ToString();
@@ -68,22 +68,20 @@ public sealed class Day_10 : BaseDay
     {
         var model = new CpModel();
         var maxPresses = machine.JoltageReq.Max();
-        
+
         // Create integer variables for each button type (how many times each button is pressed)
         var buttonVars = Enumerable.Range(0, machine.Buttons.Length)
-                .Select(i => model.NewIntVar(0, maxPresses, $"button_{i}"))
-                .ToArray();
-        
+            .Select(i => model.NewIntVar(0, maxPresses, $"button_{i}"))
+            .ToArray();
+
         // For each counter/joltage requirement, add constraint that sum of button presses equals target
         foreach (var (counterIdx, targetValue) in machine.JoltageReq.Index())
         {
             // Find all buttons that affect this counter
-            var affectingButtons = machine.Buttons
-                .Index()
-                .Where(b => (b.Item & (1 << counterIdx)) != 0)
-                .Select(b => buttonVars[b.Index])
-                .ToList();
-            
+            var affectingButtons = machine.Buttons.Zip(buttonVars)
+                .Where(t => t.First[counterIdx])
+                .SelectList(t => t.Second);
+
             // Sum of all button presses that affect this counter must equal the target
             if (affectingButtons.Count > 0)
             {
@@ -96,14 +94,14 @@ public sealed class Day_10 : BaseDay
                 return 0;
             }
         }
-        
+
         // Minimize the total number of button presses
         model.Minimize(LinearExpr.Sum(buttonVars));
-        
+
         // Solve
         var solver = new CpSolver();
         var status = solver.Solve(model);
-        
+
         if (status is CpSolverStatus.Optimal or CpSolverStatus.Feasible)
         {
             return buttonVars.Sum(buttonVar => (int)solver.Value(buttonVar));
@@ -111,5 +109,47 @@ public sealed class Day_10 : BaseDay
 
         Console.WriteLine($"No solution found: {status}");
         return 0;
+    }
+
+
+    /// <summary>
+    /// A compact bit array that stores up to 32 bits in an int with index-based access.
+    /// </summary>
+    public readonly struct BitArray32
+    {
+        public int Length { get; }
+        public int Data { get; }
+
+        public BitArray32(int length)
+        {
+            if (length is < 0 or > 32)
+                throw new ArgumentOutOfRangeException(nameof(length), "Length must be between 0 and 32");
+
+            Length = length;
+            Data = 0;
+        }
+
+        public BitArray32(IReadOnlyCollection<int> onBits) : this(onBits.Max() + 1)
+        {
+            foreach (var index in onBits)
+                Data |= 1 << index;
+        }
+
+        public bool this[int index] => (Data & (1 << index)) != 0;
+
+
+        public override string ToString()
+        {
+            if (Length == 0)
+                return string.Empty;
+
+            var chars = new char[Length];
+            for (var i = 0; i < Length; i++)
+            {
+                chars[Length - 1 - i] = this[i] ? '1' : '0';
+            }
+
+            return new string(chars);
+        }
     }
 }
