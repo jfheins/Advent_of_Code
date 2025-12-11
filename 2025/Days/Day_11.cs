@@ -1,10 +1,8 @@
 ﻿using Core;
-using System.Linq;
-using System.Drawing;
 
 namespace AoC_2025.Days;
 
-public sealed partial class Day_11 : BaseDay
+public sealed class Day_11 : BaseDay
 {
     private readonly (string node, string[] outputs)[] _input;
 
@@ -38,46 +36,31 @@ public sealed partial class Day_11 : BaseDay
     public override async ValueTask<string> Solve_2()
     {
         var ex = _input.ToDictionary(it => it.node, it => it.outputs);
+        var cache = new Dictionary<(string from, string to), long>();
+        long part1;
+        var part2 = Search("dac", "fft");
+        long part3;
 
-        // Dictionary to merge nodes at current level: (node, hasDac, hasFft) -> pathCount
-        var currentLevel = new Dictionary<(string device, bool dac, bool fft), long>
+        if (part2 > 0)
         {
-            [("svr", false, false)] = 1
-        };
-
-        long totalPaths = 0;
-
-        while (currentLevel.Count > 0)
-        {
-            var nextLevel = new Dictionary<(string device, bool dac, bool fft), long>();
-
-            foreach (var (state, pathCount) in currentLevel)
-            {
-                var (device, hasDac, hasFft) = state;
-                if (device == "out" && hasDac && hasFft)
-                {
-                    Console.WriteLine($"Found path with count: {pathCount}");
-                    totalPaths += pathCount;
-                    continue;
-                }
-
-                foreach (var nextNode in ex.GetValueOrDefault(device, []))
-                {
-                    var newState = (
-                        device: nextNode,
-                        dac: hasDac || nextNode == "dac",
-                        fft: hasFft || nextNode == "fft"
-                    );
-
-                    var existingCount = nextLevel.GetValueOrDefault(newState);
-                    nextLevel[newState] = existingCount + pathCount;
-                }
-            }
-
-            currentLevel = nextLevel;
+            part1 = Search("svr", "dac");
+            part3 = Search("fft", "out");
+            return (part1 * part2 * part3).ToString();
         }
 
-        return totalPaths.ToString(); // wrong: 1409877312320
+        part1 = Search("svr", "fft");
+        part2 = Search("fft", "dac");
+        part3 = Search("dac", "out");
+
+        return (part1 * part2 * part3).ToString();
+
+        long Search(string node, string target)
+        {
+            if (node == target)
+                return 1;
+
+            return cache.GetOrAdd((node, target),
+                _ => ex.GetValueOrDefault(node, []).Select(it => Search(it, target)).Sum());
+        }
     }
 }
-
