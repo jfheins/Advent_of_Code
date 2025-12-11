@@ -747,6 +747,12 @@ public static class LinqHelpers
             < 1000000000000000000L => 18,
             _ => 19
         };
+    
+    public static string Reverse(this string s) => string.Create(s.Length, s, static (span, str) =>
+    {
+        for (var i = 0; i < str.Length; i++)
+            span[i] = str[str.Length - 1 - i];
+    });
 
     public static long PolygonArea(this IEnumerable<Point> points)
     {
