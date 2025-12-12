@@ -23,9 +23,7 @@ static class Program
             }
         }
 
-        //await WarmUp<Day_21>();
-
-        await Solver.SolveLast(c =>
+        await Solver.SolveAll(c =>
         {
             c.ShowConstructorElapsedTime = true;
             c.ShowTotalElapsedTimePerDay = true;

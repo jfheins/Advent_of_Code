@@ -34,7 +34,6 @@ public sealed partial class Day_04 : BaseDay
         var removable = GetRemovable();
         while (removable.Count > 0)
         {
-            Console.WriteLine("Removing " + removable.Count + " cells, total: " + removed);
             removed += removable.Count;
             foreach (var point in removable)
             {
