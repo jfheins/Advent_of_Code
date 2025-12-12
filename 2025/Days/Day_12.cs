@@ -16,14 +16,14 @@ public sealed class Day_12 : BaseDay
         _regions = parts.Last().Select(ParseRegion).ToArray();
     }
 
-    private Shape ParseShape(ArraySegment<string> arg)
+    private static Shape ParseShape(ArraySegment<string> arg)
     {
         var id = arg[0].ParseInts(1).First();
         var grid = new FiniteGrid2D<char>(arg[1..]);
         return new Shape(id, grid);
     }
 
-    private TreeRegion ParseRegion(string arg)
+    private static TreeRegion ParseRegion(string arg)
     {
         var x = arg.ParseInts();
         var width = x[0];
@@ -39,15 +39,28 @@ public sealed class Day_12 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        var count = _regions.Chunk(100).AsParallel().Select(chunk =>
-        {
-            var packer = new ShapePacker(_shapes);
-            return chunk.Count(region => packer.HasPacking(region));
-        }).Sum();
+        // var count = _regions.Chunk(100).Select(chunk =>
+        // {
+        //     var packer = new ShapePacker(_shapes);
+        //     return chunk.Count(region => packer.HasPacking(region));
+        // }).Sum();
+        var count = _regions.Count(QuickCheck);
         return count.ToString();
     }
 
     public override async ValueTask<string> Solve_2() => "just click";
+    
+    private bool QuickCheck(TreeRegion region)
+    {
+        var totalShapeArea = region.Presents
+            .Select((count, shapeId) => count * CountFilledCells(_shapes[shapeId].Outline))
+            .Sum();
+        var regionArea = region.Size.Width * region.Size.Height;
+        return totalShapeArea <= regionArea;
+        
+        int CountFilledCells(FiniteGrid2D<char> shape)
+            => shape.Count(t => t.value != '.');
+    }
 
     class ShapePacker
     {
