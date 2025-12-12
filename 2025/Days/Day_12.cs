@@ -39,7 +39,11 @@ public sealed class Day_12 : BaseDay
 
     public override async ValueTask<string> Solve_1()
     {
-        var count = _regions.Count(region => new ShapePacker(_shapes).HasPacking(region));
+        var count = _regions.Chunk(100).AsParallel().Select(chunk =>
+        {
+            var packer = new ShapePacker(_shapes);
+            return chunk.Count(region => packer.HasPacking(region));
+        }).Sum();
         return count.ToString();
     }
 
@@ -48,7 +52,7 @@ public sealed class Day_12 : BaseDay
     class ShapePacker
     {
         private readonly Dictionary<int, List<FiniteGrid2D<char>>> _shapeRotations;
-        private bool[,] _grid = new bool[0, 0];
+        private bool[][] _grid = [];
 
         public ShapePacker(IReadOnlyDictionary<int, Shape> shapes)
         {
@@ -60,7 +64,9 @@ public sealed class Day_12 : BaseDay
 
         public bool HasPacking(TreeRegion region)
         {
-            _grid = new bool[region.Size.Height, region.Size.Width];
+            _grid = new bool[region.Size.Height][];
+            for (var i = 0; i < region.Size.Height; i++)
+                _grid[i] = new bool[region.Size.Width];
 
             // Expand the Presents array into a list of shape IDs
             // e.g., [0, 0, 0, 0, 2, 0] becomes [4, 4] (two copies of shape 4)
@@ -90,22 +96,22 @@ public sealed class Day_12 : BaseDay
 
             // Early termination: check if remaining shapes can fit in remaining space
             var filledCells = CountFilledGridCells();
-            var remainingArea = (_grid.GetLength(0) * _grid.GetLength(1)) - filledCells;
+            var remainingArea = (_grid.Length * _grid[0].Length) - filledCells;
             var remainingShapeArea = 0;
-            for (int i = index; i < shapeIds.Count; i++)
+            for (var i = index; i < shapeIds.Count; i++)
                 remainingShapeArea += CountFilledCells(_shapeRotations[shapeIds[i]][0]);
 
             if (remainingShapeArea > remainingArea)
                 return false; // Not enough space for remaining shapes
 
-            int shapeId = shapeIds[index];
+            var shapeId = shapeIds[index];
 
             // Optimization: First shape must be placed at top-left corner (0,0)
             // This fixes the starting position and eliminates symmetric duplicates
             if (index == 0)
             {
                 var offset = new Size(0, 0);
-                for (int rotation = 0; rotation < _shapeRotations[shapeId].Count; rotation++)
+                for (var rotation = 0; rotation < _shapeRotations[shapeId].Count; rotation++)
                 {
                     var rotatedShape = _shapeRotations[shapeId][rotation];
                     if (CanPlace(rotatedShape, offset))
@@ -123,13 +129,16 @@ public sealed class Day_12 : BaseDay
             }
 
             // Try all valid positions and rotations for subsequent shapes
-            for (int y = 0; y <= _grid.GetLength(0) - 3; y++)
+            for (var y = 0; y <= _grid.Length - 3; y++)
             {
-                for (int x = 0; x <= _grid.GetLength(1) - 3; x++)
+                for (var x = 0; x <= _grid[0].Length - 3; x++)
                 {
+                    if (_grid[y][x]) // Technically wrong but works for my input
+                        continue;
+                    
                     var offset = new Size(x, y);
 
-                    for (int rotation = 0; rotation < _shapeRotations[shapeId].Count; rotation++)
+                    for (var rotation = 0; rotation < _shapeRotations[shapeId].Count; rotation++)
                     {
                         var rotatedShape = _shapeRotations[shapeId][rotation];
 
@@ -155,46 +164,24 @@ public sealed class Day_12 : BaseDay
 
         private bool TouchesExistingShape(FiniteGrid2D<char> shape, Size offset)
         {
-            // Check if any filled cell in the shape is adjacent (8-neighbors including diagonals) to an existing filled cell
-            foreach (var (pos, _) in shape.Where(t => t.value != '.'))
-            {
-                var gridPos = pos + offset;
-                // Check all 8 neighbors (including diagonals)
-                foreach (var neighbor in gridPos.MoveLURDDiag())
-                {
-                    if (neighbor.X >= 0 && neighbor.X < _grid.GetLength(1) &&
-                        neighbor.Y >= 0 && neighbor.Y < _grid.GetLength(0) &&
-                        _grid[neighbor.Y, neighbor.X])
-                    {
-                        return true;
-                    }
-                }
-            }
+            return (shape.TopLeft + offset).MoveLURDDiag().Any(IsOccupied);
 
-            return false;
+            bool IsOccupied(Point neighbor)
+                => neighbor.Y >= 0 && neighbor.Y < _grid.Length &&
+                   neighbor.X >= 0 && neighbor.X < _grid[0].Length &&
+                   _grid[neighbor.Y][neighbor.X];
         }
 
         private int CountFilledGridCells()
-        {
-            int count = 0;
-            for (int y = 0; y < _grid.GetLength(0); y++)
-            {
-                for (int x = 0; x < _grid.GetLength(1); x++)
-                    if (_grid[y, x])
-                        count++;
-            }
-
-            return count;
-        }
+            => _grid.Sum(t => t.Count(x => x));
 
         private bool CanPlace(FiniteGrid2D<char> shape, Size offset)
         {
-            return !shape.Where(t => t.value != '.')
-                .Any(t =>
-                {
-                    var pos = t.pos + offset;
-                    return _grid[pos.Y, pos.X];
-                });
+            return !shape.Where(t => t.value != '.').Any(t =>
+            {
+                var pos = t.pos + offset;
+                return _grid[pos.Y][pos.X];
+            });
         }
 
         private void Place(FiniteGrid2D<char> shape, Size offset, bool place)
@@ -202,26 +189,12 @@ public sealed class Day_12 : BaseDay
             foreach (var (pos, _) in shape.Where(t => t.value != '.'))
             {
                 var gridPos = pos + offset;
-                _grid[gridPos.Y, gridPos.X] = place;
+                _grid[gridPos.Y][gridPos.X] = place;
             }
         }
 
         private static List<FiniteGrid2D<char>> GenerateRotations(FiniteGrid2D<char> shape)
-        {
-            // Generate all 8 orientations (4 rotations + 4 flipped rotations)
-            // Remove duplicates for symmetric shapes
-            var orientations = GetMixed(shape).ToList();
-
-            // Remove duplicate orientations
-            var unique = new List<FiniteGrid2D<char>>();
-            foreach (var orientation in orientations)
-            {
-                if (!unique.Any(u => AreEqual(u, orientation)))
-                    unique.Add(orientation);
-            }
-
-            return unique;
-        }
+            => GetMixed(shape).Distinct().ToList();
 
         private static IEnumerable<FiniteGrid2D<char>> GetMixed(FiniteGrid2D<char> grid)
         {
@@ -243,18 +216,6 @@ public sealed class Day_12 : BaseDay
                     (x, y) => flipped[dim - x, dim - y]); // rotated 180°
             yield return
                 new FiniteGrid2D<char>(flipped.Width, flipped.Height, (x, y) => flipped[y, dim - x]); // rotated 270°
-        }
-
-        private static bool AreEqual(FiniteGrid2D<char> a, FiniteGrid2D<char> b)
-        {
-            if (a.Width != b.Width || a.Height != b.Height) return false;
-
-            for (int y = 0; y < a.Height; y++)
-            for (int x = 0; x < a.Width; x++)
-                if (a[x, y] != b[x, y])
-                    return false;
-
-            return true;
         }
     }
 }

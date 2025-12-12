@@ -12,7 +12,7 @@ using System.Diagnostics;
 namespace Core
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1710:Identifiers should have correct suffix", Justification = "Collection is a minor concern")]
-    public class FiniteGrid2D<TNode> : ICollection<(Point pos, TNode value)>
+    public class FiniteGrid2D<TNode> : ICollection<(Point pos, TNode value)>, IEquatable<FiniteGrid2D<TNode>>
         where TNode : notnull
     {
         public Rectangle Bounds { get => _bounds.Clone(); private set => _bounds = value; }
@@ -435,12 +435,30 @@ namespace Core
             public void Reset() => _enumerator.Reset();
         }
 
-        public bool Equals(FiniteGrid2D<TNode> other)
+        public bool Equals(FiniteGrid2D<TNode>? other)
         {
-            if (Bounds != other.Bounds)
+            if (other is null || Bounds != other.Bounds)
                 return false;
 
             return Keys.All(p => this[p].Equals(other[p]));
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is FiniteGrid2D<TNode> other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(Width);
+            hash.Add(Height);
+            foreach (var (pos, value) in this.OrderBy(kvp => kvp.pos.X).ThenBy(kvp => kvp.pos.Y))
+            {
+                hash.Add(pos);
+                hash.Add(value);
+            }
+            return hash.ToHashCode();
         }
     }
 }
